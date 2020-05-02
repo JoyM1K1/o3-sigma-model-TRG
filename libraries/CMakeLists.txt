@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.16)
+project(lib)
+
+add_library(frac STATIC ./src/frac.cpp)
+add_library(CG STATIC ./src/CG.cpp)
+target_compile_definitions(frac PRIVATE cxx_std_11)
+target_compile_definitions(CG PRIVATE cxx_std_11)
+target_include_directories(frac INTERFACE ./include)
+target_include_directories(CG INTERFACE ./include)
+set_target_properties(frac)
