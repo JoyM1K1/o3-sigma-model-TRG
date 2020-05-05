@@ -11,6 +11,7 @@
 class frac {
 public:
     long long num, den; // numerator, denominator
+
     explicit frac(long long n = 0, long long d = 1); // Constructor
 
     double toDouble() const;
@@ -26,6 +27,8 @@ public:
     static frac max(frac a, frac b);
 
     static frac min(frac a, frac b);
+
+//    static void swap(frac & a, frac & b);
 
     frac cleanSquareRoot() const;
 
@@ -75,6 +78,8 @@ public:
     frac operator/(const frac &rhs) const;
 
     frac operator/(const long long rhs) const;
+
+    frac operator%(const long long rhs) const;
 
     frac &operator+=(const frac &rhs);
 

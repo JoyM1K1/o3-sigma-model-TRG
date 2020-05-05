@@ -56,6 +56,11 @@ frac frac::min(frac a, frac b) {
     return a < b ? a : b;
 }
 
+//void frac::swap(frac &a, frac &b) {
+//    frac tmp = a;
+//    a = b;
+//}
+
 frac frac::cleanSquareRoot() const {
     if (num <= 0 || den <= 0)
         return frac(0);
@@ -197,6 +202,12 @@ frac frac::operator/(const frac &rhs) const {
 frac frac::operator/(const long long rhs) const {
     frac L(num, den), R(rhs);
     frac res = L / R;
+    res.reduce();
+    return res;
+}
+
+frac frac::operator%(const long long rhs) const {
+    frac res(num % (rhs * den), den);
     res.reduce();
     return res;
 }
