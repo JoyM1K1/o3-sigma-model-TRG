@@ -9,6 +9,7 @@
 #include <fstream>
 #include "libraries/include/frac.hpp"
 #include "libraries/include/CG.hpp"
+#include "libraries/include/legendre_zero_point.hpp"
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -210,15 +211,16 @@ void print_matrix(T *matrix, MKL_INT m, MKL_INT n, MKL_INT lda, const string &me
     cout << '\n';
 }
 
-double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N, MKL_INT *order,
-           std::map<CG, frac> &map) {
+double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N, MKL_INT *order
+        /*std::map<CG, frac> &map*/) {
     chrono::system_clock::time_point start = chrono::system_clock::now();
     // index dimension
     MKL_INT D = D_cut;
 
-    double A[l_max];
+    std::vector<double> x = math::solver::legendre_zero_point(l_max);
+    std::vector<double> p(l_max);
     REP(i, l_max) {
-        A[i] = std::cyl_bessel_i(i + 0.5, K) * (i * 2 + 1);
+        p[i] = std::legendre(l_max - 1, x[i]);
     }
 
     // initialize tensor network : max index size is D_cut
@@ -226,30 +228,28 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     REP4(i, j, k, l, D_cut) {
                     T[i][j][k][l] = 0;
                 }
-    REP4(i, j, k, l, l_max) {
-                    for (int im = 0; im <= 2 * i; ++im)
-                        for (int jm = 0; jm <= 2 * j; ++jm)
-                            for (int km = 0; km <= 2 * k; ++km)
-                                for (int lm = 0; lm <= 2 * l; ++lm) {
-                                    double sum = 0;
-                                    for (int L = std::abs(i - j); L <= i + j; ++L)
-                                        for (int M = -L; M <= L; ++M) {
-                                            if (L < std::abs(k - l) || k + l < L || im - i + jm - j != M || km - k + lm - l != M)
-                                                continue; // CG係数としてありえないものは0なので飛ばす
-                                            frac c(1);
-                                            c *= getCoeff(frac(i), frac(j), frac(im - i), frac(jm - j), frac(L),
-                                                          frac(M), map);
-                                            c *= getCoeff(frac(i), frac(j), frac(0), frac(0), frac(L), frac(0), map);
-                                            c *= getCoeff(frac(k), frac(l), frac(km - k), frac(lm - l), frac(L),
-                                                          frac(M), map);
-                                            c *= getCoeff(frac(k), frac(l), frac(0), frac(0), frac(L), frac(0), map);
-                                            c /= frac(2 * L + 1).sign() * (2 * L + 1) * (2 * L + 1);
-                                            sum += c.sign().toDouble() * std::sqrt(frac::abs(c).toDouble());
-                                        }
-                                    T[i * i + im][j * j + jm][k * k + km][l * l + lm] =
-                                            std::sqrt(A[i] * A[j] * A[k] * A[l]) * sum;
+    std::vector<double> w(l_max);
+    REP(i, l_max) {
+        w[i] = 2 * (1 - x[i] * x[i]) / (l_max * l_max * p[i] * p[i]);
+    }
+    std::function<double(double, double, double, double)> f = [=](double t1, double u1, double t2, double u2) {
+        return t1 * t2 + std::sqrt((1 - t1 * t1) * (1 - t2 * t2)) * std::cos(M_PI * (u1 - u2));
+    };
+    REP(i1, l_max)
+        REP(j1, l_max)
+            REP(i2, l_max)
+                REP(j2, l_max)
+                    REP(i3, l_max)
+                        REP(j3, l_max)
+                            REP(i4, l_max)
+                                REP(j4, l_max) {
+                                    T[l_max * i1 + j1][l_max * i2 + j2][l_max * i3 + j3][l_max * i4 + j4] =
+                                            std::sqrt(w[i1] * w[j1] * w[i2] * w[j2] * w[i3] * w[j3] * w[i4] * w[j4])
+                                            * std::exp(K * f(x[i1], x[j1], x[i2], x[j2]))
+                                            * std::exp(K * f(x[i2], x[j2], x[i3], x[j3]))
+                                            * std::exp(K * f(x[i3], x[j3], x[i4], x[j4]))
+                                            * std::exp(K * f(x[i4], x[j4], x[i1], x[j1]));
                                 }
-                }
 
     REP(n, N) {
         // Tを 1以上 に丸め込む
@@ -375,8 +375,7 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     }
 
     double Z = 0;
-    REP(i, D)
-        REP(j, D) {
+    REP(i, D)REP(j, D) {
             Z += T[i][j][i][j];
         }
 
@@ -400,42 +399,42 @@ int main() {
     cout << '\n';
 
     /* Clebsch-Gordan coefficient */
-    std::map<CG, frac> map;
-    std::ifstream CGFile;
-    CGFile.open(CGFileName, std::ios::in);
-    MKL_INT l1, l2, m1, m2, L, M, num, den;
-    while (CGFile >> l1 >> l2 >> m1 >> m2 >> L >> M >> num >> den) {
-        if (map.find(CG(frac(l1), frac(l2), frac(m1), frac(m2), frac(L), frac(M))) != map.end()) {
-            cerr << "clebsch_gordan.txt is broken." << '\n';
-            return 1;
-        }
-        map[CG(frac(l1), frac(l2), frac(m1), frac(m2), frac(L), frac(M))] = frac(num, den);
-    }
-    CGFile.close();
+//    std::map<CG, frac> map;
+//    std::ifstream CGFile;
+//    CGFile.open(CGFileName, std::ios::in);
+//    MKL_INT l1, l2, m1, m2, L, M, num, den;
+//    while (CGFile >> l1 >> l2 >> m1 >> m2 >> L >> M >> num >> den) {
+//        if (map.find(CG(frac(l1), frac(l2), frac(m1), frac(m2), frac(L), frac(M))) != map.end()) {
+//            cerr << "clebsch_gordan.txt is broken." << '\n';
+//            return 1;
+//        }
+//        map[CG(frac(l1), frac(l2), frac(m1), frac(m2), frac(L), frac(M))] = frac(num, den);
+//    }
+//    CGFile.close();
 
     /* loop */
-    for (l_max = 1; l_max <= 5; ++l_max) {
+    for (l_max = 5; l_max <= 6; ++l_max) {
         chrono::system_clock::time_point start = chrono::system_clock::now();
         cout << "---------- " << l_max << " ----------\n";
-        const string fileName = to_string(l_max) + '-' + to_string(N) + ".txt";
+        const string fileName = "gauss_quadrature_" + to_string(l_max) + '-' + to_string(N) + ".txt";
         std::ofstream dataFile;
         dataFile.open(fileName, std::ios::trunc);
-        D_cut = (l_max + 1) * (l_max + 1);
+        D_cut = l_max * l_max;
         K_start = 0.1;
         K_end = 4.01;
         double K = K_start; // inverse temperature
         while (K <= K_end) {
             cout << "K = " << K << "   ";
-            MKL_INT order[2 * N];
-            double Z = log(TRG(K, D_cut, l_max, N * 2, order, map));
+            MKL_INT order[2 * N - 1];
+            double Z = log(TRG(K, D_cut, l_max, N * 2 - 1, order /*map*/));
+            REP(i, N) Z /= 4; // 体積で割る
             double o = 0;
-            REP(i, 2 * N) {
-                Z /= 2;
+            REP(i, 2 * N - 1) {
                 double tmp = order[i] * log(10);
-                REP(j, i) tmp /= 2;
+                REP(j, i + 1) tmp /= 2;
                 o += tmp;
             }
-            Z += log(M_PI / (2 * K)) + o;
+            Z += -log(4) + o;
 //        Z = log(M_PI / (2 * K)) + order * log(THRESHOLD) / V + Z / V;
             dataFile << K << '\t' << -Z / K << '\n';
 //        cout << "結果 : " << -Z/K << '\n';
