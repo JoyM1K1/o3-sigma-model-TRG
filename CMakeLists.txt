@@ -14,6 +14,6 @@ add_executable(spherical_harmonics spherical_harmonics.cpp)
 add_executable(gauss_quadrature gauss_quadrature.cpp)
 add_executable(gauss_legendre_test gauss_legendre_test.cpp libraries/include/legendre_zero_point.hpp)
 
-target_link_libraries(spherical_harmonics mkl_intel_ilp64 mkl_sequential mkl_core frac CG)
-target_link_libraries(gauss_quadrature mkl_intel_ilp64 mkl_sequential mkl_core legendre_zero_point)
+target_link_libraries(spherical_harmonics mkl_intel_ilp64 mkl_sequential mkl_core TRG frac CG)
+target_link_libraries(gauss_quadrature mkl_intel_ilp64 mkl_sequential mkl_core TRG legendre_zero_point)
 
