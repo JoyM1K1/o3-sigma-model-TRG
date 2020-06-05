@@ -11,7 +11,7 @@
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-#define MESH 1e-1
+#define MESH 1
 
 using std::cin;
 using std::cout;
@@ -46,9 +46,7 @@ TRG(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, 
 
     std::ifstream GL_node;
     GL_node.open("GL-node.txt", std::ios::in);
-    for (int i = 0; GL_node >> x[i] >> w[i]; ++i) {
-        cout << x[i] << ' ' << w[i] << '\n';
-    }
+    for (int i = 0; GL_node >> x[i] >> w[i]; ++i);
     GL_node.close();
 
 //    REP(i, n_node) {
@@ -239,12 +237,13 @@ int main() {
     /* calculation */
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     const string fileName =
-            "gauss_quadrature_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) +
+            "gauss_quadrature_node" +
+            std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) +
             ".txt";
     std::ofstream dataFile;
     dataFile.open(fileName, std::ios::trunc);
-    double K_start = 4.0;
-    double K_end = 4.01;
+    double K_start = 5;
+    double K_end = 10.01;
     double K = K_start; // inverse temperature
     while (K <= K_end) {
         cout << "K = " << K << "   ";
