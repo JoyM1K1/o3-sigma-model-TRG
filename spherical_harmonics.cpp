@@ -7,8 +7,8 @@
 #include <vector>
 #include <mkl.h>
 #include <fstream>
-#include "libraries/include/frac.hpp"
-#include "libraries/include/CG.hpp"
+#include <frac.hpp>
+#include <CG.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
