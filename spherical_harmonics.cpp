@@ -13,11 +13,14 @@
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-#define MESH 1e-1
+#define MESH 1
 
 #define CGFileName "clebsch_gordan.txt"
 
-using namespace std;
+using std::cin;
+using std::cout;
+using std::cerr;
+using std::string;
 
 frac squareSummation(std::vector<frac> &factors) {
     // 絶対値が同じで符号だけが異なるものは相殺するので消す
@@ -56,14 +59,14 @@ frac squareSummation(std::vector<frac> &factors) {
 }
 
 void determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map) {
-    chrono::system_clock::time_point start = chrono::system_clock::now();
+    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     cout << "determine : l1=" << l1 << " l2=" << l2 << " L=" << L << "   ";
     if (l1 + l2 < L) {
         cerr << "l1 + l2 < L" << '\n';
         return;
     }
-    frac m1_max = min(l1, L + l2);
-    frac m2_max = min(l2, L + l1);
+    frac m1_max = frac::min(l1, L + l2);
+    frac m2_max = frac::min(l2, L + l1);
     frac m1_min = -m1_max;
     frac m2_min = -m2_max;
     // CG(l1, l2, m1_max, L - m1_max, L, L) ... 一番右の一番上
@@ -76,10 +79,9 @@ void determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map) {
         frac preFactorA;
         frac M = m1_max + m2;
         frac A = (L - M) * (L + M + 1);
-        frac B(0);
         frac C = (l2 - m2) * (l2 + m2 + 1);
         if (A == 0) {
-            std::cerr << "Error : A is 0" << '\n';
+            cerr << "Error : A is 0" << '\n';
             exit(1);
         }
         frac preFactorC = map[CG(l1, l2, m1_max, m2 + 1, L, M + 1)];
@@ -99,7 +101,7 @@ void determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map) {
                 frac B = (l1 + m1) * (l1 - m1 + 1);
                 frac C = (l2 + m2) * (l2 - m2 + 1);
                 if (B == 0) {
-                    std::cerr << "Error : B is 0" << '\n';
+                    cerr << "Error : B is 0" << '\n';
                     exit(1);
                 }
                 frac preFactorA = map[CG(l1, l2, m1, m2, L, M)];
@@ -128,7 +130,7 @@ void determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map) {
                 frac C = (l2 - m2) * (l2 + m2 + 1);
                 if (C == 0) {
                     std::cerr << "Error : C is 0" << '\n';
-                    exit(0);
+                    exit(1);
                 }
                 frac preFactorA;
                 if (frac::abs(M) <= L)
@@ -170,8 +172,8 @@ void determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map) {
         }
         CGFile.close();
     }
-    chrono::system_clock::time_point end = chrono::system_clock::now();
-    cout << "time : " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms\n";
+    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+    cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 }
 
 // sqrtの配列を足し合わせる
@@ -202,7 +204,7 @@ void print_matrix(T *matrix, MKL_INT m, MKL_INT n, MKL_INT lda, const string &me
     cout << '\n' << message << '\n';
     REP(i, m) {
         REP(j, n) {
-            cout << scientific << setprecision(5) << (matrix[i * lda + j] >= 0 ? " " : "") << matrix[i * lda + j]
+            cout << std::scientific << std::setprecision(5) << (matrix[i * lda + j] >= 0 ? " " : "") << matrix[i * lda + j]
                  << ' ';
         }
         cout << '\n';
@@ -212,7 +214,7 @@ void print_matrix(T *matrix, MKL_INT m, MKL_INT n, MKL_INT lda, const string &me
 
 double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N, MKL_INT *order,
            std::map<CG, frac> &map) {
-    chrono::system_clock::time_point start = chrono::system_clock::now();
+    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     // index dimension
     MKL_INT D = D_cut;
 
@@ -270,13 +272,13 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
                     }
         order[n] = o;
 
-        MKL_INT D_new = min(D * D, D_cut);
+        MKL_INT D_new = std::min(D * D, D_cut);
         double Ma[D * D * D * D], Mb[D * D * D * D]; // Ma = M(ij)(kl)  Mb = M(jk)(li)
         REP(i, D * D * D * D) {
             Ma[i] = 0;
             Mb[i] = 0;
         }
-        REP4(i, j, k, l, min(D, D_cut)) {
+        REP4(i, j, k, l, std::min(D, D_cut)) {
                         Ma[l + D * k + D * D * j + D * D * D * i] = T[i][j][k][l];
                         Mb[i + D * l + D * D * k + D * D * D * j] = T[i][j][k][l];
                     }
@@ -292,7 +294,7 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
                                       superb); // Ma = U * sigma * VH
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
-            return 1;
+            exit(1);
         }
         if (n < 0) {
             print_matrix(sigma, 1, D * D, D * D, "sigma");
@@ -323,7 +325,7 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
         info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, Mb, D * D, sigma, U, D * D, VH, D * D, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
-            return 1;
+            exit(1);
         }
         if (n < 0) {
             print_matrix(sigma, 1, D * D, D * D, "sigma");
@@ -339,8 +341,6 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
                 }
             }
         }
-
-        double T_new[D_cut][D_cut][D_cut][D_cut];
 
         double X12[D_new][D_new][D][D], X34[D_new][D_new][D][D];
         REP(i, D_new) {
@@ -359,19 +359,16 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
         }
 
         REP4(i, j, k, l, D_new) {
-                        T_new[i][j][k][l] = 0;
+                        T[i][j][k][l] = 0;
                         REP(b, D) {
                             REP(d, D) {
-                                T_new[i][j][k][l] += X12[k][l][b][d] * X34[i][j][b][d];
+                                T[i][j][k][l] += X12[k][l][b][d] * X34[i][j][b][d];
                             }
                         }
                     }
 
         // 更新
         D = D_new;
-        REP4(i, j, k, l, D) {
-                        T[i][j][k][l] = T_new[i][j][k][l];
-                    }
     }
 
     double Z = 0;
@@ -380,24 +377,18 @@ double TRG(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
             Z += T[i][j][i][j];
         }
 
-    chrono::system_clock::time_point end = chrono::system_clock::now();
-    cout << "計算時間 : " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << '\n';
+    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+    cout << "計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
     return Z;
 }
 
 int main() {
     /* inputs */
     MKL_INT D_cut; // bond dimension
-    MKL_INT N;     // repeat count
+    MKL_INT N = 40;     // volume : 2^N
     MKL_INT l_max; // max l
     double K_start;
     double K_end;
-
-//    cout << "input max l : ";
-//    cin >> l_max;
-    cout << "input N : ";
-    cin >> N;
-    cout << '\n';
 
     /* Clebsch-Gordan coefficient */
     std::map<CG, frac> map;
@@ -414,36 +405,33 @@ int main() {
     CGFile.close();
 
     /* loop */
-    for (l_max = 1; l_max <= 5; ++l_max) {
-        chrono::system_clock::time_point start = chrono::system_clock::now();
+    for (l_max = 1; l_max <= 6; ++l_max) {
+        std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
         cout << "---------- " << l_max << " ----------\n";
-        const string fileName = to_string(l_max) + '-' + to_string(N) + ".txt";
+        const string fileName = "spherical_harmonics_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
         std::ofstream dataFile;
         dataFile.open(fileName, std::ios::trunc);
         D_cut = (l_max + 1) * (l_max + 1);
-        K_start = 0.1;
-        K_end = 4.01;
+        K_start = 5.0;
+        K_end = 10.01;
         double K = K_start; // inverse temperature
         while (K <= K_end) {
             cout << "K = " << K << "   ";
-            MKL_INT order[2 * N];
-            double Z = log(TRG(K, D_cut, l_max, N * 2, order, map));
-            double o = 0;
-            REP(i, 2 * N) {
-                Z /= 2;
+            MKL_INT order[N];
+            double Z = log(TRG(K, D_cut, l_max, N, order, map));
+            REP(i, N) Z /= 2; // 体積で割る
+            REP(i, N) {
                 double tmp = order[i] * log(10);
                 REP(j, i) tmp /= 2;
-                o += tmp;
+                Z += tmp;
             }
-            Z += log(M_PI / (2 * K)) + o;
-//        Z = log(M_PI / (2 * K)) + order * log(THRESHOLD) / V + Z / V;
+            Z += log(M_PI / (2 * K));
             dataFile << K << '\t' << -Z / K << '\n';
-//        cout << "結果 : " << -Z/K << '\n';
             K += MESH;
         }
         dataFile.close();
-        chrono::system_clock::time_point end = chrono::system_clock::now();
-        cout << "合計計算時間 : " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms\n\n";
+        std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
     }
 
     return 0;
