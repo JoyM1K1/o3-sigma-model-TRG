@@ -6,7 +6,9 @@
 #include <vector>
 #include <mkl.h>
 #include <fstream>
-#include "libraries/include/legendre_zero_point.hpp"
+#include <legendre_zero_point.hpp>
+#include <functional>
+#include <TRG.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -34,7 +36,7 @@ void print_matrix(T *matrix, MKL_INT m, MKL_INT n, MKL_INT lda, const string &me
 }
 
 double
-TRG(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, MKL_INT *order) {
+Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, MKL_INT *order) {
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
@@ -57,10 +59,7 @@ TRG(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, 
 //    }
 
     // initialize tensor network : max index size is D_cut
-    double T[D_cut][D_cut][D_cut][D_cut];
-    REP4(i, j, k, l, D_cut) {
-                    T[i][j][k][l] = 0;
-                }
+    std::vector<std::vector<std::vector<std::vector<double>>>> T(D_cut, std::vector<std::vector<std::vector<double>>>(D_cut, std::vector<std::vector<double>>(D_cut, std::vector<double>(D_cut))));
     std::function<double(double, double, double, double)> f = [=](double theta1, double phi1, double theta2,
                                                                   double phi2) {
         std::function<double(double)> s = [=](double theta) { return std::sin(M_PI * theta / 2); };
@@ -72,23 +71,23 @@ TRG(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, 
                     M[n_node * n_node * n_node * theta1 + n_node * n_node * phi1 + n_node * theta2 + phi2] = f(
                             x[theta1], x[phi1], x[theta2], x[phi2]);
                 }
-    double u[n_node * n_node * n_node * n_node];
-    double vt[n_node * n_node * n_node * n_node];
-    double sig[n_node * n_node];
+    double U[n_node * n_node * n_node * n_node];
+    double VT[n_node * n_node * n_node * n_node];
+    double sigma[n_node * n_node];
     double buffer[n_node * n_node];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M, n_node * n_node, sig,
-                                  u, n_node * n_node, vt, n_node * n_node, buffer);
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M, n_node * n_node, sigma,
+                                  U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
     }
     double A[n_node][n_node][D], B[n_node][n_node][D];
     REP(k, D) {
-        double s = std::sqrt(sig[k]);
+        double s = std::sqrt(sigma[k]);
         REP(i, n_node)
             REP(j, n_node) {
-                A[i][j][k] = u[n_node * n_node * n_node * i + n_node * n_node * j + k] * s;
-                B[i][j][k] = vt[n_node * n_node * k + n_node * i + j] * s;
+                A[i][j][k] = U[n_node * n_node * n_node * i + n_node * n_node * j + k] * s;
+                B[i][j][k] = VT[n_node * n_node * k + n_node * i + j] * s;
             }
     }
     REP4(i, j, k, l, D) {
@@ -118,103 +117,7 @@ TRG(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, 
                     }
         order[n] = o;
 
-        MKL_INT D_new = std::min(D * D, D_cut);
-        double Ma[D * D * D * D], Mb[D * D * D * D]; // Ma = M(ij)(kl)  Mb = M(jk)(li)
-        REP(i, D * D * D * D) {
-            Ma[i] = 0;
-            Mb[i] = 0;
-        }
-        REP4(i, j, k, l, std::min(D, D_cut)) {
-                        Ma[l + D * k + D * D * j + D * D * D * i] = T[i][j][k][l];
-                        Mb[i + D * l + D * D * k + D * D * D * j] = T[i][j][k][l];
-                    }
-        double sigma[D * D];
-        double U[D * D * D * D], VH[D * D * D * D];
-        double S1[D][D][D_new], S2[D][D][D_new], S3[D][D][D_new], S4[D][D][D_new];
-        double superb[D * D];
-        if (n < 0) {
-            print_matrix(Ma, D * D, D * D, D * D, "Ma");
-//            print_matrix(Mb, D * D, D * D, D * D, "Mb");
-        }
-        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, Ma, D * D, sigma, U, D * D, VH, D * D,
-                              superb); // Ma = U * sigma * VH
-        if (info > 0) {
-            cerr << "The algorithm computing SVD failed to converge.\n";
-            return 1;
-        }
-        if (n < 0) {
-            print_matrix(sigma, 1, D * D, D * D, "sigma");
-            print_matrix(U, D * D, D * D, D * D, "U");
-//            print_matrix(VH, D * D, D * D, D * D, "VH");
-//            double US[D * D * D * D];
-//            REP4(i, j, k, l, D) {
-//                            US[i + D * j + D * D * k + D * D * D * l] =
-//                                    U[i + D * j + D * D * k + D * D * D * l] * sigma[i + D * j];
-//                        }
-//            double USVH[D * D * D * D];
-//            REP(i, D * D * D * D) {
-//                USVH[i] = 0;
-//            }
-//            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, D * D, 1, US, D * D, VH, D * D, 0,
-//                        USVH, D * D);
-//            print_matrix(USVH, D * D, D * D, D * D, "U * sigma * VH");
-        }
-        REP(i, D) {
-            REP(j, D) {
-                REP(k, D_new) {
-                    double s = sqrt(sigma[k]);
-                    S1[i][j][k] = s * U[k + D * D * j + D * D * D * i];
-                    S3[i][j][k] = s * VH[j + D * i + D * D * k];
-                }
-            }
-        }
-        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, Mb, D * D, sigma, U, D * D, VH, D * D, superb);
-        if (info > 0) {
-            cerr << "The algorithm computing SVD failed to converge.\n";
-            return 1;
-        }
-        if (n < 0) {
-            print_matrix(sigma, 1, D * D, D * D, "sigma");
-            print_matrix(U, D * D, D * D, D * D, "U");
-//            print_matrix(VH, D * D, D * D, D * D, "VH");
-        }
-        REP(i, D) {
-            REP(j, D) {
-                REP(k, D_new) {
-                    double s = sqrt(sigma[k]);
-                    S2[i][j][k] = s * U[k + D * D * j + D * D * D * i];
-                    S4[i][j][k] = s * VH[j + D * i + D * D * k];
-                }
-            }
-        }
-
-        double X12[D_new][D_new][D][D], X34[D_new][D_new][D][D];
-        REP(i, D_new) {
-            REP(j, D_new) {
-                REP(b, D) {
-                    REP(d, D) {
-                        X12[i][j][b][d] = 0;
-                        X34[i][j][b][d] = 0;
-                        REP(a, D) {
-                            X12[i][j][b][d] += S1[a][d][i] * S2[b][a][j];
-                            X34[i][j][b][d] += S3[a][b][i] * S4[d][a][j];
-                        }
-                    }
-                }
-            }
-        }
-
-        REP4(i, j, k, l, D_new) {
-                        T[i][j][k][l] = 0;
-                        REP(b, D) {
-                            REP(d, D) {
-                                T[i][j][k][l] += X12[k][l][b][d] * X34[i][j][b][d];
-                            }
-                        }
-                    }
-
-        // 更新
-        D = D_new;
+        TRG::solver(D, D_cut, T);
     }
 
     double Z = 0;
@@ -246,9 +149,9 @@ int main() {
     double K_end = 10.01;
     double K = K_start; // inverse temperature
     while (K <= K_end) {
-        cout << "K = " << K << "   ";
+        cout << "K = " << std::fixed << std::setprecision(1) << K << "   ";
         MKL_INT order[N];
-        double Z = log(TRG(K, D_cut, n_node, N, order));
+        double Z = log(Trace(K, D_cut, n_node, N, order));
         REP(i, N) Z /= 2; // 体積で割る
         REP(i, N) {
             double tmp = order[i] * log(10);

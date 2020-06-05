@@ -1,13 +1,20 @@
 cmake_minimum_required(VERSION 3.16)
 project(lib)
 
+include_directories(/opt/intel/mkl/include)
+link_directories(/opt/intel/mkl/lib)
+
 add_library(frac STATIC ./src/frac.cpp)
 add_library(CG STATIC ./src/CG.cpp)
 add_library(legendre_zero_point STATIC ./src/legendre_zero_point.cpp)
+add_library(TRG STATIC ./src/TRG.cpp)
 target_compile_features(frac PRIVATE cxx_std_11)
 target_compile_features(CG PRIVATE cxx_std_11)
 target_compile_features(legendre_zero_point PRIVATE cxx_std_17)
+target_compile_features(TRG PRIVATE cxx_std_17)
 target_include_directories(frac INTERFACE ./include)
 target_include_directories(CG INTERFACE ./include)
 target_include_directories(legendre_zero_point INTERFACE ./include)
-#set_target_properties(frac)
+target_include_directories(TRG INTERFACE ./include)
+
+target_link_libraries(TRG mkl_intel_ilp64 mkl_sequential mkl_core)
