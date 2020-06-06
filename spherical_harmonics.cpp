@@ -23,8 +23,8 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-double Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N, MKL_INT *order,
-             std::map<CG, frac> &map) {
+void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N,
+             std::map<CG, frac> &map, std::ofstream& file) {
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     // index dimension
     MKL_INT D = D_cut;
@@ -61,7 +61,9 @@ double Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT c
                                 }
                 }
 
-    REP(n, N) {
+    MKL_INT order[N];
+
+    for (int n = 1; n <= N; ++n) {
         // Tを 1以上 に丸め込む
         double _min = std::abs(T[0][0][0][0]);
         REP4(i, j, k, l, D) {
@@ -78,20 +80,30 @@ double Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT c
                             }
                         }
                     }
-        order[n] = o;
+        order[n-1] = o;
 
         TRG::solver(D, D_cut, T);
-    }
 
-    double Z = 0;
-    REP(i, D)
-        REP(j, D) {
-            Z += T[i][j][i][j];
+        double Tr = 0;
+        REP(i, D)
+            REP(j, D) {
+                Tr += T[i][j][i][j];
+            }
+        Tr = std::log(Tr);
+        REP(i, n) Tr /= 2; // 体積で割る
+        REP(i, n) {
+            double tmp = order[i] * std::log(10);
+            REP(j, i) tmp /= 2;
+            Tr += tmp;
         }
-
+        Tr += std::log(M_PI / (2 * K));
+        file << '\t' << std::fixed << std::setprecision(10) << Tr;
+        cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
+    }
+    file << '\n';
+    cout << '\n';
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
     cout << "計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
-    return Z;
 }
 
 int main() {
@@ -117,7 +129,7 @@ int main() {
     CGFile.close();
 
     /* loop */
-    for (l_max = 1; l_max <= 1; ++l_max) {
+    for (l_max = 4; l_max <= 6; ++l_max) {
         std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
         cout << "---------- " << l_max << " ----------\n";
         const string fileName = "spherical_harmonics_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
@@ -128,17 +140,9 @@ int main() {
         K_end = 4.01;
         double K = K_start; // inverse temperature
         while (K <= K_end) {
-            cout  << "K = " << std::fixed << std::setprecision(1) << K << "   ";
-            MKL_INT order[N];
-            double Z = log(Trace(K, D_cut, l_max, N, order, map));
-            REP(i, N) Z /= 2; // 体積で割る
-            REP(i, N) {
-                double tmp = order[i] * log(10);
-                REP(j, i) tmp /= 2;
-                Z += tmp;
-            }
-            Z += log(M_PI / (2 * K));
-            dataFile << K << '\t' << -Z / K << '\n';
+            cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
+            dataFile << std::setprecision(1) << K;
+            Trace(K, D_cut, l_max, N, map, dataFile);
             K += MESH;
         }
         dataFile.close();

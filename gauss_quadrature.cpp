@@ -13,30 +13,15 @@
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-#define MESH 1
+#define MESH 1e-1
 
 using std::cin;
 using std::cout;
 using std::cerr;
 using std::string;
 
-// m x n 行列を出力
-template<typename T>
-void print_matrix(T *matrix, MKL_INT m, MKL_INT n, MKL_INT lda, const string &message) {
-    cout << '\n' << message << '\n';
-    REP(i, m) {
-        REP(j, n) {
-            cout << std::scientific << std::setprecision(5) << (matrix[i * lda + j] >= 0 ? " " : "")
-                 << matrix[i * lda + j]
-                 << ' ';
-        }
-        cout << '\n';
-    }
-    cout << '\n';
-}
-
-double
-Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, MKL_INT *order) {
+void
+Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
@@ -59,7 +44,12 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
 //    }
 
     // initialize tensor network : max index size is D_cut
-    std::vector<std::vector<std::vector<std::vector<double>>>> T(D_cut, std::vector<std::vector<std::vector<double>>>(D_cut, std::vector<std::vector<double>>(D_cut, std::vector<double>(D_cut))));
+    std::vector<std::vector<std::vector<std::vector<double>>>> T(D_cut,
+                                                                 std::vector<std::vector<std::vector<double>>>(D_cut,
+                                                                                                               std::vector<std::vector<double>>(
+                                                                                                                       D_cut,
+                                                                                                                       std::vector<double>(
+                                                                                                                               D_cut))));
     std::function<double(double, double, double, double)> f = [=](double theta1, double phi1, double theta2,
                                                                   double phi2) {
         std::function<double(double)> s = [=](double theta) { return std::sin(M_PI * theta / 2); };
@@ -75,7 +65,8 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
     double VT[n_node * n_node * n_node * n_node];
     double sigma[n_node * n_node];
     double buffer[n_node * n_node];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M, n_node * n_node, sigma,
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M, n_node * n_node,
+                                  sigma,
                                   U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
@@ -84,21 +75,21 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
     double A[n_node][n_node][D], B[n_node][n_node][D];
     REP(k, D) {
         double s = std::sqrt(sigma[k]);
-        REP(i, n_node)
-            REP(j, n_node) {
+        REP(i, n_node)REP(j, n_node) {
                 A[i][j][k] = U[n_node * n_node * n_node * i + n_node * n_node * j + k] * s;
                 B[i][j][k] = VT[n_node * n_node * k + n_node * i + j] * s;
             }
     }
     REP4(i, j, k, l, D) {
-                    REP(theta, n_node)
-                        REP(phi, n_node) {
+                    REP(theta, n_node)REP(phi, n_node) {
                             T[i][j][k][l] += A[theta][phi][i] * A[theta][phi][j] * B[theta][phi][k] * B[theta][phi][l] *
                                              w[theta] * w[phi] * std::cos(M_PI * x[theta] / 2);
                         }
                 }
 
-    REP(n, N) {
+    MKL_INT order[N];
+
+    for (int n = 1; n <= N; ++n) {
         // Tを 1~10 に丸め込む
         double _min = std::abs(T[0][0][0][0]);
         REP4(i, j, k, l, D) {
@@ -115,20 +106,29 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
                             }
                         }
                     }
-        order[n] = o;
+        order[n - 1] = o;
 
         TRG::solver(D, D_cut, T);
-    }
 
-    double Z = 0;
-    REP(i, D)
-        REP(j, D) {
-            Z += T[i][j][i][j];
+        double Tr = 0;
+        REP(i, D)REP(j, D) {
+                Tr += T[i][j][i][j];
+            }
+        Tr = std::log(Tr);
+        REP(i, n) Tr /= 2; // 体積で割る
+        REP(i, n) {
+            double tmp = order[i] * std::log(10);
+            REP(j, i) tmp /= 2;
+            Tr += tmp;
         }
-
+        Tr += std::log(M_PI / (2 * K));
+        file << '\t' << std::fixed << std::setprecision(10) << Tr;
+        cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
+    }
+    file << '\n';
+    cout << '\n';
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
     cout << "計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
-    return Z;
 }
 
 int main() {
@@ -145,21 +145,13 @@ int main() {
             ".txt";
     std::ofstream dataFile;
     dataFile.open(fileName, std::ios::trunc);
-    double K_start = 5;
-    double K_end = 10.01;
+    double K_start = 0.1;
+    double K_end = 4.01;
     double K = K_start; // inverse temperature
     while (K <= K_end) {
-        cout << "K = " << std::fixed << std::setprecision(1) << K << "   ";
-        MKL_INT order[N];
-        double Z = log(Trace(K, D_cut, n_node, N, order));
-        REP(i, N) Z /= 2; // 体積で割る
-        REP(i, N) {
-            double tmp = order[i] * log(10);
-            REP(j, i) tmp /= 2;
-            Z += tmp;
-        }
-        Z += log(M_PI / 8);
-        dataFile << std::setprecision(10) << K << '\t' << Z << '\n';
+        cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
+        dataFile << std::setprecision(1) << K;
+        Trace(K, D_cut, n_node, N, dataFile);
         K += MESH;
     }
     dataFile.close();
