@@ -8,17 +8,42 @@
 #include <fstream>
 #include <legendre_zero_point.hpp>
 #include <functional>
-#include <TRG.hpp>
+#include <HOTRG.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
+#define INFL 1e300
 
 using std::cin;
 using std::cout;
 using std::cerr;
 using std::string;
+
+void normalization(const int n, const int D, int *order, std::vector<std::vector<std::vector<std::vector<double>>>> &T) {
+    // Tを 1~10 に丸め込む
+    double _min = INFL;
+    double _max = 0;
+    REP4(i, j, k, l, D) {
+                    if (std::abs(T[i][j][k][l]) > 0) {
+                        _min = std::min(_min, std::abs(T[i][j][k][l]));
+                        _max = std::max(_max, std::abs(T[i][j][k][l]));
+                    }
+                }
+//    cout << std::scientific << std::setprecision(2) << _min << ' ' << _max << '\n';
+    auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max))/2));
+    REP4(i, j, k, l, D) {
+                    REP(t, std::abs(o)) {
+                        if (o > 0) {
+                            T[i][j][k][l] /= 10;
+                        } else {
+                            T[i][j][k][l] *= 10;
+                        }
+                    }
+                }
+    order[n - 1] = o;
+}
 
 void
 Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
@@ -86,34 +111,36 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
                                              w[theta] * w[phi] * std::cos(M_PI * x[theta] / 2);
                         }
                 }
+//    cout << '\n' << std::scientific << std::setprecision(3);
+//    REP(i, D) {
+//        REP(j, D) {
+//            REP(k, D) {
+//                REP(l, D) {
+//                    cout << (T[i][j][k][l] < 0 ? "" : " ") << T[i][j][k][l] << ' ';
+//                }
+//                cout << "| ";
+//            }
+//            cout << '\n';
+//        }
+//    }
+//    cout << '\n';
+//    return;
 
     MKL_INT order[N];
+    MKL_INT Dx = D, Dy = D;
 
     for (int n = 1; n <= N; ++n) {
-        // Tを 1~10 に丸め込む
-        double _min = std::abs(T[0][0][0][0]);
-        REP4(i, j, k, l, D) {
-                        if (std::abs(T[i][j][k][l]) > 0)
-                            _min = std::min(_min, std::abs(T[i][j][k][l]));
-                    }
-        auto o = static_cast<MKL_INT>(std::floor(std::log10(_min)));
-        REP4(i, j, k, l, D) {
-                        REP(t, std::abs(o)) {
-                            if (o > 0) {
-                                T[i][j][k][l] /= 10;
-                            } else {
-                                T[i][j][k][l] *= 10;
-                            }
-                        }
-                    }
-        order[n - 1] = o;
+        normalization(n, D, order, T);
 
-        TRG::solver(D, D_cut, T);
+//        HOTRG::contractionX(Dx, Dy, D_cut, T);
+        HOTRG::contractionY(Dx, Dy, D_cut, T);
 
         double Tr = 0;
-        REP(i, D)REP(j, D) {
+        REP(i, Dx) {
+            REP(j, Dy) {
                 Tr += T[i][j][i][j];
             }
+        }
         Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
         REP(i, n) {
@@ -140,7 +167,7 @@ int main() {
     /* calculation */
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     const string fileName =
-            "gauss_quadrature_node" +
+            "gauss_quadrature_HOTRG_node" +
             std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) +
             ".txt";
     std::ofstream dataFile;
@@ -149,7 +176,7 @@ int main() {
     double K_end = 4.01;
     double K = K_start; // inverse temperature
     while (K <= K_end) {
-        cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
+        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
         dataFile << std::setprecision(1) << K;
         Trace(K, D_cut, n_node, N, dataFile);
         K += MESH;
