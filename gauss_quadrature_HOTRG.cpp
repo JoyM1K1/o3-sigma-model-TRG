@@ -32,7 +32,7 @@ void normalization(const int n, const int D, int *order, std::vector<std::vector
                     }
                 }
 //    cout << std::scientific << std::setprecision(2) << _min << ' ' << _max << '\n';
-    auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max))/2));
+    auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
     REP4(i, j, k, l, D) {
                     REP(t, std::abs(o)) {
                         if (o > 0) {
@@ -69,12 +69,9 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
     }
 
     // initialize tensor network : max index size is D_cut
-    std::vector<std::vector<std::vector<std::vector<double>>>> T(D_cut,
-                                                                 std::vector<std::vector<std::vector<double>>>(D_cut,
-                                                                                                               std::vector<std::vector<double>>(
-                                                                                                                       D_cut,
-                                                                                                                       std::vector<double>(
-                                                                                                                               D_cut))));
+    std::vector<std::vector<std::vector<std::vector<double>>>>
+            T(D_cut,
+              std::vector<std::vector<std::vector<double>>>(D_cut, std::vector<std::vector<double>>(D_cut, std::vector<double>(D_cut))));
     std::function<double(double, double, double, double)> f = [=](double theta1, double phi1, double theta2,
                                                                   double phi2) {
         std::function<double(double)> s = [=](double theta) { return std::sin(M_PI * theta / 2); };
@@ -91,8 +88,7 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
     double sigma[n_node * n_node];
     double buffer[n_node * n_node];
     MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M, n_node * n_node,
-                                  sigma,
-                                  U, n_node * n_node, VT, n_node * n_node, buffer);
+                                  sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
@@ -100,31 +96,19 @@ Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N
     double A[n_node][n_node][D], B[n_node][n_node][D];
     REP(k, D) {
         double s = std::sqrt(sigma[k]);
-        REP(i, n_node)REP(j, n_node) {
+        REP(i, n_node)
+            REP(j, n_node) {
                 A[i][j][k] = U[n_node * n_node * n_node * i + n_node * n_node * j + k] * s;
                 B[i][j][k] = VT[n_node * n_node * k + n_node * i + j] * s;
             }
     }
     REP4(i, j, k, l, D) {
-                    REP(theta, n_node)REP(phi, n_node) {
+                    REP(theta, n_node)
+                        REP(phi, n_node) {
                             T[i][j][k][l] += A[theta][phi][i] * A[theta][phi][j] * B[theta][phi][k] * B[theta][phi][l] *
                                              w[theta] * w[phi] * std::cos(M_PI * x[theta] / 2);
                         }
                 }
-//    cout << '\n' << std::scientific << std::setprecision(3);
-//    REP(i, D) {
-//        REP(j, D) {
-//            REP(k, D) {
-//                REP(l, D) {
-//                    cout << (T[i][j][k][l] < 0 ? "" : " ") << T[i][j][k][l] << ' ';
-//                }
-//                cout << "| ";
-//            }
-//            cout << '\n';
-//        }
-//    }
-//    cout << '\n';
-//    return;
 
     MKL_INT order[N];
     MKL_INT Dx = D, Dy = D;
@@ -167,9 +151,7 @@ int main() {
     /* calculation */
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     const string fileName =
-            "gauss_quadrature_HOTRG_node" +
-            std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) +
-            ".txt";
+            "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
     std::ofstream dataFile;
     dataFile.open(fileName, std::ios::trunc);
     double K_start = 0.1;
