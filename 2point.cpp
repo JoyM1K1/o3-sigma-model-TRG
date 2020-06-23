@@ -360,15 +360,15 @@ int main() {
     /* inputs */
     MKL_INT N = 16;     // volume : 2^N
     MKL_INT n_node = 16;  // n_node
-    MKL_INT D_cut = 8; // bond dimension
+    MKL_INT D_cut = 16; // bond dimension
     double K = 1.9; // inverse temperature
+    size_t distances[DATA_POINTS] = {1, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64};
 
     /* calculation */
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     const string fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
     std::ofstream dataFile;
     dataFile.open(fileName, std::ios::trunc);
-    size_t distances[DATA_POINTS] = {1, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64};
     Trace(distances, K, D_cut, n_node, N, dataFile);
     dataFile.close();
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now();

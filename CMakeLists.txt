@@ -17,7 +17,7 @@ add_executable(2point 2point.cpp)
 add_executable(gauss_legendre_test gauss_legendre_test.cpp libraries/include/legendre_zero_point.hpp)
 add_executable(test test.cpp)
 
-target_link_libraries(spherical_harmonics mkl_intel_ilp64 mkl_sequential mkl_core TRG frac CG)
+target_link_libraries(spherical_harmonics mkl_intel_ilp64 mkl_sequential mkl_core TRG tensor frac CG)
 target_link_libraries(gauss_quadrature mkl_intel_ilp64 mkl_sequential mkl_core TRG legendre_zero_point)
 target_link_libraries(gauss_quadrature_HOTRG mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor legendre_zero_point)
 target_link_libraries(2point mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor legendre_zero_point)
