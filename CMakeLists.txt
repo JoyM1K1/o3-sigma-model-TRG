@@ -10,23 +10,29 @@ set(CMAKE_CXX_FLAGS "-fopenmp -Wl,-stack_size -Wl,100000000")
 include_directories(/opt/intel/mkl/include)
 link_directories(/opt/intel/mkl/lib)
 
-add_executable(spherical_harmonics spherical_harmonics.cpp)
-add_executable(gauss_quadrature gauss_quadrature.cpp)
+add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
+target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core TRG tensor frac CG)
+
+add_executable(gauss_quadrature_TRG gauss_quadrature_TRG.cpp)
+target_link_libraries(gauss_quadrature_TRG mkl_intel_ilp64 mkl_sequential mkl_core TRG legendre_zero_point)
+
 add_executable(gauss_quadrature_HOTRG gauss_quadrature_HOTRG.cpp)
-add_executable(gauss_quadrature_2point gauss_quadrature_2point.cpp)
-add_executable(gauss_quadrature_2point_manual gauss_quadrature_2point_manual.cpp)
-add_executable(spherical_harmonics_2point spherical_harmonics_2point.cpp)
-add_executable(spherical_harmonics_2point_manual spherical_harmonics_2point_manual.cpp)
-add_executable(gauss_legendre_test gauss_legendre_test.cpp)
-add_executable(test test.cpp)
-
-target_link_libraries(spherical_harmonics mkl_intel_ilp64 mkl_sequential mkl_core TRG tensor frac CG)
-target_link_libraries(gauss_quadrature mkl_intel_ilp64 mkl_sequential mkl_core TRG legendre_zero_point)
 target_link_libraries(gauss_quadrature_HOTRG mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor legendre_zero_point)
-target_link_libraries(gauss_quadrature_2point mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor legendre_zero_point)
-target_link_libraries(gauss_quadrature_2point_manual mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor legendre_zero_point)
-target_link_libraries(spherical_harmonics_2point mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor frac CG)
-target_link_libraries(spherical_harmonics_2point_manual mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor frac CG)
-target_link_libraries(gauss_legendre_test legendre_zero_point)
-target_link_libraries(test tensor)
 
+add_executable(gauss_quadrature_HOTRG_2point gauss_quadrature_HOTRG_2point.cpp)
+target_link_libraries(gauss_quadrature_HOTRG_2point mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor legendre_zero_point)
+
+add_executable(gauss_quadrature_HOTRG_2point_manual gauss_quadrature_HOTRG_2point_manual.cpp)
+target_link_libraries(gauss_quadrature_HOTRG_2point_manual mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor legendre_zero_point)
+
+add_executable(spherical_harmonics_HOTRG_2point spherical_harmonics_HOTRG_2point.cpp)
+target_link_libraries(spherical_harmonics_HOTRG_2point mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor frac CG)
+
+add_executable(spherical_harmonics_HOTRG_2point_manual spherical_harmonics_HOTRG_2point_manual.cpp)
+target_link_libraries(spherical_harmonics_HOTRG_2point_manual mkl_intel_ilp64 mkl_sequential mkl_core HOTRG tensor impure_tensor frac CG)
+
+add_executable(gauss_legendre_test gauss_legendre_test.cpp)
+target_link_libraries(gauss_legendre_test legendre_zero_point)
+
+add_executable(test test.cpp)
+target_link_libraries(test tensor)
