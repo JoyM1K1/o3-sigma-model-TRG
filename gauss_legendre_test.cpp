@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <cmath>
-#include "./libraries/include/legendre_zero_point.hpp"
+#include <legendre_zero_point.hpp>
 
 #define N 32
 

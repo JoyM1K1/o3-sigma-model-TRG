@@ -6,7 +6,6 @@
 #include <mkl.h>
 #include <iostream>
 #include <iomanip>
-#include <cmath>
 #include <cassert>
 #include <vector>
 
@@ -29,60 +28,75 @@ void print_matrix(const int m, const int n, const T *M) {
 
 void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
-    Tensor M(Dx * Dx, Dy);
-    const int m = M.GetDx();
-    const int n = M.GetDx() * M.GetDy() * M.GetDy();
-    auto *temp = new double [m * m];
-    auto *sigma = new double [m];
-    auto *superb = new double [m - 1];
+    Tensor MM(Dx);
+    Tensor A(Dx, Dy);
+    Tensor B(Dx, Dy);
     double sum;
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(i1, Dx)
-            REP(j1, Dy)
-                REP(k1, Dx)
-                    REP(i2, Dx)
-                        REP(k2, Dx)
-                            REP(l2, Dy) {
-                                sum = 0;
-                                REP(a, Dy) sum += T(i1, j1, k1, a) * T(i2, a, k2, l2);
-                                M(Dx * i1 + i2, j1, Dx * k1 + k2, l2) = sum;
-                            }
-    }
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, n, M.GetMatrix(), n, sigma, U, m, nullptr, 1, superb);
+    /* compute Right Unitary matrix */
+    REP(i, Dx)REP(i_, Dx)REP(p, Dy)REP(q, Dy) {
+                    sum = 0;
+                    REP(y, Dy)REP(k, Dx) {
+                            sum += T(i, y, k, p) * T(i_, y, k, q);
+                        }
+                    A(i, p, i_, q) = sum;
+                }
+    REP(i, Dx)REP(i_, Dx)REP(p, Dy)REP(q, Dy) {
+                    sum = 0;
+                    REP(k, Dx)REP(y, Dy) {
+                            sum += T(i, p, k, y) * T(i_, q, k, y);
+                        }
+                    B(i, p, i_, q) = sum;
+                }
+    REP4(i1, i1_, i2, i2_, Dx) {
+                    sum = 0;
+                    REP(p, Dy)REP(q, Dy) {
+                            sum += A(i1, p, i1_, q) * B(i2, p, i2_, q);
+                        }
+                    MM(i1, i2, i1_, i2_) = sum;
+                }
+    const int m = Dx * Dx;
+    auto temp = new double[m * m];
+    auto sigma = new double[m];
+    auto superb = new double[m - 1];
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, U, m, nullptr, 1, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
     }
     double epsilon_1 = 0, epsilon_2 = 0;
     for (int i = D_cut; i < m; ++i) {
-        const double s = sigma[i];
-        epsilon_1 += s * s;
+        epsilon_1 += sigma[i];
     }
     if (epsilon_1 != 0) {
-        #pragma omp parallel private(sum)
-        {
-            #pragma omp for schedule(static)
-            REP(i1, Dx)
-                REP(j1, Dy)
-                    REP(k1, Dx)
-                        REP(i2, Dx)
-                            REP(k2, Dx)
-                                REP(l2, Dy) {
-                                    sum = 0;
-                                    REP(a, Dy) sum += T(i1, j1, k1, a) * T(i2, a, k2, l2);
-                                    M(Dx * k1 + k2, j1, Dx * i1 + i2, l2) = sum;
-                                }
-        }
-        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, n, M.GetMatrix(), n, sigma, temp, m, nullptr, 1, superb);
+        /* compute Left Unitary matrix */
+        REP(k1, Dx)REP(k1_, Dx)REP(p, Dy)REP(q, Dy) {
+                        sum = 0;
+                        REP(y, Dy)REP(i, Dx) {
+                                sum += T(i, y, k1, p) * T(i, y, k1_, q);
+                            }
+                        A(k1, p, k1_, q) = sum;
+                    }
+        REP(k2, Dx)REP(k2_, Dx)REP(p, Dy)REP(q, Dy) {
+                        sum = 0;
+                        REP(i, Dx)REP(y, Dy) {
+                                sum += T(i, p, k2, y) * T(i, q, k2_, y);
+                            }
+                        B(k2, p, k2_, q) = sum;
+                    }
+        REP4(k1, k1_, k2, k2_, Dx) {
+                        sum = 0;
+                        REP(p, Dy)REP(q, Dy) {
+                                sum += A(k1, p, k1_, q) * B(k2, p, k2_, q);
+                            }
+                        MM(k1, k2, k1_, k2_) = sum;
+                    }
+        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, temp, m, nullptr, 1, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
             exit(1);
         }
         for (int i = D_cut; i < m; ++i) {
-            const double s = sigma[i];
-            epsilon_2 += s * s;
+            epsilon_2 += sigma[i];
         }
         if (epsilon_1 > epsilon_2) {
             REP(i, m * m) U[i] = temp[i];
@@ -95,60 +109,75 @@ void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
 
 void HOTRG::SVD_Y(const int D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
-    Tensor M(Dy * Dy, Dx);
-    const int m = M.GetDx();
-    const int n = M.GetDx() * M.GetDy() * M.GetDy();
-    auto *temp = new double [m * m];
-    auto *sigma = new double [m];
-    auto *superb = new double [m - 1];
     double sum;
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(i1, Dx)
-            REP(j1, Dy)
-                REP(l1, Dy)
-                    REP(j2, Dy)
-                        REP(k2, Dx)
-                            REP(l2, Dy) {
-                                sum = 0;
-                                REP(a, Dx) sum += T(i1, j1, a, l1) * T(a, j2, k2, l2);
-                                M(Dy * j1 + j2, i1, Dy * l1 + l2, k2) = sum;
-                            }
-    }
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, n, M.GetMatrix(), n, sigma, U, m, nullptr, 1, superb);
+    Tensor MM(Dy);
+    Tensor A(Dx, Dy);
+    Tensor B(Dx, Dy);
+    /* compute Up Unitary matrix */
+    REP(j, Dy)REP(j_, Dy)REP(p, Dx)REP(q, Dx) {
+                    sum = 0;
+                    REP(l, Dy)REP(x, Dx) {
+                            sum += T(x, j, p, l) * T(x, j_, q, l);
+                        }
+                    A(p, j, q, j_) = sum;
+                }
+    REP(j, Dy)REP(j_, Dy)REP(p, Dx)REP(q, Dx) {
+                    sum = 0;
+                    REP(l, Dy)REP(x, Dx) {
+                            sum += T(p, j, x, l) * T(q, j_, x, l);
+                        }
+                    B(p, j, q, j_) = sum;
+                }
+    REP4(j1, j1_, j2, j2_, Dy) {
+                    sum = 0;
+                    REP(p, Dx)REP(q, Dx) {
+                            sum += A(p, j1, q, j1_) * B(p, j2, q, j2_);
+                        }
+                    MM(j1, j2, j1_, j2_) = sum;
+                }
+    const int m = Dx * Dx;
+    auto temp = new double [m * m];
+    auto sigma = new double [m];
+    auto superb = new double [m - 1];
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, U, m, nullptr, 1, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
     }
     double epsilon_1 = 0, epsilon_2 = 0;
     for (int i = D_cut; i < m; ++i) {
-        const double s = sigma[i];
-        epsilon_1 += s * s;
+        epsilon_1 += sigma[i];
     }
     if (epsilon_1 != 0) {
-        #pragma omp parallel private(sum)
-        {
-            #pragma omp for schedule(static)
-            REP(i1, Dx)
-                REP(j1, Dy)
-                    REP(l1, Dy)
-                        REP(j2, Dy)
-                            REP(k2, Dx)
-                                REP(l2, Dy) {
-                                    sum = 0;
-                                    REP(a, Dx) sum += T(i1, j1, a, l1) * T(a, j2, k2, l2);
-                                    M(Dy * l1 + l2, i1, Dy * j1 + j2, k2) = sum;
-                                }
-        }
-        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, n, M.GetMatrix(), n, sigma, temp, m, nullptr, 1, superb);
+        /* compute Down Unitary matrix */
+        REP(l, Dy)REP(l_, Dy)REP(p, Dx)REP(q, Dx) {
+                        sum = 0;
+                        REP(j, Dy)REP(x, Dx) {
+                                sum += T(x, j, p, l) * T(x, j, q, l_);
+                            }
+                        A(p, l, q, l_) = sum;
+                    }
+        REP(l, Dy)REP(l_, Dy)REP(p, Dx)REP(q, Dx) {
+                        sum = 0;
+                        REP(j, Dy)REP(x, Dx) {
+                                sum += T(p, j, x, l) * T(q, j, x, l_);
+                            }
+                        B(p, l, q, l_) = sum;
+                    }
+        REP4(l1, l1_, l2, l2_, Dy) {
+                        sum = 0;
+                        REP(p, Dx)REP(q, Dx) {
+                                sum += A(p, l1, q, l1_) * B(p, l2, q, l2_);
+                            }
+                        MM(l1, l2, l1_, l2_) = sum;
+                    }
+        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, temp, m, nullptr, 1, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
             exit(1);
         }
         for (int i = D_cut; i < m; ++i) {
-            const double s = sigma[i];
-            epsilon_2 += s * s;
+            epsilon_2 += sigma[i];
         }
         if (epsilon_1 > epsilon_2) {
             REP(i, m * m) U[i] = temp[i];
@@ -180,7 +209,7 @@ void HOTRG::contractionX(const int &D_cut, Tensor &leftT, Tensor &rightT, const 
                             }
     }
     MKL_INT Dy_new = std::min(Dy * Dy, D_cut);
-    auto *temp = new double[Dy_new * Dy * Dy * Dx * Dx];
+    auto temp = new double[Dy_new * Dy * Dy * Dx * Dx];
     #pragma omp parallel private(sum)
     {
         #pragma omp for schedule(static)
@@ -239,7 +268,7 @@ void HOTRG::contractionY(const int &D_cut, Tensor &bottomT, Tensor &topT, const 
                             }
     }
     MKL_INT Dx_new = std::min(Dx * Dx, D_cut);
-    auto *temp = new double[Dx_new * Dx * Dx * Dy * Dy];
+    auto temp = new double[Dx_new * Dx * Dx * Dy * Dy];
     #pragma omp parallel private(sum)
     {
         #pragma omp for schedule(static)

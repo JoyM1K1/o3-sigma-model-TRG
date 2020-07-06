@@ -6,82 +6,23 @@
 #include <vector>
 #include <mkl.h>
 #include <fstream>
-#include <legendre_zero_point.hpp>
 #include <functional>
+#include <legendre_zero_point.hpp>
+#include <tensor.hpp>
+#include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-#define DATA_POINTS 12
 #define MESH 1e-1
-#define INFL 1e300
+#define LINF 1e300
 
-#include <tensor.hpp>
 
 using std::cin;
 using std::cout;
 using std::cerr;
 using std::string;
-
-class ImpureTensor {
-public:
-    size_t distance{0};
-    bool isMerged{false};
-    std::vector<double> corrs;
-    Tensor tensors[3];
-
-    ImpureTensor();
-
-    ImpureTensor(int Dx, int Dy, int Dx_max, int Dy_max);
-
-    ImpureTensor(int d, ImpureTensor &T);
-
-    ImpureTensor(ImpureTensor &rhs);
-
-    ~ImpureTensor();
-
-    ImpureTensor &operator=(const ImpureTensor &rhs);
-};
-
-ImpureTensor::ImpureTensor() {
-    tensors[0] = Tensor();
-    tensors[1] = Tensor();
-    tensors[2] = Tensor();
-}
-
-ImpureTensor::ImpureTensor(int Dx, int Dy, int Dx_max, int Dy_max) {
-    tensors[0] = Tensor(Dx, Dy, Dx_max, Dy_max);
-    tensors[1] = Tensor(Dx, Dy, Dx_max, Dy_max);
-    tensors[2] = Tensor(Dx, Dy, Dx_max, Dy_max);
-}
-
-ImpureTensor::ImpureTensor(int d, ImpureTensor &T) {
-    this->distance = d;
-    tensors[0] = Tensor(T.tensors[0]);
-    tensors[1] = Tensor(T.tensors[1]);
-    tensors[2] = Tensor(T.tensors[2]);
-}
-
-ImpureTensor::ImpureTensor(ImpureTensor &rhs) {
-    distance = rhs.distance;
-    corrs.clear();
-    tensors[0] = rhs.tensors[0];
-    tensors[1] = rhs.tensors[1];
-    tensors[2] = rhs.tensors[2];
-}
-
-ImpureTensor::~ImpureTensor() {
-    corrs.clear();
-}
-
-ImpureTensor &ImpureTensor::operator=(const ImpureTensor &rhs) {
-    distance = rhs.distance;
-    tensors[0] = rhs.tensors[0];
-    tensors[1] = rhs.tensors[1];
-    tensors[2] = rhs.tensors[2];
-    return *this;
-}
 
 void initTensor(const double &K, const int &n_node, const int &D_cut, int &D, Tensor &T, ImpureTensor &IMT) {
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
@@ -164,76 +105,80 @@ void initTensor(const double &K, const int &n_node, const int &D_cut, int &D, Te
     delete[] buffer;
 }
 
-void normalization(const int n, int *order, Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs) {
-    double _min = INFL;
+int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs) {
+    double _min = LINF;
     double _max = 0;
     int Dx = T.GetDx();
     int Dy = T.GetDy();
+    bool isAllMerged = true;
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    if (std::abs(T(i, j, k, l)) > 0) {
-                        _min = std::min(_min, std::abs(T(i, j, k, l)));
-                        _max = std::max(_max, std::abs(T(i, j, k, l)));
+                    double t = std::abs(T(i, j, k, l));
+                    if (t > 0) {
+                        _min = std::min(_min, t);
+                        _max = std::max(_max, t);
                     }
                 }
-    for (Tensor &tensor : originIMT.tensors) {
-        REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                        if (std::abs(tensor(i, j, k, l)) > 0) {
-                            _min = std::min(_min, std::abs(tensor(i, j, k, l)));
-                            _max = std::max(_max, std::abs(tensor(i, j, k, l)));
-                        }
-                    }
-    }
     for (ImpureTensor &IMT : IMTs) {
+        if (!IMT.isMerged) isAllMerged = false;
         for (Tensor &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            if (std::abs(tensor(i, j, k, l)) > 0) {
-                                _min = std::min(_min, std::abs(tensor(i, j, k, l)));
-                                _max = std::max(_max, std::abs(tensor(i, j, k, l)));
+                            double t = std::abs(tensor(i, j, k, l));
+                            if (t > 0) {
+                                _min = std::min(_min, t);
+                                _max = std::max(_max, t);
+                            }
+                        }
+        }
+    }
+    if (!isAllMerged) {
+        for (Tensor &tensor : originIMT.tensors) {
+            REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                            double t = std::abs(tensor(i, j, k, l));
+                            if (t > 0) {
+                                _min = std::min(_min, t);
+                                _max = std::max(_max, t);
                             }
                         }
         }
     }
     auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    REP(t, std::abs(o)) {
-                        if (o > 0) {
-                            T(i, j, k, l) /= 10;
-                        } else {
-                            T(i, j, k, l) *= 10;
-                        }
+                    if (o > 0) {
+                        REP(t, std::abs(o)) T(i, j, k, l) /= 10;
+                    } else {
+                        REP(t, std::abs(o)) T(i, j, k, l) *= 10;
                     }
                 }
-    for (Tensor &tensor : originIMT.tensors) {
-        REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                        REP(t, std::abs(o)) {
-                            if (o > 0) {
-                                tensor(i, j, k, l) /= 10;
-                            } else {
-                                tensor(i, j, k, l) *= 10;
-                            }
-                        }
-                    }
-    }
-    for (ImpureTensor &IMT : IMTs) {
-        for (Tensor &tensor : IMT.tensors) {
+    if (!isAllMerged) {
+        for (Tensor &tensor : originIMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            REP(t, std::abs(o)) {
-                                if (o > 0) {
-                                    tensor(i, j, k, l) /= 10;
-                                } else {
-                                    tensor(i, j, k, l) *= 10;
-                                }
+                            if (o > 0) {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
+                            } else {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) *= 10;
                             }
                         }
         }
     }
-    order[n - 1] = o;
+    for (ImpureTensor &IMT : IMTs) {
+        for (Tensor &tensor : IMT.tensors) {
+            REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                            if (o > 0) {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
+                            } else {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) *= 10;
+                            }
+                        }
+        }
+    }
+    return o;
 }
 
-void Trace(const size_t *d, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::vector<int> d, std::ofstream &file) {
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
+
+    const int DATA_POINTS = d.size();
 
     // initialize tensor network : max index size is D_cut
     Tensor T(D, D, D_cut, D_cut);
@@ -252,29 +197,14 @@ void Trace(const size_t *d, double const K, MKL_INT const D_cut, MKL_INT const n
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
-        cout << "N = " << n << " :" << std::flush;
+        std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        normalization(n, order, T, originIMT, IMTs);
+        order[n - 1] = normalization(T, originIMT, IMTs);
 
-        if (n % 2) { // compression along y-axis
-            auto U = new double[Dx * Dx * Dx * Dx];
-            HOTRG::SVD_X(D_cut, T, U);
-            for (ImpureTensor &IMT : IMTs) {
-                for (Tensor &tensor : IMT.tensors) {
-                    HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
-                }
-            }
-            if (!isMerged) {
-                for (Tensor &tensor : originIMT.tensors) {
-                    HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
-                }
-            }
-            HOTRG::contractionY(D_cut, T, T, U, "bottom");
-            delete[] U;
-        } else { // compression along x-axis
+        if (n <= N / 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
-            const size_t times = n / 2;
             bool isAllMerged = true;
             for (ImpureTensor &IMT : IMTs) {
                 if (IMT.isMerged) {
@@ -282,8 +212,8 @@ void Trace(const size_t *d, double const K, MKL_INT const D_cut, MKL_INT const n
                         HOTRG::contractionX(D_cut, tensor, T, U, "left");
                     }
                 } else {
-                    if (IMT.distance >> times) {
-                        if (IMT.distance & (1 << (times - 1))) {
+                    if (IMT.distance >> n) {
+                        if (IMT.distance & (1 << (n - 1))) {
                             for (Tensor &tensor : IMT.tensors) {
                                 HOTRG::contractionX(D_cut, T, tensor, U, "right");
                             }
@@ -312,13 +242,24 @@ void Trace(const size_t *d, double const K, MKL_INT const D_cut, MKL_INT const n
             }
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
+        } else { // compression along y-axis
+            auto U = new double[Dx * Dx * Dx * Dx];
+            HOTRG::SVD_X(D_cut, T, U);
+            for (ImpureTensor &IMT : IMTs) {
+                for (Tensor &tensor : IMT.tensors) {
+                    HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
+                }
+            }
+            HOTRG::contractionY(D_cut, T, T, U, "bottom");
+            delete[] U;
         }
 
         Dx = T.GetDx();
         Dy = T.GetDy();
 
-        if (n <= 10) {
-            cout << "\tfinished\n";
+        if (!isMerged) {
+            std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+            cout << " 計算時間 " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
             continue;
         }
 
@@ -351,28 +292,56 @@ void Trace(const size_t *d, double const K, MKL_INT const D_cut, MKL_INT const n
         file << '\n';
     }
     delete[] order;
-    file << '\n';
-    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-    cout << "計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
 }
 
 int main() {
     /* inputs */
     MKL_INT N = 16;     // volume : 2^N
-    MKL_INT n_node = 16;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
     double K = 1.9; // inverse temperature
-    size_t distances[DATA_POINTS] = {1, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64};
+    MKL_INT n_node;  // n_node
+    MKL_INT D_cut; // bond dimension
+    std::vector<int> d = {64}; // distances
+
+    std::chrono::system_clock::time_point start;
+    std::chrono::system_clock::time_point end;
+    string fileName;
+    std::ofstream dataFile;
 
     /* calculation */
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-    const string fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-    std::ofstream dataFile;
-    dataFile.open(fileName, std::ios::trunc);
-    Trace(distances, K, D_cut, n_node, N, dataFile);
-    dataFile.close();
-    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+//    n_node = 32;
+//    D_cut = 32;
+//    start = std::chrono::system_clock::now();
+//    fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//    dataFile.open(fileName, std::ios::trunc);
+//    Trace(K, D_cut, n_node, N, d, dataFile);
+//    dataFile.close();
+//    end = std::chrono::system_clock::now();
+//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+
+    /* vs D_cut */
+    n_node = 32;
+    for (D_cut = 8; D_cut <= 32; D_cut += 4) {
+        start = std::chrono::system_clock::now();
+        cout << "---------- " << D_cut << " ----------\n";
+        fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_x" + std::to_string(d[0]) + ".txt";
+        dataFile.open(fileName, std::ios::trunc);
+        Trace(K, D_cut, n_node, N, d, dataFile);
+        dataFile.close();
+        end = std::chrono::system_clock::now();
+        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+    }
+
+    /* vs n_node */
+//    for (n_node = 8; n_node <= 32; n_node += 8) {
+//        start = std::chrono::system_clock::now();
+//        cout << "---------- " << n_node << " ----------\n";
+//        fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        Trace(K, D_cut, n_node, N, d, dataFile);
+//        dataFile.close();
+//        end = std::chrono::system_clock::now();
+//        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+//    }
 
     return 0;
 }

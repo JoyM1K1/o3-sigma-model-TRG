@@ -16,7 +16,7 @@
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
-#define INFL 1e300
+#define LINF 1e300
 #define CGFileName "clebsch_gordan.txt"
 
 using std::cin;
@@ -26,7 +26,7 @@ using std::string;
 
 void normalization(const int n, int *order, Tensor &T) {
     const int D = T.GetDx(); // same as T.GetDx()
-    double _min = INFL;
+    double _min = LINF;
     double _max = 0;
     REP4(i, j, k, l, D) {
                     double t = std::abs(T(i, j, k, l));

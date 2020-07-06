@@ -15,7 +15,7 @@
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
-#define INFL 1e300
+#define LINF 1e300
 
 using std::cin;
 using std::cout;
@@ -69,21 +69,17 @@ void initTensor(const double K, const int &n_node, const int &D_cut, int &D, Ten
             }
     }
     double sum;
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP4(i, j, k, l, D) {
-                        sum = 0;
-                        REP(theta, n_node)REP(phi, n_node) {
-                                const double a = U[n_node * n_node * n_node * theta + n_node * n_node * phi + i];
-                                const double b = U[n_node * n_node * n_node * theta + n_node * n_node * phi + j];
-                                const double c = VT[n_node * n_node * k + n_node * theta + phi];
-                                const double d = VT[n_node * n_node * l + n_node * theta + phi];
-                                sum += a * b * c * d * w[theta] * w[phi] * std::cos(M_PI * x[theta] / 2);
-                            }
-                        T(i, j, k, l) = sum;
-                    }
-    }
+    REP4(i, j, k, l, D) {
+                    sum = 0;
+                    REP(theta, n_node)REP(phi, n_node) {
+                            const double a = U[n_node * n_node * n_node * theta + n_node * n_node * phi + i];
+                            const double b = U[n_node * n_node * n_node * theta + n_node * n_node * phi + j];
+                            const double c = VT[n_node * n_node * k + n_node * theta + phi];
+                            const double d = VT[n_node * n_node * l + n_node * theta + phi];
+                            sum += a * b * c * d * w[theta] * w[phi] * std::cos(M_PI * x[theta] / 2);
+                        }
+                    T(i, j, k, l) = sum;
+                }
     delete [] M;
     delete [] U;
     delete [] VT;
@@ -93,7 +89,7 @@ void initTensor(const double K, const int &n_node, const int &D_cut, int &D, Ten
 
 void normalization(const int n, const int D, int *order, Tensor &T) {
     // Tを 1~10 に丸め込む
-    double _min = INFL;
+    double _min = LINF;
     double _max = 0;
     REP4(i, j, k, l, D) {
         const double t = T(i, j, k, l);
@@ -105,13 +101,11 @@ void normalization(const int n, const int D, int *order, Tensor &T) {
 //    cout << std::scientific << std::setprecision(2) << _min << ' ' << _max << '\n';
     auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
     REP4(i, j, k, l, D) {
-                    REP(t, std::abs(o)) {
                         if (o > 0) {
-                            T(i, j, k, l) /= 10;
+                            REP(t, std::abs(o)) T(i, j, k, l) /= 10;
                         } else {
-                            T(i, j, k, l) *= 10;
+                            REP(t, std::abs(o)) T(i, j, k, l) *= 10;
                         }
-                    }
                 }
     order[n - 1] = o;
 }
@@ -131,15 +125,15 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     for (int n = 1; n <= N; ++n) {
         normalization(n, D, order, T);
 
-        if (n % 2) { // compression along y-axis
-            auto U = new double[Dx * Dx * Dx * Dx];
-            HOTRG::SVD_X(D_cut, T, U);
-            HOTRG::contractionY(D_cut, T, T, U, "bottom");
-            delete [] U;
-        } else { // compression along x-axis
+        if (n <= 2 / N) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             HOTRG::contractionX(D_cut, T, T, U, "left");
+            delete [] U;
+        } else { // compression along y-axis
+            auto U = new double[Dx * Dx * Dx * Dx];
+            HOTRG::SVD_X(D_cut, T, U);
+            HOTRG::contractionY(D_cut, T, T, U, "bottom");
             delete [] U;
         }
 
@@ -172,28 +166,49 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
 
 int main() {
     /* inputs */
-    MKL_INT N = 10;     // volume : 2^N
-    MKL_INT n_node = 16;  // n_node
+    MKL_INT N = 20;     // volume : 2^N
+    MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 16; // bond dimension
 
-    /* calculation */
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-    const string fileName =
-            "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-    std::ofstream dataFile;
-    dataFile.open(fileName, std::ios::trunc);
     double K_start = 0.1;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
-    while (K <= K_end) {
-        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
-        dataFile << std::setprecision(1) << K;
-        Trace(K, D_cut, n_node, N, dataFile);
-        K += MESH;
+
+    std::chrono::system_clock::time_point start;
+    std::chrono::system_clock::time_point end;
+    string fileName;
+    std::ofstream dataFile;
+
+    /* calculation */
+//    start = std::chrono::system_clock::now();
+//    fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//    dataFile.open(fileName, std::ios::trunc);
+//    while (K <= K_end) {
+//        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
+//        dataFile << std::setprecision(1) << K;
+//        Trace(K, D_cut, n_node, N, dataFile);
+//        K += MESH;
+//    }
+//    dataFile.close();
+//    end = std::chrono::system_clock::now();
+//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+
+    /* vs D_cut */
+    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
+        K = K_start;
+        start = std::chrono::system_clock::now();
+        fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+        dataFile.open(fileName, std::ios::trunc);
+        while (K <= K_end) {
+            cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
+            dataFile << std::setprecision(1) << K;
+            Trace(K, D_cut, n_node, N, dataFile);
+            K += MESH;
+        }
+        dataFile.close();
+        end = std::chrono::system_clock::now();
+        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
     }
-    dataFile.close();
-    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
 
     return 0;
 }

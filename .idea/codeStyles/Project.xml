@@ -3,6 +3,13 @@
     <Objective-C>
       <option name="INDENT_DIRECTIVE_AS_CODE" value="true" />
     </Objective-C>
+    <Objective-C-extensions>
+      <extensions>
+        <pair source="cpp" header="hpp" fileNamingConvention="NONE" />
+        <pair source="c" header="h" fileNamingConvention="NONE" />
+        <pair source="cu" header="cuh" fileNamingConvention="NONE" />
+      </extensions>
+    </Objective-C-extensions>
     <codeStyleSettings language="ObjectiveC">
       <option name="RIGHT_MARGIN" value="140" />
       <option name="WRAP_ON_TYPING" value="0" />

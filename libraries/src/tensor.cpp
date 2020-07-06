@@ -4,12 +4,9 @@
 
 #include "../include/tensor.hpp"
 #include <cassert>
-#include <cmath>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
-
-#define CGFileName "clebsch_gordan.txt"
 
 Tensor::Tensor() {
     this->Dx = 0;
@@ -113,36 +110,4 @@ double & Tensor::operator()(int i, int j, int k, int l) {
     assert(0 <= k && k <= Dx);
     assert(0 <= l && l <= Dy);
     return M[Dy * Dx * Dy * i + Dx * Dy * j + Dy * k + l];
-}
-
-void Tensor::initSphericalHarmonics(const double &K, const int &l_max, Tensor &T, std::map<CG, frac> &map, std::ofstream &CGFile) {
-    auto A = new double[l_max];
-    REP(i, l_max) {
-        A[i] = std::cyl_bessel_i(i + 0.5, K) * (i * 2 + 1);
-    }
-
-    REP4(i, j, k, l, l_max) {
-        for (int im = 0; im <= 2 * i; ++im)
-            for (int jm = 0; jm <= 2 * j; ++jm)
-                for (int km = 0; km <= 2 * k; ++km)
-                    for (int lm = 0; lm <= 2 * l; ++lm) {
-                        double sum = 0;
-                        for (int L = std::abs(i - j); L <= i + j; ++L)
-                            for (int M = -L; M <= L; ++M) {
-                                if (L < std::abs(k - l) || k + l < L || im - i + jm - j != M || km - k + lm - l != M)
-                                    continue; // CG係数としてありえないものは0なので飛ばす
-                                frac c(1);
-                                c *= CG::getCoeff(frac(i), frac(j), frac(im - i), frac(jm - j), frac(L),
-                                                  frac(M), map, CGFile);
-                                c *= CG::getCoeff(frac(i), frac(j), frac(0), frac(0), frac(L), frac(0), map, CGFile);
-                                c *= CG::getCoeff(frac(k), frac(l), frac(km - k), frac(lm - l), frac(L),
-                                                  frac(M), map, CGFile);
-                                c *= CG::getCoeff(frac(k), frac(l), frac(0), frac(0), frac(L), frac(0), map, CGFile);
-                                c /= frac(2 * L + 1).sign() * (2 * L + 1) * (2 * L + 1);
-                                sum += c.sign().toDouble() * std::sqrt(frac::abs(c).toDouble());
-                            }
-                        T(i * i + im, j * j + jm, k * k + km, l * l + lm) = std::sqrt(A[i] * A[j] * A[k] * A[l]) * sum;
-                    }
-    }
-    delete [] A;
 }

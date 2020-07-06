@@ -5,9 +5,6 @@
 #ifndef O3_SIGMA_MODEL_TENSOR_HPP
 #define O3_SIGMA_MODEL_TENSOR_HPP
 
-#include "frac.hpp"
-#include "CG.hpp"
-
 class Tensor {
 private:
     int Dx, Dy, Dx_max, Dy_max;
@@ -30,8 +27,6 @@ public:
     Tensor & operator=(const Tensor & rhs);
     const double & operator()(int i, int j, int k, int l) const;
     double & operator()(int i, int j, int k, int l);
-
-    static void initSphericalHarmonics(const double &K, const int &l_max, Tensor &T, std::map<CG, frac> &map, std::ofstream &CGFile);
 };
 
 #endif //O3_SIGMA_MODEL_TENSOR_HPP
