@@ -36,5 +36,5 @@ target_link_libraries(spherical_harmonics_HOTRG_2point_manual mkl_intel_ilp64 mk
 add_executable(gauss_legendre_test gauss_legendre_test.cpp)
 target_link_libraries(gauss_legendre_test legendre_zero_point)
 
-add_executable(test test.cpp)
-target_link_libraries(test tensor)
+#add_executable(test test.cpp)
+#target_link_libraries(test tensor)
