@@ -1,14 +1,16 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 2.8)
 project(o3_sigma_model)
 
 add_subdirectory(./libraries)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "-fopenmp -Wl,-stack_size -Wl,100000000")
+set(CMAKE_CXX_FLAGS "-fopenmp -Wl,-stack_size -Wl,100000000 -lgsl -lgslcblas")
 
 include_directories(/opt/intel/mkl/include)
 link_directories(/opt/intel/mkl/lib)
+include_directories(/usr/local/include)
+link_directories(/usr/local/lib)
 
 add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
 target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core TRG tensor frac CG)

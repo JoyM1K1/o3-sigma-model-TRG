@@ -11,6 +11,7 @@
 #include <CG.hpp>
 #include <TRG.hpp>
 #include <tensor.hpp>
+#include <gsl/gsl_specfunc.h>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -23,6 +24,38 @@ using std::cin;
 using std::cout;
 using std::cerr;
 using std::string;
+
+void initSphericalHarmonics(const double &K, const int &l_max, Tensor &T, std::map<CG, frac> &map, std::ofstream &CGFile) {
+    auto A = new double[l_max];
+    REP(i, l_max) {
+        A[i] = gsl_sf_bessel_Inu(i + 0.5, K) * (i * 2 + 1);
+    }
+
+    REP4(i, j, k, l, l_max) {
+                    for (int im = 0; im <= 2 * i; ++im)
+                        for (int jm = 0; jm <= 2 * j; ++jm)
+                            for (int km = 0; km <= 2 * k; ++km)
+                                for (int lm = 0; lm <= 2 * l; ++lm) {
+                                    double sum = 0;
+                                    for (int L = std::abs(i - j); L <= i + j; ++L)
+                                        for (int M = -L; M <= L; ++M) {
+                                            if (L < std::abs(k - l) || k + l < L || im - i + jm - j != M || km - k + lm - l != M)
+                                                continue; // CG係数としてありえないものは0なので飛ばす
+                                            frac c(1);
+                                            c *= CG::getCoeff(frac(i), frac(j), frac(im - i), frac(jm - j), frac(L),
+                                                              frac(M), map, CGFile);
+                                            c *= CG::getCoeff(frac(i), frac(j), frac(0), frac(0), frac(L), frac(0), map, CGFile);
+                                            c *= CG::getCoeff(frac(k), frac(l), frac(km - k), frac(lm - l), frac(L),
+                                                              frac(M), map, CGFile);
+                                            c *= CG::getCoeff(frac(k), frac(l), frac(0), frac(0), frac(L), frac(0), map, CGFile);
+                                            c /= frac(2 * L + 1).sign() * (2 * L + 1) * (2 * L + 1);
+                                            sum += c.sign().toDouble() * std::sqrt(frac::abs(c).toDouble());
+                                        }
+                                    T(i * i + im, j * j + jm, k * k + km, l * l + lm) = std::sqrt(A[i] * A[j] * A[k] * A[l]) * sum;
+                                }
+                }
+    delete[] A;
+}
 
 void normalization(const int n, int *order, Tensor &T) {
     const int D = T.GetDx(); // same as T.GetDx()
@@ -53,7 +86,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     Tensor T(D_cut);
     std::ofstream CGFile;
     CGFile.open(CGFileName, std::ios::app);
-    Tensor::initSphericalHarmonics(K, l_max, T, map, CGFile);
+    initSphericalHarmonics(K, l_max, T, map, CGFile);
     CGFile.close();
 
     auto order = new int[N];

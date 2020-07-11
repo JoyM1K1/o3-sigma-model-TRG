@@ -12,6 +12,7 @@
 #include <frac.hpp>
 #include <tensor.hpp>
 #include <impure_tensor.hpp>
+#include <gsl/gsl_specfunc.h>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -28,7 +29,7 @@ using std::string;
 void initSphericalHarmonics(const double &K, const int &l_max, Tensor &T, std::map<CG, frac> &map, std::ofstream &CGFile) {
     auto A = new double[l_max];
     REP(i, l_max) {
-        A[i] = std::cyl_bessel_i(i + 0.5, K) * (i * 2 + 1);
+        A[i] = gsl_sf_bessel_Inu(i + 0.5, K) * (i * 2 + 1);
     }
 
     REP4(i, j, k, l, l_max) {
@@ -63,7 +64,7 @@ void initTensor(const double &K, const int &l_max, const int &D_cut, Tensor &T, 
 
     auto A = new double[l_max];
     REP(i, l_max) {
-        A[i] = std::cyl_bessel_i(i + 0.5, K) * (i * 2 + 1);
+        A[i] = gsl_sf_bessel_Inu(i + 0.5, K) * (i * 2 + 1);
     }
 
     REP4(i, j, k, l, l_max) {

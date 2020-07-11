@@ -6,12 +6,13 @@
 #include "../include/legendre_zero_point.hpp"
 #include <cmath>
 #include <algorithm>
+#include <gsl/gsl_specfunc.h>
 
 #define ERROR 10e-6
 
 double math::solver::d_legendre(size_t n, double x) {
     if (n == 0) return 0;
-    return n * (std::legendre(n - 1, x) - x * std::legendre(n, x)) / (1 - x * x);
+    return n * (gsl_sf_legendre_Pl(n - 1, x) - x * gsl_sf_legendre_Pl(n, x)) / (1 - x * x);
 }
 
 double math::solver::newton(size_t n, double x) {
@@ -22,8 +23,8 @@ double math::solver::newton(size_t n, double x) {
             std::cerr << "Error : derivative is zero\n";
             exit(1);
         }
-        x -= std::legendre(n, x) / d;
-        if (std::abs(std::legendre(n, x)) < ERROR) {
+        x -= gsl_sf_legendre_Pl(n, x) / d;
+        if (std::abs(gsl_sf_legendre_Pl(n, x)) < ERROR) {
             return x;
         }
     }

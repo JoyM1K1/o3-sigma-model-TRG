@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cmath>
 #include <legendre_zero_point.hpp>
+#include <gsl/gsl_specfunc.h>
 
 #define N 32
 
@@ -18,7 +19,7 @@ int main() {
     std::cout << '\n';
     std::vector<double> p(N);
     for (int i = 0; i < N; ++i) {
-        p[i] = std::legendre(N - 1, v[i]);
+        p[i] = gsl_sf_legendre_Pl(N - 1, v[i]);
     }
     std::vector<double> w(N);
     for (int i = 0; i < N; ++i) {
