@@ -63,8 +63,7 @@ void initTensor(const double K, const int &n_node, const int &D_cut, int &D, Ten
     }
     REP(k, D) {
         double s = std::sqrt(sigma[k]);
-        REP(i, n_node)
-            REP(j, n_node) {
+        REP(i, n_node)REP(j, n_node) {
                 U[n_node * n_node * n_node * i + n_node * n_node * j + k] *= s;
                 VT[n_node * n_node * k + n_node * i + j] *= s;
             }
@@ -81,19 +80,21 @@ void initTensor(const double K, const int &n_node, const int &D_cut, int &D, Ten
                         }
                     T(i, j, k, l) = sum;
                 }
-    delete [] M;
-    delete [] U;
-    delete [] VT;
-    delete [] sigma;
-    delete [] buffer;
+    delete[] M;
+    delete[] U;
+    delete[] VT;
+    delete[] sigma;
+    delete[] buffer;
 }
 
-void normalization(const int n, const int D, int *order, Tensor &T) {
+int normalization(Tensor &T) {
+    const int Dx = T.GetDx();
+    const int Dy = T.GetDy();
     // Tを 1~10 に丸め込む
     double _min = LINF;
     double _max = 0;
-    REP4(i, j, k, l, D) {
-        const double t = T(i, j, k, l);
+    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                    const double t = T(i, j, k, l);
                     if (std::abs(t) > 0) {
                         _min = std::min(_min, std::abs(t));
                         _max = std::max(_max, std::abs(t));
@@ -101,14 +102,14 @@ void normalization(const int n, const int D, int *order, Tensor &T) {
                 }
 //    cout << std::scientific << std::setprecision(2) << _min << ' ' << _max << '\n';
     auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
-    REP4(i, j, k, l, D) {
-                        if (o > 0) {
-                            REP(t, std::abs(o)) T(i, j, k, l) /= 10;
-                        } else {
-                            REP(t, std::abs(o)) T(i, j, k, l) *= 10;
-                        }
+    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                    if (o > 0) {
+                        REP(t, std::abs(o)) T(i, j, k, l) /= 10;
+                    } else {
+                        REP(t, std::abs(o)) T(i, j, k, l) *= 10;
+                    }
                 }
-    order[n - 1] = o;
+    return o;
 }
 
 void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
@@ -117,25 +118,25 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
-    Tensor T(D, D, D_cut,D_cut);
+    Tensor T(D, D, D_cut, D_cut);
     initTensor(K, n_node, D_cut, D, T);
 
-    auto *order = new MKL_INT[N];
+    auto order = new MKL_INT[N];
     MKL_INT Dx = D, Dy = D;
 
     for (int n = 1; n <= N; ++n) {
-        normalization(n, D, order, T);
+        order[n - 1] = normalization(D, T);
 
         if (n <= 2 / N) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             HOTRG::contractionX(D_cut, T, T, U, "left");
-            delete [] U;
+            delete[] U;
         } else { // compression along y-axis
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             HOTRG::contractionY(D_cut, T, T, U, "bottom");
-            delete [] U;
+            delete[] U;
         }
 
         Dx = T.GetDx();
@@ -158,7 +159,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         file << '\t' << std::fixed << std::setprecision(10) << Tr;
         cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
     }
-    delete [] order;
+    delete[] order;
     file << '\n';
     cout << '\n';
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
@@ -198,7 +199,8 @@ int main() {
     for (D_cut = 8; D_cut <= 24; D_cut += 4) {
         K = K_start;
         start = std::chrono::system_clock::now();
-        fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+        fileName =
+                "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         while (K <= K_end) {
             cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
