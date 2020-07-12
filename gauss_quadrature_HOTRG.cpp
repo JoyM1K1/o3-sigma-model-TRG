@@ -125,7 +125,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     MKL_INT Dx = D, Dy = D;
 
     for (int n = 1; n <= N; ++n) {
-        order[n - 1] = normalization(D, T);
+        order[n - 1] = normalization(T);
 
         if (n <= 2 / N) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
