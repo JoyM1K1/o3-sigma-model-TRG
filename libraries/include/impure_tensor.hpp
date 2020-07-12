@@ -10,7 +10,7 @@
 
 class ImpureTensor {
 public:
-    size_t distance{0};
+    int distance{0};
     bool isMerged{false};
     std::vector<double> corrs;
     Tensor tensors[3];

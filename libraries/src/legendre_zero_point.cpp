@@ -10,14 +10,14 @@
 
 #define ERROR 10e-6
 
-double math::solver::d_legendre(size_t n, double x) {
+double math::solver::d_legendre(int n, double x) {
     if (n == 0) return 0;
     return n * (gsl_sf_legendre_Pl(n - 1, x) - x * gsl_sf_legendre_Pl(n, x)) / (1 - x * x);
 }
 
-double math::solver::newton(size_t n, double x) {
+double math::solver::newton(int n, double x) {
     // 最大100回まで試す
-    for (size_t i = 0; i < 100; ++i) {
+    for (int i = 0; i < 100; ++i) {
         double d = d_legendre(n, x);
         if (d == 0) {
             std::cerr << "Error : derivative is zero\n";
@@ -33,9 +33,9 @@ double math::solver::newton(size_t n, double x) {
     exit(1);
 }
 
-std::vector<double> math::solver::legendre_zero_point(size_t n) {
+std::vector<double> math::solver::legendre_zero_point(int n) {
     std::vector<double> ans(n);
-    for (size_t i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
         // 初期値
         double init = std::cos((i + 0.75) / (n + 0.5) * M_PI);
         // newton法

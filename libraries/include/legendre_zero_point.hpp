@@ -10,13 +10,13 @@
 namespace math {
     namespace solver {
         // P_n(x) の微分
-        double d_legendre(size_t n, double x);
+        double d_legendre(int n, double x);
 
         // newton法
-        double newton(size_t n, double x);
+        double newton(int n, double x);
 
         // newton法を用いてn次Legendre多項式のゼロ点を計算する
-        std::vector<double> legendre_zero_point(size_t n);
+        std::vector<double> legendre_zero_point(int n);
     }
 }
 

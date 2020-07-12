@@ -171,7 +171,7 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
     return o;
 }
 
-void Trace(const size_t n_data_point, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
+void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
@@ -272,7 +272,7 @@ int main() {
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 12; // bond dimension
     double K = 1.9; // inverse temperature
-    size_t n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
+    int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
 
     std::chrono::system_clock::time_point start;
     std::chrono::system_clock::time_point end;
