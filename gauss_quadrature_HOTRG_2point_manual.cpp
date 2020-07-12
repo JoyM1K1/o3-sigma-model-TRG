@@ -11,6 +11,7 @@
 #include <tensor.hpp>
 #include <impure_tensor.hpp>
 #include <HOTRG.hpp>
+#include <gsl/gsl_specfunc.h>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -36,7 +37,7 @@ void initTensor(const double &K, const int &n_node, const int &D_cut, int &D, Te
 //    GL_node.close();
 
     REP(i, n_node) {
-        p[i] = std::legendre(n_node - 1, x[i]);
+        p[i] = gsl_sf_legendre_Pl(n_node - 1, x[i]);
     }
     REP(i, n_node) {
         w[i] = 2 * (1 - x[i] * x[i]) / (n_node * n_node * p[i] * p[i]);
