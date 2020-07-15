@@ -170,9 +170,9 @@ int main() {
     /* inputs */
     MKL_INT N = 20;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
+    MKL_INT D_cut = 64; // bond dimension
 
-    double K_start = 0.1;
+    double K_start = 1.9;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
 
@@ -195,11 +195,14 @@ int main() {
 //    end = std::chrono::system_clock::now();
 //    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
-    while (K <= K_end) {
-        cout << std::setprecision(1) << K;
-        Trace(K, D_cut, n_node, N);
-        K += MESH;
-    }
+//    while (K <= K_end) {
+//        cout << std::setprecision(1) << K;
+//        Trace(K, D_cut, n_node, N);
+//        K += MESH;
+//    }
+
+    cout << std::setprecision(1) << K;
+    Trace(K, D_cut, n_node, N);
 
     /* vs D_cut */
 //    for (D_cut = 8; D_cut <= 24; D_cut += 4) {

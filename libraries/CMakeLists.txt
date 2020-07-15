@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(lib)
+
 set(CMAKE_CXX_STANDARD 11)
-include_directories(/opt/intel/mkl/include)
-link_directories(/opt/intel/mkl/lib)
-include_directories(/usr/local/include)
-#link_directories(/usr/local/lib)
+set(CMAKE_CXX_COMPILER icpc)
+set(CMAKE_CXX_FLAGS "-std=c++11 -mkl=sequential -axMIC-AVX512 -qopenmp -lgsl -lgslcblas")
 
 add_library(frac STATIC ./src/frac.cpp)
 add_library(CG STATIC ./src/CG.cpp)
@@ -20,5 +19,3 @@ target_include_directories(TRG INTERFACE ./include)
 target_include_directories(HOTRG INTERFACE ./include)
 target_include_directories(tensor INTERFACE ./include)
 target_include_directories(impure_tensor INTERFACE ./include)
-
-target_link_libraries(TRG mkl_intel_ilp64 mkl_sequential mkl_core)
