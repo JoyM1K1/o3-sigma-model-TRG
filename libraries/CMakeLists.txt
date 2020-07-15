@@ -19,3 +19,5 @@ target_include_directories(TRG INTERFACE ./include)
 target_include_directories(HOTRG INTERFACE ./include)
 target_include_directories(tensor INTERFACE ./include)
 target_include_directories(impure_tensor INTERFACE ./include)
+
+target_link_libraries(TRG)
