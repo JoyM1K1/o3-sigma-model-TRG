@@ -12,7 +12,7 @@ add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
 target_link_libraries(spherical_harmonics_TRG TRG tensor frac CG)
 
 add_executable(gauss_quadrature_TRG gauss_quadrature_TRG.cpp)
-target_link_libraries(gauss_quadrature_TRG TRG legendre_zero_point)
+target_link_libraries(gauss_quadrature_TRG TRG tensor legendre_zero_point)
 
 add_executable(gauss_quadrature_HOTRG gauss_quadrature_HOTRG.cpp)
 target_link_libraries(gauss_quadrature_HOTRG HOTRG tensor legendre_zero_point)
