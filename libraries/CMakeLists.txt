@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(lib)
+
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "-fopenmp -Wl,-stack_size -Wl,100000000 -lgsl -lgslcblas")
+
 include_directories(/opt/intel/mkl/include)
 link_directories(/opt/intel/mkl/lib)
 include_directories(/usr/local/include)
