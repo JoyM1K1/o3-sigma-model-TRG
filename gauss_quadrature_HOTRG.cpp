@@ -195,24 +195,38 @@ int main() {
 //    end = std::chrono::system_clock::now();
 //    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
+    while (K <= K_end) {
+        cout << std::setprecision(1) << K;
+        Trace(K, D_cut, n_node, N);
+        K += MESH;
+    }
+
     /* vs D_cut */
-    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
-        K = K_start;
+//    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
+//        K = K_start;
 //        start = std::chrono::system_clock::now();
 //        fileName =
 //                "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
-        while (K <= K_end) {
+//        while (K <= K_end) {
 //            cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
 //            dataFile << std::setprecision(1) << K;
-            cout << std::setprecision(1) << K;
-            Trace(K, D_cut, n_node, N/*, dataFile*/);
-            K += MESH;
-        }
+//            Trace(K, D_cut, n_node, N/*, dataFile*/);
+//            K += MESH;
+//        }
 //        dataFile.close();
 //        end = std::chrono::system_clock::now();
 //        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
-    }
+//    }
+
+//    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
+//        K = K_start;
+//        while (K <= K_end) {
+//            cout << std::setprecision(1) << K;
+//            Trace(K, D_cut, n_node, N/*, dataFile*/);
+//            K += MESH;
+//        }
+//    }
 
     return 0;
 }
