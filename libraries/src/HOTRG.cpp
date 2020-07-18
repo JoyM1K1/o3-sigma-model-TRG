@@ -1,7 +1,3 @@
-//
-// Created by Joy on 2020/06/09.
-//
-
 #include "../include/HOTRG.hpp"
 #include <mkl.h>
 #include <iostream>
@@ -11,6 +7,7 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
+#define REP4tensor(i, j, k, l, Dx, Dy) REP(i, Dx) REP(j, Dy) REP(k, Dx) REP(l, Dy)
 
 using std::cout;
 using std::cerr;
@@ -31,29 +28,37 @@ void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
     Tensor MM(Dx);
     Tensor A(Dx, Dy);
     Tensor B(Dx, Dy);
-    double sum;
+    auto tmp1 = new double[Dx * Dx * Dy * Dy];
+    auto tmp2 = new double[Dx * Dx * Dy * Dy];
     /* compute Right Unitary matrix */
-    REP(i, Dx)REP(i_, Dx)REP(p, Dy)REP(q, Dy) {
-                    sum = 0;
-                    REP(y, Dy)REP(k, Dx) {
-                            sum += T(i, y, k, p) * T(i_, y, k, q);
-                        }
-                    A(i, p, i_, q) = sum;
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    tmp1[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
+                    tmp2[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
                 }
-    REP(i, Dx)REP(i_, Dx)REP(p, Dy)REP(q, Dy) {
-                    sum = 0;
-                    REP(k, Dx)REP(y, Dy) {
-                            sum += T(i, p, k, y) * T(i_, q, k, y);
-                        }
-                    B(i, p, i_, q) = sum;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, k, p) * T(i_, y, k, q)
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    tmp1[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
+                    tmp2[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
                 }
-    REP4(i1, i1_, i2, i2_, Dx) {
-                    sum = 0;
-                    REP(p, Dy)REP(q, Dy) {
-                            sum += A(i1, p, i1_, q) * B(i2, p, i2_, q);
-                        }
-                    MM(i1, i2, i1_, i2_) = sum;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, k, y) * T(i_, q, k, y)
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    tmp1[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = A(i, j, k, l);
+                    tmp2[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = B(i, j, k, l);
                 }
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp1,
+                Dy * Dy, tmp2, Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+    REP(i, Dx)REP(l, Dx) { // MM(i1, i2, i1_, i2_) = A(i1, p, i1_, q) * B(i2, p, i2_, q)
+            auto t = new double[Dx * Dx];
+            REP(j, Dx)REP(k, Dx) {
+                    t[Dx * j + k] = MM(i, j, k, l);
+                }
+            REP(j, Dx)REP(k, Dx) {
+                    MM(i, j, k, l) = t[Dx * k + j];
+                }
+            delete[] t;
+        }
     const int m = Dx * Dx;
     auto temp = new double[m * m];
     auto sigma = new double[m];
@@ -69,27 +74,34 @@ void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
     }
     if (epsilon_1 != 0) {
         /* compute Left Unitary matrix */
-        REP(k1, Dx)REP(k1_, Dx)REP(p, Dy)REP(q, Dy) {
-                        sum = 0;
-                        REP(y, Dy)REP(i, Dx) {
-                                sum += T(i, y, k1, p) * T(i, y, k1_, q);
-                            }
-                        A(k1, p, k1_, q) = sum;
+        REP4tensor(i, j, k, l, Dx, Dy) {
+                        tmp1[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
+                        tmp2[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
                     }
-        REP(k2, Dx)REP(k2_, Dx)REP(p, Dy)REP(q, Dy) {
-                        sum = 0;
-                        REP(i, Dx)REP(y, Dy) {
-                                sum += T(i, p, k2, y) * T(i, q, k2_, y);
-                            }
-                        B(k2, p, k2_, q) = sum;
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                    Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(k, p, k_, q) = T(x, y, k, p) * T(x, y, k_, q)
+        REP4tensor(i, j, k, l, Dx, Dy) {
+                        tmp1[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
+                        tmp2[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
                     }
-        REP4(k1, k1_, k2, k2_, Dx) {
-                        sum = 0;
-                        REP(p, Dy)REP(q, Dy) {
-                                sum += A(k1, p, k1_, q) * B(k2, p, k2_, q);
-                            }
-                        MM(k1, k2, k1_, k2_) = sum;
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                    Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(k, p, k_, q) = T(x, p, k, y) * T(x, q, k_, y)
+        REP4tensor(i, j, k, l, Dx, Dy) {
+                        tmp1[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = A(i, j, k, l);
+                        tmp2[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = B(i, j, k, l);
                     }
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp1,
+                    Dy * Dy, tmp2, Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+        REP(i, Dx)REP(l, Dx) { // MM(k1, k2, k1_, k2_) = A(k1, p, k1_, q) * B(k2, p, k2_, q)
+                auto t = new double[Dx * Dx];
+                REP(j, Dx)REP(k, Dx) {
+                        t[Dx * j + k] = MM(i, j, k, l);
+                    }
+                REP(j, Dx)REP(k, Dx) {
+                        MM(i, j, k, l) = t[Dx * k + j];
+                    }
+                delete[] t;
+            }
         info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, temp, m, nullptr, 1, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
@@ -102,43 +114,53 @@ void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
             REP(i, m * m) U[i] = temp[i];
         }
     }
-    delete [] temp;
-    delete [] sigma;
-    delete [] superb;
+    delete[] temp;
+    delete[] sigma;
+    delete[] superb;
+    delete[] tmp1;
+    delete[] tmp2;
 }
 
 void HOTRG::SVD_Y(const int D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
-    double sum;
     Tensor MM(Dy);
     Tensor A(Dx, Dy);
     Tensor B(Dx, Dy);
+    auto tmp1 = new double[Dx * Dx * Dy * Dy];
+    auto tmp2 = new double[Dx * Dx * Dy * Dy];
     /* compute Up Unitary matrix */
-    REP(j, Dy)REP(j_, Dy)REP(p, Dx)REP(q, Dx) {
-                    sum = 0;
-                    REP(l, Dy)REP(x, Dx) {
-                            sum += T(x, j, p, l) * T(x, j_, q, l);
-                        }
-                    A(p, j, q, j_) = sum;
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    tmp1[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
+                    tmp2[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
                 }
-    REP(j, Dy)REP(j_, Dy)REP(p, Dx)REP(q, Dx) {
-                    sum = 0;
-                    REP(l, Dy)REP(x, Dx) {
-                            sum += T(p, j, x, l) * T(q, j_, x, l);
-                        }
-                    B(p, j, q, j_) = sum;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, j, q, j_) = T(x, j, p, y) * T(x, j_, q, y)
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    tmp1[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
+                    tmp2[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
                 }
-    REP4(j1, j1_, j2, j2_, Dy) {
-                    sum = 0;
-                    REP(p, Dx)REP(q, Dx) {
-                            sum += A(p, j1, q, j1_) * B(p, j2, q, j2_);
-                        }
-                    MM(j1, j2, j1_, j2_) = sum;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, j, q, j_) = T(p, j, x, y) * T(q, j_, x, y)
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    tmp1[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = A(i, j, k, l);
+                    tmp2[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = B(i, j, k, l);
                 }
-    const int m = Dx * Dx;
-    auto temp = new double [m * m];
-    auto sigma = new double [m];
-    auto superb = new double [m - 1];
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp1,
+                Dx * Dx, tmp2, Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
+    REP(i, Dy)REP(l, Dy) { // MM(j1, j2, j1_, j2_) = A(p, j1, q, j1_) * B(p, j2, q, j2_)
+            auto t = new double[Dy * Dy];
+            REP(j, Dy)REP(k, Dy) {
+                    t[Dy * j + k] = MM(i, j, k, l);
+                }
+            REP(j, Dy)REP(k, Dy) {
+                    MM(i, j, k, l) = t[Dy * k + j];
+                }
+            delete[] t;
+        }
+    const int m = Dy * Dy;
+    auto temp = new double[m * m];
+    auto sigma = new double[m];
+    auto superb = new double[m - 1];
     MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, U, m, nullptr, 1, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
@@ -150,27 +172,34 @@ void HOTRG::SVD_Y(const int D_cut, Tensor &T, double *U) {
     }
     if (epsilon_1 != 0) {
         /* compute Down Unitary matrix */
-        REP(l, Dy)REP(l_, Dy)REP(p, Dx)REP(q, Dx) {
-                        sum = 0;
-                        REP(j, Dy)REP(x, Dx) {
-                                sum += T(x, j, p, l) * T(x, j, q, l_);
-                            }
-                        A(p, l, q, l_) = sum;
+        REP4tensor(i, j, k, l, Dx, Dy) {
+                        tmp1[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
+                        tmp2[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
                     }
-        REP(l, Dy)REP(l_, Dy)REP(p, Dx)REP(q, Dx) {
-                        sum = 0;
-                        REP(j, Dy)REP(x, Dx) {
-                                sum += T(p, j, x, l) * T(q, j, x, l_);
-                            }
-                        B(p, l, q, l_) = sum;
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                    Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, l, q, l_) = T(x, y, p, l) * T(x, y, q, l_)
+        REP4tensor(i, j, k, l, Dx, Dy) {
+                        tmp1[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
+                        tmp2[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
                     }
-        REP4(l1, l1_, l2, l2_, Dy) {
-                        sum = 0;
-                        REP(p, Dx)REP(q, Dx) {
-                                sum += A(p, l1, q, l1_) * B(p, l2, q, l2_);
-                            }
-                        MM(l1, l2, l1_, l2_) = sum;
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
+                    Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, l, q, l_) = T(p, y, x, l) * T(q, y, x, l_)
+        REP4tensor(i, j, k, l, Dx, Dy) {
+                        tmp1[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = A(i, j, k, l);
+                        tmp2[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = B(i, j, k, l);
                     }
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp1,
+                    Dx * Dx, tmp2, Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
+        REP(i, Dy)REP(l, Dy) { // MM(l1, l2, l1_, l2_) = A(p, l1, q, l1_) * B(p, l2, q, l2_)
+                auto t = new double[Dy * Dy];
+                REP(j, Dy)REP(k, Dy) {
+                        t[Dy * j + k] = MM(i, j, k, l);
+                    }
+                REP(j, Dy)REP(k, Dy) {
+                        MM(i, j, k, l) = t[Dy * k + j];
+                    }
+                delete[] t;
+            }
         info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, temp, m, nullptr, 1, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
@@ -183,124 +212,111 @@ void HOTRG::SVD_Y(const int D_cut, Tensor &T, double *U) {
             REP(i, m * m) U[i] = temp[i];
         }
     }
-    delete [] temp;
-    delete [] sigma;
-    delete [] superb;
+    delete[] temp;
+    delete[] sigma;
+    delete[] superb;
+    delete[] tmp1;
+    delete[] tmp2;
 }
 
 // contraction right tensor into left tensor or vice versa
 void HOTRG::contractionX(const int &D_cut, Tensor &leftT, Tensor &rightT, const double *U, const std::string mergeT) {
     assert(mergeT == "right" || mergeT == "left");
-    const int Dx = leftT.GetDx(), Dy = leftT.GetDy();
-    Tensor M(Dy * Dy, Dx);
-    double sum;
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(i1, Dx)
-            REP(j1, Dy)
-                REP(l1, Dy)
-                    REP(j2, Dy)
-                        REP(k2, Dx)
-                            REP(l2, Dy) {
-                                sum = 0;
-                                REP(a, Dx) sum += rightT(i1, j1, a, l1) * leftT(a, j2, k2, l2);
-                                M(Dy * j1 + j2, i1, Dy * l1 + l2, k2) = sum;
-                            }
-    }
-    MKL_INT Dy_new = std::min(Dy * Dy, D_cut);
-    auto temp = new double[Dy_new * Dy * Dy * Dx * Dx];
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(i, Dx)
-            REP(k, Dx)
-                REP(j, Dy_new)
-                    REP(l, Dy * Dy) {
-                        sum = 0;
-                        REP(p, Dy * Dy) sum += U[Dy * Dy * p + j] * M(p, i, l, k);
-                        temp[Dx * Dx * Dy * Dy * j + Dx * Dy * Dy * i + Dy * Dy * k + l] = sum;
+    const int Dx = leftT.GetDx(), Dy = leftT.GetDy(), Dy_new = std::min(Dy * Dy, D_cut);
+    auto lT = new double[Dx * Dx * Dy * Dy];
+    auto rT = new double[Dx * Dx * Dy * Dy];
+    auto tU = new double[Dy_new * Dy * Dy];
+    auto bU = new double[Dy_new * Dy * Dy];
+    auto tmp1 = new double[Dy_new * Dx * Dx * Dy * Dy];
+    auto tmp2 = new double[Dy_new * Dx * Dx * Dy * Dy];
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    lT[Dy * Dx * Dy * k + Dx * Dy * j + Dy * i + l] = leftT(i, j, k, l);
+                    rT[Dx * Dy * Dy * i + Dy * Dy * k + Dy * l + j] = rightT(i, j, k, l);
+                }
+    REP(i, Dy)REP(j, Dy)REP(k, Dy_new) {
+                tU[Dy_new * Dy * i + Dy_new * j + k] = U[Dy * Dy * Dy * i + Dy * Dy * j + k];
+                bU[Dy_new * Dy * j + Dy_new * i + k] = U[Dy * Dy * Dy * i + Dy * Dy * j + k];
+            }
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, rT,
+                Dy, tU, Dy * Dy_new, 0, tmp1, Dy * Dy_new);
+    delete[] rT;
+    delete[] tU;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, lT,
+                Dy, bU, Dy * Dy_new, 0, tmp2, Dy * Dy_new);
+    delete[] lT;
+    delete[] bU;
+    auto tmp1_ = new double[Dy_new * Dx * Dx * Dy * Dy];
+    REP(a, Dy)REP(b, Dx)REP(c, Dy)REP(i, Dx)REP(j, Dy_new) {
+                        tmp1_[Dy_new * Dy * Dy * Dx * i + Dy * Dy * Dx * j + Dy * Dx * c + Dx * a + b]
+                                = tmp1[Dx * Dy_new * Dy * Dy * i + Dy_new * Dy * Dy * b + Dy_new * Dy * c + Dy_new * a + j];
                     }
-    }
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(i, Dx)
-            REP(k, Dx)
-                REP(j, Dy_new)
-                    REP(l, Dy_new) {
-                        sum = 0;
-                        REP(p, Dy * Dy) sum += U[Dy * Dy * p + l] *
-                                               temp[Dx * Dx * Dy * Dy * j + Dx * Dy * Dy * i + Dy * Dy * k + p];
-                        if (mergeT == "left") {
-                            leftT(i, j, k, l) = sum;
-                        } else {
-                            rightT(i, j, k, l) = sum;
-                        }
+    delete[] tmp1;
+    auto tmp2_ = new double[Dy_new * Dx * Dx * Dy * Dy];
+    REP(a, Dy)REP(b, Dx)REP(c, Dy)REP(k, Dx)REP(l, Dy_new) {
+                        tmp2_[Dy * Dx * Dx * Dy_new * c + Dx * Dx * Dy_new * a + Dx * Dy_new * b + Dy_new * k + l]
+                                = tmp2[Dy * Dx * Dy * Dy_new * k + Dx * Dy * Dy_new * a + Dy * Dy_new * b + Dy_new * c + l];
                     }
-    }
+    delete[] tmp2;
     if (mergeT == "left") {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
+                    tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, leftT.GetMatrix(), Dx * Dy_new);
         leftT.UpdateDy(Dy_new);
     } else {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
+                    tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, rightT.GetMatrix(), Dx * Dy_new);
         rightT.UpdateDy(Dy_new);
     }
-    delete [] temp;
+    delete[] tmp1_;
+    delete[] tmp2_;
 }
 
 // contraction top tensor into bottom tensor
 void HOTRG::contractionY(const int &D_cut, Tensor &bottomT, Tensor &topT, const double *U, const std::string mergeT) {
     assert(mergeT == "bottom" || mergeT == "top");
-    const int Dx = bottomT.GetDx(), Dy = bottomT.GetDy();
-    Tensor M(Dx * Dx, Dy);
-    double sum;
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(i1, Dx)
-            REP(j1, Dy)
-                REP(k1, Dx)
-                    REP(i2, Dx)
-                        REP(k2, Dx)
-                            REP(l2, Dy) {
-                                sum = 0;
-                                REP(a, Dy) sum += topT(i1, j1, k1, a) * bottomT(i2, a, k2, l2);
-                                M(Dx * i1 + i2, j1, Dx * k1 + k2, l2) = sum;
-                            }
-    }
-    MKL_INT Dx_new = std::min(Dx * Dx, D_cut);
-    auto temp = new double[Dx_new * Dx * Dx * Dy * Dy];
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(j, Dy)
-            REP(l, Dy)
-                REP(i, Dx_new)
-                    REP(k, Dx * Dx) {
-                        sum = 0;
-                        REP(p, Dx * Dx) sum += U[Dx * Dx * p + i] * M(p, j, k, l);
-                        temp[Dx * Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = sum;
+    const int Dx = bottomT.GetDx(), Dy = bottomT.GetDy(), Dx_new = std::min(Dx * Dx, D_cut);
+    auto bT = new double[Dx * Dx * Dy * Dy];
+    auto tT = new double[Dx * Dx * Dy * Dy];
+    auto lU = new double[Dx_new * Dx * Dx];
+    auto rU = new double[Dx_new * Dx * Dx];
+    auto tmp1 = new double[Dx_new * Dx * Dx * Dy * Dy];
+    auto tmp2 = new double[Dx_new * Dx * Dx * Dy * Dy];
+    REP4tensor(i, j, k, l, Dx, Dy) {
+                    bT[Dx * Dy * Dx * j + Dy * Dx * k + Dx * l + i] = bottomT(i, j, k, l);
+                    tT[Dy * Dy * Dx * i + Dy * Dx * j + Dx * l + k] = topT(i, j, k, l);
+                }
+    REP(i, Dx)REP(j, Dx)REP(k, Dx_new) {
+                lU[Dx_new * Dx * j + Dx_new * i + k] = U[Dx * Dx * Dx * i + Dx * Dx * j + k];
+                rU[Dx_new * Dx * i + Dx_new * j + k] = U[Dx * Dx * Dx * i + Dx * Dx * j + k];
+            }
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy * Dx, Dx * Dx_new, Dx, 1, tT,
+                Dx, rU, Dx * Dx_new, 0, tmp1, Dx * Dx_new);
+    delete[] tT;
+    delete[] rU;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy * Dx, Dx * Dx_new, Dx, 1, bT,
+                Dx, lU, Dx * Dx_new, 0, tmp2, Dx * Dx_new);
+    delete[] bT;
+    delete[] lU;
+    auto tmp1_ = new double[Dx_new * Dx * Dx * Dy * Dy];
+    REP(a, Dx)REP(b, Dy)REP(c, Dx)REP(j, Dy)REP(i, Dx_new) {
+                        tmp1_[Dx * Dy * Dx * Dy * i + Dx * Dy * Dx * j + Dx * Dy * a + Dx * b + c]
+                                = tmp1[Dx_new * Dx * Dy * Dx * j + Dx_new * Dx * Dy * a + Dx_new * Dx * b + Dx_new * c + i];
                     }
-    }
-    #pragma omp parallel private(sum)
-    {
-        #pragma omp for schedule(static)
-        REP(j, Dy)
-            REP(l, Dy)
-                REP(i, Dx_new)
-                    REP(k, Dx_new) {
-                        sum = 0;
-                        REP(p, Dx * Dx) sum += U[Dx * Dx * p + k] * temp[Dx * Dx * Dy * Dy * i + Dy * Dy * p + Dy * j + l];
-                        if (mergeT == "top") {
-                            topT(i, j, k, l) = sum;
-                        } else {
-                            bottomT(i, j, k, l) = sum;
-                        }
+    delete[] tmp1;
+    auto tmp2_ = new double[Dx_new * Dx * Dx * Dy * Dy];
+    REP(a, Dx)REP(b, Dy)REP(c, Dx)REP(l, Dy)REP(k, Dx_new) {
+                        tmp2_[Dy * Dx_new * Dx * Dy * a + Dy * Dx_new * Dx * b + Dy * Dx_new * c + Dy * k + l]
+                                = tmp2[Dx_new * Dx * Dy * Dy * c + Dx_new * Dx * Dy * b + Dx_new * Dx * l + Dx_new * a + k];
                     }
-    }
+    delete[] tmp2;
     if (mergeT == "top") {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx_new, Dy * Dx_new, Dx * Dx * Dy, 1,
+                    tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, topT.GetMatrix(), Dy * Dx_new);
         topT.UpdateDx(Dx_new);
     } else {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx_new, Dy * Dx_new, Dx * Dx * Dy, 1,
+                    tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, bottomT.GetMatrix(), Dy * Dx_new);
         bottomT.UpdateDx(Dx_new);
     }
-    delete [] temp;
+    delete[] tmp1_;
+    delete[] tmp2_;
 }
