@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-//#include <chrono>
+#include <chrono>
 //#include <string>
 #include <cmath>
 #include <vector>
@@ -113,13 +113,18 @@ int normalization(Tensor &T) {
 }
 
 void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N/*, std::ofstream &file*/) {
-//    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point start;
+    std::chrono::system_clock::time_point end;
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
+    cout << "initialize tensor : " << std::flush;
+    start = std::chrono::system_clock::now();
     Tensor T(D, D, D_cut, D_cut);
     initTensor(K, n_node, D_cut, D, T);
+    end = std::chrono::system_clock::now();
+    cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
 
     auto order = new MKL_INT[N];
     MKL_INT Dx = D, Dy = D;
@@ -129,8 +134,16 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
 
         if (n <= N / 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
+            cout << "perform SVD : " << std::flush;
+            start = std::chrono::system_clock::now();
             HOTRG::SVD_Y(D_cut, T, U);
+            end = std::chrono::system_clock::now();
+            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+            cout << "perform contraction : " << std::flush;
+            start = std::chrono::system_clock::now();
             HOTRG::contractionX(D_cut, T, T, U, "left");
+            end = std::chrono::system_clock::now();
+            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
             delete[] U;
         } else { // compression along y-axis
             auto U = new double[Dx * Dx * Dx * Dx];
@@ -176,8 +189,8 @@ int main() {
     double K_end = 4.01;
     double K = K_start; // inverse temperature
 
-//    std::chrono::system_clock::time_point start;
-//    std::chrono::system_clock::time_point end;
+    std::chrono::system_clock::time_point start;
+    std::chrono::system_clock::time_point end;
 //    string fileName;
 //    std::ofstream dataFile;
 
@@ -201,8 +214,12 @@ int main() {
 //        K += MESH;
 //    }
 
-    cout << std::setprecision(1) << K;
+//    start = std::chrono::system_clock::now();
+//    cout << std::fixed << std::setprecision(1) << K;
+    cout << std::fixed << std::setprecision(1) << K << '\n';
     Trace(K, D_cut, n_node, N);
+//    end = std::chrono::system_clock::now();
+//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
     /* vs D_cut */
 //    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
