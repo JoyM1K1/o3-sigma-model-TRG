@@ -124,7 +124,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     Tensor T(D, D, D_cut, D_cut);
     initTensor(K, n_node, D_cut, D, T);
     end = std::chrono::system_clock::now();
-    cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+    cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
 
     auto order = new MKL_INT[N];
     MKL_INT Dx = D, Dy = D;
@@ -138,12 +138,12 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             start = std::chrono::system_clock::now();
             HOTRG::SVD_Y(D_cut, T, U);
             end = std::chrono::system_clock::now();
-            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
             cout << "perform contraction : " << std::flush;
             start = std::chrono::system_clock::now();
             HOTRG::contractionX(D_cut, T, T, U, "left");
             end = std::chrono::system_clock::now();
-            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
             delete[] U;
         } else { // compression along y-axis
             auto U = new double[Dx * Dx * Dx * Dx];
@@ -170,7 +170,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         }
         Tr += std::log(M_PI / 8);
 //        file << '\t' << std::fixed << std::setprecision(10) << Tr;
-        cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
+        cout << '\t' << std::fixed << std::setprecision(10) << Tr << '\n' << std::flush;
     }
     delete[] order;
 //    file << '\n';
