@@ -115,6 +115,7 @@ int normalization(Tensor &T) {
 void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N/*, std::ofstream &file*/) {
     std::chrono::system_clock::time_point start;
     std::chrono::system_clock::time_point end;
+
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
@@ -140,10 +141,10 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             end = std::chrono::system_clock::now();
             cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
             cout << "perform contraction : " << std::flush;
-            start = std::chrono::system_clock::now();
+//            start = std::chrono::system_clock::now();
             HOTRG::contractionX(D_cut, T, T, U, "left");
-            end = std::chrono::system_clock::now();
-            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
+//            end = std::chrono::system_clock::now();
+//            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
             delete[] U;
         } else { // compression along y-axis
             auto U = new double[Dx * Dx * Dx * Dx];
