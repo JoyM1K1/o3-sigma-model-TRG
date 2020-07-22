@@ -170,7 +170,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             Tr += tmp;
         }
         Tr += std::log(M_PI / 8);
-        file << '\t' << std::fixed << std::setprecision(10) << Tr;
+//        file << '\t' << std::fixed << std::setprecision(10) << Tr;
+        cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
 //        cout << '\t' << std::fixed << std::setprecision(10) << Tr << '\n' << std::flush;
     }
     delete[] order;
