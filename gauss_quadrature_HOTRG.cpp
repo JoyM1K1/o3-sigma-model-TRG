@@ -135,12 +135,12 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
 
         if (n <= N / 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
-            cout << "perform SVD : " << std::flush;
-            start = std::chrono::system_clock::now();
+//            cout << "perform SVD : " << std::flush;
+//            start = std::chrono::system_clock::now();
             HOTRG::SVD_Y(D_cut, T, U);
-            end = std::chrono::system_clock::now();
-            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
-            cout << "perform contraction : " << std::flush;
+//            end = std::chrono::system_clock::now();
+//            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
+//            cout << "perform contraction : " << std::flush;
 //            start = std::chrono::system_clock::now();
             HOTRG::contractionX(D_cut, T, T, U, "left");
 //            end = std::chrono::system_clock::now();
@@ -170,8 +170,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             Tr += tmp;
         }
         Tr += std::log(M_PI / 8);
-//        file << '\t' << std::fixed << std::setprecision(10) << Tr;
-        cout << '\t' << std::fixed << std::setprecision(10) << Tr << '\n' << std::flush;
+        file << '\t' << std::fixed << std::setprecision(10) << Tr;
+//        cout << '\t' << std::fixed << std::setprecision(10) << Tr << '\n' << std::flush;
     }
     delete[] order;
 //    file << '\n';
@@ -215,12 +215,12 @@ int main() {
 //        K += MESH;
 //    }
 
-//    start = std::chrono::system_clock::now();
-//    cout << std::fixed << std::setprecision(1) << K;
-    cout << std::fixed << std::setprecision(1) << K << '\n';
+    start = std::chrono::system_clock::now();
+    cout << std::fixed << std::setprecision(1) << K;
+//    cout << std::fixed << std::setprecision(1) << K << '\n';
     Trace(K, D_cut, n_node, N);
-//    end = std::chrono::system_clock::now();
-//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+    end = std::chrono::system_clock::now();
+    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
     /* vs D_cut */
 //    for (D_cut = 8; D_cut <= 24; D_cut += 4) {

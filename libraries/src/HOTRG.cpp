@@ -284,8 +284,8 @@ void HOTRG::contractionX(const int &D_cut, Tensor &leftT, Tensor &rightT, const 
     delete[] tmp2_;
     end = std::chrono::system_clock::now();
     contraction += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    cout << "replace index : " << replace << " ms\n" << std::flush;
-    cout << "contraction   : " << contraction << " ms\n" << std::flush;
+//    cout << "replace index : " << replace << " ms\n" << std::flush;
+//    cout << "contraction   : " << contraction << " ms\n" << std::flush;
 }
 
 // contraction top tensor into bottom tensor
