@@ -116,7 +116,10 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
                     }
                 }
     for (ImpureTensor &IMT : IMTs) {
-        if (!IMT.isMerged) isAllMerged = false;
+        if (!IMT.isMerged) {
+            isAllMerged = false;
+            continue;
+        }
         for (Tensor &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             double t = std::abs(tensor(i, j, k, l));
@@ -158,6 +161,7 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
         }
     }
     for (ImpureTensor &IMT : IMTs) {
+        if (!IMT.isMerged) continue;
         for (Tensor &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             if (o > 0) {
@@ -195,7 +199,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         order[n - 1] = normalization(T, originIMT, IMTs);
 
         if (n <= N / 2) { // compress along x-axis
-            cout << " compress along x-axis :" << std::flush;
+//            cout << " compress along x-axis :" << std::flush;
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             if (n <= n_data_point) {
@@ -221,7 +225,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compress along y-axis
-            cout << " compress along y-axis :" << std::flush;
+//            cout << " compress along y-axis :" << std::flush;
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             for (int i = 0; i < n_data_point; ++i) {
