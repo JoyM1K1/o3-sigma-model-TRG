@@ -291,7 +291,7 @@ int main() {
 //    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
     /* vs D_cut */
-    for (D_cut = 8; D_cut <= 48; D_cut += 4) {
+    for (D_cut = 40; D_cut <= 48; D_cut += 4) {
 //        start = std::chrono::system_clock::now();
         cout << "---------- " << D_cut << " ----------\n";
         Trace(n_data_point, K, D_cut, n_node, N);
