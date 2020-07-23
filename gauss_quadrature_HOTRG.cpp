@@ -120,12 +120,12 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
-    cout << "initialize tensor : " << std::flush;
-    start = std::chrono::system_clock::now();
+//    cout << "initialize tensor : " << std::flush;
+//    start = std::chrono::system_clock::now();
     Tensor T(D, D, D_cut, D_cut);
     initTensor(K, n_node, D_cut, D, T);
-    end = std::chrono::system_clock::now();
-    cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
+//    end = std::chrono::system_clock::now();
+//    cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
 
     auto order = new MKL_INT[N];
     MKL_INT Dx = D, Dy = D;
