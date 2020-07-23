@@ -116,7 +116,10 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
                     }
                 }
     for (ImpureTensor &IMT : IMTs) {
-        if (!IMT.isMerged) isAllMerged = false;
+        if (!IMT.isMerged) {
+            isAllMerged = false;
+            continue;
+        }
         for (Tensor &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             double t = std::abs(tensor(i, j, k, l));
@@ -158,6 +161,7 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
         }
     }
     for (ImpureTensor &IMT : IMTs) {
+        if (!IMT.isMerged) continue;
         for (Tensor &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             if (o > 0) {
