@@ -272,8 +272,8 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
 
 int main() {
     /* inputs */
-    MKL_INT N = 16;     // volume : 2^N
-    MKL_INT n_node = 32;  // n_node
+    MKL_INT N = 40;     // volume : 2^N
+    MKL_INT n_node = 48;  // n_node
     MKL_INT D_cut = 12; // bond dimension
     double K = 1.9; // inverse temperature
     int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
@@ -291,7 +291,7 @@ int main() {
 //    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
     /* vs D_cut */
-    for (D_cut = 8; D_cut <= 32; D_cut += 4) {
+    for (D_cut = 8; D_cut <= 48; D_cut += 4) {
 //        start = std::chrono::system_clock::now();
         cout << "---------- " << D_cut << " ----------\n";
         Trace(n_data_point, K, D_cut, n_node, N);
