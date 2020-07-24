@@ -278,7 +278,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
 int main() {
     /* inputs */
     MKL_INT N = 40;     // volume : 2^N
-    MKL_INT n_node = 32;  // n_node
+    MKL_INT n_node = 40;  // n_node
     MKL_INT D_cut = 12; // bond dimension
     double K = 1.9; // inverse temperature
     int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
@@ -298,7 +298,7 @@ int main() {
 //    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
     /* vs D_cut */
-    for (D_cut = 8; D_cut <= 40; D_cut += 4) {
+    for (D_cut = 24; D_cut <= 40; D_cut += 8) {
         start = std::chrono::system_clock::now();
         cout << "---------- " << D_cut << " ----------\n";
         fileName = "new_2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
