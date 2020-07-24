@@ -29,7 +29,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     Tensor T(D, D, D_cut, D_cut);
     GaussQuadrature::initTensor(K, n_node, D_cut, T);
 
-    MKL_INT order[N];
+    auto order = new int[N];
 
     for (int n = 1; n <= N; ++n) {
         order[n - 1] = Tensor::normalization(T);
