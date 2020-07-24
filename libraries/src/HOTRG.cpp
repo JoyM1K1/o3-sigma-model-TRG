@@ -36,13 +36,13 @@ void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
                     tmp2[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
                 }
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, k, p) * T(i_, y, k, q)
+                Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, x, p) * T(i_, y, x, q)
     REP4tensor(i, j, k, l, Dx, Dy) {
                     tmp1[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
                     tmp2[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
                 }
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, k, y) * T(i_, q, k, y)
+                Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, x, y) * T(i_, q, x, y)
     REP4tensor(i, j, k, l, Dx, Dy) {
                     tmp1[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = A(i, j, k, l);
                     tmp2[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = B(i, j, k, l);
@@ -179,8 +179,8 @@ void HOTRG::SVD_Y(const int D_cut, Tensor &T, double *U) {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
                     Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, l, q, l_) = T(x, y, p, l) * T(x, y, q, l_)
         REP4tensor(i, j, k, l, Dx, Dy) {
-                        tmp1[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
-                        tmp2[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
+                        tmp1[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
+                        tmp2[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
                     }
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
                     Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, l, q, l_) = T(p, y, x, l) * T(q, y, x, l_)
@@ -281,8 +281,8 @@ void HOTRG::contractionY(const int &D_cut, Tensor &bottomT, Tensor &topT, const 
     auto tmp1 = new double[Dx_new * Dx * Dx * Dy * Dy];
     auto tmp2 = new double[Dx_new * Dx * Dx * Dy * Dy];
     REP4tensor(i, j, k, l, Dx, Dy) {
-                    bT[Dx * Dy * Dx * j + Dy * Dx * k + Dx * l + i] = bottomT(i, j, k, l);
-                    tT[Dy * Dy * Dx * i + Dy * Dx * j + Dx * l + k] = topT(i, j, k, l);
+                    bT[Dy * Dy * Dx * i + Dy * Dx * j + Dx * l + k] = bottomT(i, j, k, l);
+                    tT[Dx * Dy * Dx * j + Dy * Dx * k + Dx * l + i] = topT(i, j, k, l);
                 }
     REP(i, Dx)REP(j, Dx)REP(k, Dx_new) {
                 lU[Dx_new * Dx * j + Dx_new * i + k] = U[Dx * Dx * Dx * i + Dx * Dx * j + k];
