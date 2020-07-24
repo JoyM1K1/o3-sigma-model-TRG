@@ -20,12 +20,17 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+
+void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N/*, std::ofstream &file*/) {
+    std::chrono::system_clock::time_point start;
+    std::chrono::system_clock::time_point end;
+
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
+//    cout << "initialize tensor : " << std::flush;
+//    start = std::chrono::system_clock::now();
     Tensor T(D, D, D_cut, D_cut);
     GaussQuadrature::initTensor(K, n_node, D_cut, T);
 
@@ -37,8 +42,16 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
 
         if (n <= N / 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
+//            cout << "perform SVD : " << std::flush;
+//            start = std::chrono::system_clock::now();
             HOTRG::SVD_Y(D_cut, T, U);
+//            end = std::chrono::system_clock::now();
+//            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
+//            cout << "perform contraction : " << std::flush;
+//            start = std::chrono::system_clock::now();
             HOTRG::contractionX(D_cut, T, T, U, "left");
+//            end = std::chrono::system_clock::now();
+//            cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n' << std::flush;
             delete[] U;
         } else { // compression along y-axis
             auto U = new double[Dx * Dx * Dx * Dx];
@@ -66,6 +79,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         Tr += std::log(M_PI / 8);
         file << '\t' << std::fixed << std::setprecision(10) << Tr;
         cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
+//        cout << '\t' << std::fixed << std::setprecision(10) << Tr << '\n' << std::flush;
     }
     delete[] order;
     file << '\n';
@@ -78,28 +92,41 @@ int main() {
     /* inputs */
     MKL_INT N = 20;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
+    MKL_INT D_cut = 64; // bond dimension
 
-    double K_start = 0.1;
+    double K_start = 1.9;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
 
     std::chrono::system_clock::time_point start;
     std::chrono::system_clock::time_point end;
-    string fileName;
-    std::ofstream dataFile;
+//    string fileName;
+//    std::ofstream dataFile;
 
     /* calculation */
+//    start = std::chrono::system_clock::now();
+//    fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//    dataFile.open(fileName, std::ios::trunc);
+//    while (K <= K_end) {
+//        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
+//        dataFile << std::setprecision(1) << K;
+//        Trace(K, D_cut, n_node, N, dataFile);
+//        K += MESH;
+//    }
+//    dataFile.close();
+//    end = std::chrono::system_clock::now();
+//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+
+//    while (K <= K_end) {
+//        cout << std::setprecision(1) << K;
+//        Trace(K, D_cut, n_node, N);
+//        K += MESH;
+//    }
+
     start = std::chrono::system_clock::now();
-    fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-    dataFile.open(fileName, std::ios::trunc);
-    while (K <= K_end) {
-        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
-        dataFile << std::setprecision(1) << K;
-        Trace(K, D_cut, n_node, N, dataFile);
-        K += MESH;
-    }
-    dataFile.close();
+    cout << std::fixed << std::setprecision(1) << K;
+//    cout << std::fixed << std::setprecision(1) << K << '\n';
+    Trace(K, D_cut, n_node, N);
     end = std::chrono::system_clock::now();
     cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
