@@ -28,6 +28,8 @@ public:
     ~ImpureTensor();
 
     ImpureTensor &operator=(const ImpureTensor &rhs);
+
+    static int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs);
 };
 
 #endif //O3_SIGMA_MODEL_IMPURE_TENSOR_HPP

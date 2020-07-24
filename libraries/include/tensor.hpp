@@ -27,6 +27,8 @@ public:
     Tensor & operator=(const Tensor & rhs);
     const double & operator()(int i, int j, int k, int l) const;
     double & operator()(int i, int j, int k, int l);
+
+    static int normalization(Tensor &T);
 };
 
 #endif //O3_SIGMA_MODEL_TENSOR_HPP

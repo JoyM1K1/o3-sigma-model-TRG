@@ -4,9 +4,13 @@
 
 #include "../include/tensor.hpp"
 #include <cassert>
+#include <cmath>
+#include <algorithm>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
+
+#define LINF 1e300
 
 Tensor::Tensor() {
     this->Dx = 0;
@@ -110,4 +114,27 @@ double & Tensor::operator()(int i, int j, int k, int l) {
     assert(0 <= k && k <= Dx);
     assert(0 <= l && l <= Dy);
     return M[Dy * Dx * Dy * i + Dx * Dy * j + Dy * k + l];
+}
+
+int Tensor::normalization(Tensor &T) {
+    const int Dx = T.GetDx();
+    const int Dy = T.GetDy();
+    double _min = LINF;
+    double _max = 0;
+    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                    const double t = T(i, j, k, l);
+                    if (std::abs(t) > 0) {
+                        _min = std::min(_min, std::abs(t));
+                        _max = std::max(_max, std::abs(t));
+                    }
+                }
+    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
+    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                    if (o > 0) {
+                        REP(t, std::abs(o)) T(i, j, k, l) /= 10;
+                    } else {
+                        REP(t, std::abs(o)) T(i, j, k, l) *= 10;
+                    }
+                }
+    return o;
 }
