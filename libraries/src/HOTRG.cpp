@@ -12,7 +12,7 @@
 using std::cout;
 using std::cerr;
 
-void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
+void HOTRG::SVD_X(const int &D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
     Tensor MM(Dx);
     Tensor A(Dx, Dy);
@@ -110,7 +110,7 @@ void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
     delete[] tmp2;
 }
 
-void HOTRG::SVD_Y(const int D_cut, Tensor &T, double *U) {
+void HOTRG::SVD_Y(const int &D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
     Tensor MM(Dy);
     Tensor A(Dx, Dy);
