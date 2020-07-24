@@ -12,17 +12,6 @@
 using std::cout;
 using std::cerr;
 
-template<typename T>
-void print_matrix(const int m, const int n, const T *M) {
-    REP(i, std::min(m, 10)) {
-        REP(j, std::min(n, 10)) {
-            const T component = M[n * i + j];
-            cout << std::scientific << std::setprecision(5) << (component < 0 ? "" : " ") << component << ' ';
-        }
-        cout << '\n';
-    }
-}
-
 void HOTRG::SVD_X(const int D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
     Tensor MM(Dx);
