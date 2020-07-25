@@ -129,10 +129,10 @@ int main() {
     MKL_INT l_max;  // l_max
     MKL_INT D_cut; // bond dimension
     double K = 1.9; // inverse temperature
-    int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, ...
+    const int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, ...
 
     /* calculation */
-    for (l_max = 1; l_max <= 6; ++l_max) {
+    for (l_max = 4; l_max <= 6; ++l_max) {
         std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
         cout << "---------- " << l_max << " ----------\n";
         const string fileName = "new_2point_spherical_harmonics_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
