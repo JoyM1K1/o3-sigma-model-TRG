@@ -60,8 +60,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
 int main() {
     /* inputs */
     MKL_INT N = 10;     // volume : 2^N
-    MKL_INT n_node = 24;  // n_node
-    MKL_INT D_cut = 24; // bond dimension
+    MKL_INT n_node = 32;  // n_node
+    MKL_INT D_cut = 16; // bond dimension
 
     /* calculation */
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
