@@ -10,7 +10,7 @@
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-void GaussQuadrature::initTensor(const double K, const int &n_node, const int &D_cut, Tensor &T) {
+void GaussQuadrature::initTensor(const double &K, const int &n_node, const int &D_cut, Tensor &T) {
     const int D = std::min(n_node * n_node, D_cut);
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
 //    std::vector<double> x(n_node);
