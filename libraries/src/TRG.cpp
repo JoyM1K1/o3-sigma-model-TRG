@@ -1,10 +1,6 @@
-//
-// Created by Joy on 2020/06/05.
-//
 #include "../include/TRG.hpp"
 #include <mkl.h>
 #include <iostream>
-#include <iomanip>
 #include <cmath>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
@@ -15,91 +11,70 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-template<typename T>
-void print_matrix(T *matrix, MKL_INT m, MKL_INT n, MKL_INT lda, const string &message) {
-    cout << '\n' << message << '\n';
-    REP(i, m) {
-        REP(j, n) {
-            cout << std::scientific << std::setprecision(5) << (matrix[i * lda + j] >= 0 ? " " : "")
-                 << matrix[i * lda + j]
-                 << ' ';
-        }
-        cout << '\n';
-    }
-    cout << '\n';
-}
-
 void TRG::solver(const int &D_cut, Tensor &T) {
     const int D = T.GetDx(); // same as T.GetDy()
-    MKL_INT D_new = std::min(D * D, D_cut);
+    const int D_new = std::min(D * D, D_cut);
     auto M = new Tensor(D);
     REP4(i, j, k, l, D) (*M)(i, j, k, l) = T(i, j, k, l); // M(ij)(kl)
     auto sigma = new double[D * D];
-    auto U1 = new double[D * D * D * D], VT1 = new double[D * D * D * D];
-    auto U2 = new double[D * D * D * D], VT2 = new double[D * D * D * D];
+    auto U = new double[D * D * D * D], VT = new double[D * D * D * D];
+    auto S1 = new double[D * D * D_new], S3 = new double[D * D * D_new];
     auto superb = new double[D * D - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, (*M).GetMatrix(), D * D, sigma, U1, D * D, VT1, D * D,
-                                  superb); // M = U * sigma * VT
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, (*M).GetMatrix(), D * D, sigma, U, D * D, VT, D * D, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
     }
     REP(k, D_new) {
         double s = std::sqrt(sigma[k]);
-        REP(i, D) {
-            REP(j, D) {
-                U1[D * D * D * i + D * D * j + k] *= s; // S1[i][j][k]
-                VT1[D * D * k + D * i + j] *= s; // S3[i][j][k]
+        REP(i, D)REP(j, D) {
+                S1[D * D * k + D * j + i] = U[D * D * D * i + D * D * j + k] * s;
+                S3[D * D * k + D * j + i] = VT[D * D * k + D * i + j] * s;
             }
-        }
     }
-    REP4(i, j, k, l, D)  (*M)(j, k, l, i) = T(i, j, k, l); // M(jk)(li)
-    info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, (*M).GetMatrix(), D * D, sigma, U2, D * D, VT2, D * D, superb);
+    auto S2 = new double[D * D * D_new], S4 = new double[D * D * D_new];
+    REP4(i, j, k, l, D) (*M)(j, k, l, i) = T(i, j, k, l); // M(jk)(li)
+    info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, (*M).GetMatrix(), D * D, sigma, U, D * D, VT, D * D, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
     }
-    delete [] superb;
+    delete[] superb;
     delete M;
     REP(k, D_new) {
         double s = std::sqrt(sigma[k]);
-        REP(i, D) {
-            REP(j, D) {
-                U2[D * D * D * i + D * D * j + k] *= s; // S2[i][j][k]
-                VT2[D * D * k + D * i + j] *= s; // S4[i][j][k]
+        REP(i, D)REP(j, D) {
+                S2[D_new * D * j + D_new * i + k] = U[D * D * D * i + D * D * j + k] * s;
+                S4[D_new * D * j + D_new * i + k] = VT[D * D * k + D * i + j] * s;
             }
-        }
     }
-    delete [] sigma;
+    delete[] U;
+    delete[] VT;
+    delete[] sigma;
 
-    Tensor X12(D_new, D), X34(D_new, D);
-    REP(i, D_new) {
-        REP(j, D_new) {
-            REP(b, D) {
-                REP(d, D) {
-                    double sum1 = 0, sum2 = 0;
-                    REP(a, D) {
-                        sum1 += U1[D * D * D * a + D * D * d + i] * U2[D * D * D * b + D * D * a + j]; // S1[a][d][i] * S2[b][a][j]
-                        sum2 += VT1[D * D * i + D * a + b] * VT2[D * D * j + D * d + a]; // S3[a][b][i] * S4[d][a][j]
-                    }
-                    X12(i, b, j, d) = sum1;
-                    X34(i, b, j, d) = sum2;
+    auto top = new double[D_new * D_new * D * D], bottom = new double[D_new * D_new * D * D];
+    auto X = new double[D_new * D_new * D * D];
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S1,
+            D, S2, D_new * D, 0, X, D_new * D);
+    delete[] S1;
+    delete[] S2;
+    REP(a, D)REP(b, D)REP(i, D_new)REP(j, D_new) {
+                    bottom[D_new * D_new * D * a + D_new * D_new * b + D_new * i + j] = X[D_new * D * D * i + D_new * D * b + D_new * a + j];
                 }
-            }
-        }
-    }
-    delete [] U1;
-    delete [] U2;
-    delete [] VT1;
-    delete [] VT2;
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S3,
+            D, S4, D_new * D, 0, X, D_new * D);
+    delete[] S3;
+    delete[] S4;
+    REP(a, D)REP(b, D)REP(i, D_new)REP(j, D_new) {
+                    top[D * D * D_new * i + D * D * j + D * a + b] = X[D_new * D * D * i + D_new * D * a + D_new * b + j];
+                }
+    delete[] X;
 
     // 更新
     T.UpdateDx(D_new);
     T.UpdateDy(D_new);
 
-    REP4(i, j, k, l, D_new) {
-                    double sum = 0;
-                    REP(b, D)REP(d, D) sum += X12(k, b, l, d) * X34(i, b, j, d);
-                    T(i, j, k, l) = sum;
-                }
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, top, D, bottom, D_new * D, 0, T.GetMatrix(), D_new * D);
+    delete[] top;
+    delete[] bottom;
 }
