@@ -21,8 +21,6 @@ using std::cerr;
 using std::string;
 
 void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N,std::ofstream &file) {
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-
     // initialize tensor network : max index size is D_cut
     Tensor T(D_cut);
     ImpureTensor originIMT(D_cut);
@@ -37,6 +35,8 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
+        std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
         order[n - 1] = ImpureTensor::normalization(T, originIMT, IMTs);
@@ -132,9 +132,9 @@ int main() {
     const int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, ...
 
     /* calculation */
-    for (l_max = 4; l_max <= 6; ++l_max) {
+    for (l_max = 1; l_max <= 6; ++l_max) {
         std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-        cout << "---------- " << l_max << " ----------\n";
+        cout << "---------- " << l_max << " ----------\n" << std::flush;
         const string fileName = "new_2point_spherical_harmonics_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
         std::ofstream dataFile;
         dataFile.open(fileName, std::ios::trunc);
