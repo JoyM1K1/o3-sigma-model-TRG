@@ -28,4 +28,4 @@ target_include_directories(HOTRG INTERFACE ./include)
 target_include_directories(tensor INTERFACE ./include)
 target_include_directories(impure_tensor INTERFACE ./include)
 
-target_link_libraries(TRG mkl_intel_ilp64 mkl_sequential mkl_core)
+target_link_libraries(gauss_quadrature legendre_zero_point)
