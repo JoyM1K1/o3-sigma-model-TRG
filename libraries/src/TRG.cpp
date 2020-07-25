@@ -74,7 +74,7 @@ void TRG::solver(const int &D_cut, Tensor &T) {
     T.UpdateDx(D_new);
     T.UpdateDy(D_new);
 
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, top, D, bottom, D_new * D, 0, T.GetMatrix(), D_new * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D_new, D_new * D_new, D * D, 1, top, D * D, bottom, D_new * D_new, 0, T.GetMatrix(), D_new * D_new);
     delete[] top;
     delete[] bottom;
 }
