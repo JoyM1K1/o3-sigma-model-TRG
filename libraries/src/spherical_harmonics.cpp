@@ -79,7 +79,8 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
                                             c *= gsl_sf_coupling_3j(two_k, two_l, two_L_, 0, 0, 0);
                                             c *= gsl_sf_coupling_3j(two_L_, 2, two_L, two_M_, two_m, -two_M);
                                             c *= gsl_sf_coupling_3j(two_L_, 2, two_L, 0, 0, 0);
-                                            sum[m] += c * (2 * L + 1) * (2 * L_ + 1) * (1 - 2 * (std::abs(M_) % 2));
+                                            if (std::abs(M_) % 2) c *= -1;
+                                            sum[m] += c * (2 * L + 1) * (2 * L_ + 1);
                                         }
                         a = std::sqrt(A[i] * A[j] * A[k] * A[l]);
                         IMT.tensors[0](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * (sum[0] - sum[2]) / std::sqrt(2);
