@@ -21,7 +21,7 @@ using std::cerr;
 using std::string;
 
 
-void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N/*, std::ofstream &file*/) {
+void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
     std::chrono::system_clock::time_point start;
     std::chrono::system_clock::time_point end;
 
@@ -38,6 +38,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     MKL_INT Dx = D, Dy = D;
 
     for (int n = 1; n <= N; ++n) {
+        start = std::chrono::system_clock::now();
         order[n - 1] = Tensor::normalization(T);
 
         if (n <= N / 2) { // compression along x-axis
@@ -84,7 +85,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     delete[] order;
     file << '\n';
     cout << '\n';
-    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+    end = std::chrono::system_clock::now();
     cout << "計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
 }
 
@@ -100,33 +101,20 @@ int main() {
 
     std::chrono::system_clock::time_point start;
     std::chrono::system_clock::time_point end;
-//    string fileName;
-//    std::ofstream dataFile;
+    string fileName;
+    std::ofstream dataFile;
 
     /* calculation */
-//    start = std::chrono::system_clock::now();
-//    fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-//    dataFile.open(fileName, std::ios::trunc);
-//    while (K <= K_end) {
-//        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
-//        dataFile << std::setprecision(1) << K;
-//        Trace(K, D_cut, n_node, N, dataFile);
-//        K += MESH;
-//    }
-//    dataFile.close();
-//    end = std::chrono::system_clock::now();
-//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
-
-//    while (K <= K_end) {
-//        cout << std::setprecision(1) << K;
-//        Trace(K, D_cut, n_node, N);
-//        K += MESH;
-//    }
-
     start = std::chrono::system_clock::now();
-    cout << std::fixed << std::setprecision(1) << K;
-//    cout << std::fixed << std::setprecision(1) << K << '\n';
-    Trace(K, D_cut, n_node, N);
+    fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+    dataFile.open(fileName, std::ios::trunc);
+    while (K <= K_end) {
+        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
+        dataFile << std::setprecision(1) << K;
+        Trace(K, D_cut, n_node, N, dataFile);
+        K += MESH;
+    }
+    dataFile.close();
     end = std::chrono::system_clock::now();
     cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
