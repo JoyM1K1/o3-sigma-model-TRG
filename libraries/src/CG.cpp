@@ -66,7 +66,7 @@ frac CG::squareSummation(std::vector<frac> &factors) {
     return sum;
 }
 
-void CG::determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map, const std::string& CGFileName) {
+void CG::determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map, std::ofstream &CGFile) {
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
     std::cout << "determine : l1=" << l1 << " l2=" << l2 << " L=" << L << "   ";
     if (l1 + l2 < L) {
@@ -168,8 +168,6 @@ void CG::determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map, cons
             exit(1);
         }
 //        cout << "sum:" << sum << ' ';
-        std::ofstream CGFile;
-        CGFile.open(CGFileName, std::ios::app);
         for (frac m1 = m1_min; m1 <= m1_max; ++m1) {
             frac m2 = M - m1;
             if (m2_min <= m2 && m2 <= m2_max) {
@@ -178,13 +176,12 @@ void CG::determineAllCGs(frac l1, frac l2, frac L, std::map<CG, frac> &map, cons
                        << map[CG(l1, l2, m1, m2, L, M)].num << '\t' << map[CG(l1, l2, m1, m2, L, M)].den << '\n';
             }
         }
-        CGFile.close();
     }
     std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
     std::cout << "time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 }
 
-frac CG::getCoeff(frac l1, frac l2, frac m1, frac m2, frac L, frac M, std::map<CG, frac> &map, const std::string& CGFileName) {
+frac CG::getCoeff(frac l1, frac l2, frac m1, frac m2, frac L, frac M, std::map<CG, frac> &map, std::ofstream &CGFile) {
     // CG係数としてありえないものは 0
     if (L < frac::abs(l1 - l2) || l1 + l2 < L || m1 + m2 != M) {
         return frac(0);
@@ -200,7 +197,7 @@ frac CG::getCoeff(frac l1, frac l2, frac m1, frac m2, frac L, frac M, std::map<C
         minus = ((L - l1 - l2) % 2 != 0);
     }
     if (map.find(CG(l1, l2, m1, m2, L, M)) == map.end()) { // まだ計算してなかったら計算する
-        determineAllCGs(l1, l2, L, map, CGFileName);
+        determineAllCGs(l1, l2, L, map, CGFile);
     }
     return map[CG(l1, l2, m1, m2, L, M)] * (minus ? 1 : -1);
 }
