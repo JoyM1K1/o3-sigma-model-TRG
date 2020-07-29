@@ -79,7 +79,7 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
                                             c *= gsl_sf_coupling_3j(two_k, two_l, two_L_, 0, 0, 0);
                                             c *= gsl_sf_coupling_3j(two_L_, 2, two_L, two_M_, two_m, -two_M);
                                             c *= gsl_sf_coupling_3j(two_L_, 2, two_L, 0, 0, 0);
-                                            if (std::abs(M_) % 2) c *= -1;
+                                            if ((int)std::abs(M_) % 2) c *= -1;
                                             sum[m] += c * (2 * L + 1) * (2 * L_ + 1);
                                         }
                         a = std::sqrt(A[i] * A[j] * A[k] * A[l]);
