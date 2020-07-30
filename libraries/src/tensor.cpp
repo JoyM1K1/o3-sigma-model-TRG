@@ -119,16 +119,17 @@ double & Tensor::operator()(int i, int j, int k, int l) {
 int Tensor::normalization(Tensor &T) {
     const int Dx = T.GetDx();
     const int Dy = T.GetDy();
-    double _min = LINF;
+//    double _min = LINF;
     double _max = 0;
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    const double t = T(i, j, k, l);
-                    if (std::abs(t) > 0) {
-                        _min = std::min(_min, std::abs(t));
-                        _max = std::max(_max, std::abs(t));
+                    const double t = std::abs(T(i, j, k, l));
+                    if (t > 0) {
+//                        _min = std::min(_min, t);
+                        _max = std::max(_max, t);
                     }
                 }
-    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
+//    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
+    auto o = static_cast<int>(std::floor(std::log10(_max)));
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                     if (o > 0) {
                         REP(t, std::abs(o)) T(i, j, k, l) /= 10;
