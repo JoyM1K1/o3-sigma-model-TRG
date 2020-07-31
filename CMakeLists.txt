@@ -32,6 +32,9 @@ if (APPLE)
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics TRG tensor)
 
+    add_executable(spherical_harmonics_HOTRG spherical_harmonics_HOTRG.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor)
+
     add_executable(spherical_harmonics_HOTRG_2point spherical_harmonics_HOTRG_2point.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_2point mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor impure_tensor)
 
@@ -64,6 +67,9 @@ else ()
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG spherical_harmonics TRG tensor)
+
+    add_executable(spherical_harmonics_HOTRG spherical_harmonics_HOTRG.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG spherical_harmonics HOTRG tensor)
 
     add_executable(spherical_harmonics_HOTRG_2point spherical_harmonics_HOTRG_2point.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_2point spherical_harmonics HOTRG tensor impure_tensor)
