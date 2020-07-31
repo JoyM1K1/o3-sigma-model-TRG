@@ -1,16 +1,13 @@
-//
-// Created by Joy on 2020/06/16.
-//
-
 #include "../include/tensor.hpp"
 #include <cassert>
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-#define LINF 1e300
+//#define LINF 1e300
 
 Tensor::Tensor() {
     this->Dx = 0;
@@ -123,6 +120,10 @@ int Tensor::normalization(Tensor &T) {
     double _max = 0;
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                     const double t = std::abs(T(i, j, k, l));
+                    if (std::isnan(t)) {
+                        std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
+                        exit(1);
+                    }
                     if (t > 0) {
 //                        _min = std::min(_min, t);
                         _max = std::max(_max, t);
