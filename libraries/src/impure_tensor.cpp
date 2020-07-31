@@ -53,7 +53,7 @@ ImpureTensor &ImpureTensor::operator=(const ImpureTensor &rhs) {
 }
 
 int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs) {
-    double _min = LINF;
+//    double _min = LINF;
     double _max = 0;
     int Dx = T.GetDx();
     int Dy = T.GetDy();
@@ -61,7 +61,7 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
         double t = std::abs(T(i, j, k, l));
         if (t > 0) {
-            _min = std::min(_min, t);
+//            _min = std::min(_min, t);
             _max = std::max(_max, t);
         }
     }
@@ -74,7 +74,7 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                 double t = std::abs(tensor(i, j, k, l));
                 if (t > 0) {
-                    _min = std::min(_min, t);
+//                    _min = std::min(_min, t);
                     _max = std::max(_max, t);
                 }
             }
@@ -85,13 +85,14 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                 double t = std::abs(tensor(i, j, k, l));
                 if (t > 0) {
-                    _min = std::min(_min, t);
+//                    _min = std::min(_min, t);
                     _max = std::max(_max, t);
                 }
             }
         }
     }
-    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
+//    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
+    auto o = static_cast<int>(std::floor(std::log10(_max)));
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
         if (o > 0) {
             REP(t, std::abs(o)) T(i, j, k, l) /= 10;
