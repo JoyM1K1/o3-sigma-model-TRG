@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <cmath>
 #include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
@@ -106,7 +107,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         Dx = T.GetDx();
         Dy = T.GetDy();
 
-        if (n <= N / 2) {
+        if (n < N) {
             std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
             cout << " 計算時間 " << duration_cast_to_string(start, end) << '\n';
             continue;
@@ -122,16 +123,16 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
                     Tr2 += IMT.tensors[1](i, j, i, j);
                     Tr3 += IMT.tensors[2](i, j, i, j);
                 }
-            double res = (Tr1 + Tr2 + Tr3) / Tr;
+            double res = std::log(Tr1 + Tr2 + Tr3) - std::log(Tr);
             IMT.corrs.push_back(res);
-            cout << '\t' << std::fixed << std::setprecision(10) << res << std::flush;
+            cout << '\t' << std::fixed << std::setprecision(16) << res << std::flush;
         }
         cout << '\n';
     }
     for (ImpureTensor &IMT : IMTs) {
         file << IMT.distance;
         for (double corr : IMT.corrs) {
-            file << '\t' << std::fixed << std::setprecision(10) << corr << std::flush;
+            file << '\t' << std::fixed << std::setprecision(16) << corr << std::flush;
         }
         file << '\n';
     }
@@ -140,9 +141,9 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
 
 int main() {
     /* inputs */
-    MKL_INT N = 40;     // volume : 2^N
+    MKL_INT N = 14;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 48; // bond dimension
+    MKL_INT D_cut = 24; // bond dimension
     double K = 1.8; // inverse temperature
     int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
 
@@ -152,25 +153,25 @@ int main() {
     std::ofstream dataFile;
 
     /* calculation */
-    start = std::chrono::system_clock::now();
-    fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-    dataFile.open(fileName, std::ios::trunc);
-    Trace(n_data_point, K, D_cut, n_node, N, dataFile);
-    dataFile.close();
-    end = std::chrono::system_clock::now();
-    cout << "合計計算時間 : " << duration_cast_to_string(start, end) << '\n';
+//    start = std::chrono::system_clock::now();
+//    fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//    dataFile.open(fileName, std::ios::trunc);
+//    Trace(n_data_point, K, D_cut, n_node, N, dataFile);
+//    dataFile.close();
+//    end = std::chrono::system_clock::now();
+//    cout << "合計計算時間 : " << duration_cast_to_string(start, end) << '\n';
 
     /* vs D_cut */
-//    for (D_cut = 44; D_cut <= 60; D_cut += 8) {
-//        start = std::chrono::system_clock::now();
-//        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        end = std::chrono::system_clock::now();
-//        cout << "合計計算時間 : " << duration_cast_to_string(start, end) << '\n';
-//    }
+    for (D_cut = 32; D_cut <= 60; D_cut += 8) {
+        start = std::chrono::system_clock::now();
+        cout << "---------- " << D_cut << " ----------\n";
+        fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+        dataFile.open(fileName, std::ios::trunc);
+        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
+        dataFile.close();
+        end = std::chrono::system_clock::now();
+        cout << "合計計算時間 : " << duration_cast_to_string(start, end) << '\n';
+    }
 
     /* vs n_node */
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
