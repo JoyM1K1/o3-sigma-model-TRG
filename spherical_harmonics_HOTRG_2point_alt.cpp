@@ -1,6 +1,5 @@
 #include <iostream>
 #include <iomanip>
-#include <chrono>
 #include <string>
 #include <vector>
 #include <mkl.h>
@@ -9,6 +8,7 @@
 #include <tensor.hpp>
 #include <impure_tensor.hpp>
 #include <spherical_harmonics.hpp>
+#include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -21,16 +21,15 @@ using std::cerr;
 using std::string;
 
 void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N,std::ofstream &file) {
-    std::chrono::system_clock::time_point start;
-    std::chrono::system_clock::time_point end;
+    time_counter time;
     // initialize tensor network : max index size is D_cut
+    time.start();
+    cout << "initialize tensor " << std::flush;
     Tensor T(D_cut);
     ImpureTensor originIMT(D_cut);
-
-    start = std::chrono::system_clock::now();
     SphericalHarmonics::initTensorWithImpure(K, l_max, T, originIMT);
-    end = std::chrono::system_clock::now();
-    cout << "initialize tensor : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
     std::vector<ImpureTensor> IMTs(n_data_point);
 
@@ -40,14 +39,14 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
-        start = std::chrono::system_clock::now();
+        time.start();
 
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
         order[n - 1] = ImpureTensor::normalization(T, originIMT, IMTs);
 
         if (n % 2) { // compress along x-axis
-            cout << " compress along x-axis :" << std::flush;
+            cout << " compress along x-axis " << std::flush;
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             const int times = (n + 1) / 2;
@@ -74,7 +73,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compress along y-axis
-            cout << " compress along y-axis :" << std::flush;
+            cout << " compress along y-axis " << std::flush;
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             for (auto &IMT : IMTs) {
@@ -92,8 +91,8 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         Dy = T.GetDy();
 
         if (n <= N / 2) {
-            end = std::chrono::system_clock::now();
-            cout << " 計算時間 " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+            time.end();
+            cout << "in " << time.duration_cast_to_string() << '\n';
             continue;
         }
 
@@ -116,7 +115,8 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             IMT.corrs.push_back(res);
             cout << '\t' << std::fixed << std::setprecision(16) << res << std::flush;
         }
-        cout << '\n';
+        time.end();
+        cout << "  in " << time.duration_cast_to_string() << '\n';
     }
     for (ImpureTensor &IMT : IMTs) {
         file << IMT.distance;
@@ -136,18 +136,21 @@ int main() {
     double K = 1.9; // inverse temperature
     const int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, ...
 
+    time_counter time;
+    string fileName;
+    std::ofstream dataFile;
+
     /* calculation */
     for (l_max = 4; l_max <= 6; ++l_max) {
-        std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+        time.start();
         cout << "---------- " << l_max << " ----------\n" << std::flush;
-        const string fileName = "new_2point_spherical_harmonics_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
-        std::ofstream dataFile;
+        fileName = "spherical_harmonics_HOTRG_2point_alt_l" + std::to_string(l_max) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         D_cut = (l_max + 1) * (l_max + 1);
         Trace(n_data_point, K, D_cut, l_max, N, dataFile);
         dataFile.close();
-        std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+        time.end();
+        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
     }
 
     return 0;

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <iomanip>
-#include <chrono>
 #include <string>
 #include <vector>
 #include <cmath>
@@ -10,6 +9,7 @@
 #include <tensor.hpp>
 #include <impure_tensor.hpp>
 #include <HOTRG.hpp>
+#include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
@@ -21,33 +21,19 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-string duration_cast_to_string(std::chrono::system_clock::time_point start, std::chrono::system_clock::time_point end) {
-    long long hours = std::chrono::duration_cast<std::chrono::hours>(end - start).count();
-    long long minutes = std::chrono::duration_cast<std::chrono::minutes>(end - start).count() % 60;
-    long long seconds = std::chrono::duration_cast<std::chrono::seconds>(end - start).count() % 60;
-    long long milli = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() % 1000;
-    string res;
-    if (hours > 0) {
-        res = std::to_string(hours) + " h " + std::to_string(minutes) + " m " + std::to_string(seconds) + " s " + std::to_string(milli) + " ms";
-    } else if (minutes > 0) {
-        res = std::to_string(minutes) + " m " + std::to_string(seconds) + " s " + std::to_string(milli) + " ms";
-    } else if (seconds > 0) {
-        res = std::to_string(seconds) + " s " + std::to_string(milli) + " ms";
-    } else {
-        res = std::to_string(milli) + " ms";
-    }
-    return res;
-}
-
 void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
+    time_counter time;
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
+    time.start();
+    cout << "initialize tensor " << std::flush;
     Tensor T(D, D, D_cut, D_cut);
     ImpureTensor originIMT(D, D, D_cut, D_cut);
-
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
     std::vector<ImpureTensor> IMTs(n_data_point);
 
@@ -57,13 +43,13 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
-        std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+        time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
         order[n - 1] = ImpureTensor::normalization(T, originIMT, IMTs);
 
         if (n % 2) { // compress along x-axis
-            cout << " compress along x-axis :" << std::flush;
+            cout << " compress along x-axis " << std::flush;
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             const int times = (n + 1) / 2;
@@ -90,7 +76,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compress along y-axis
-            cout << " compress along y-axis :" << std::flush;
+            cout << " compress along y-axis " << std::flush;
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             for (auto &IMT : IMTs) {
@@ -108,8 +94,8 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         Dy = T.GetDy();
 
         if (n < N) {
-            std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-            cout << " 計算時間 " << duration_cast_to_string(start, end) << '\n';
+            time.end();
+            cout << " in " << time.duration_cast_to_string() << '\n';
             continue;
         }
 
@@ -127,7 +113,8 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             IMT.corrs.push_back(res);
             cout << '\t' << std::fixed << std::setprecision(16) << res << std::flush;
         }
-        cout << '\n';
+        time.end();
+        cout << "  in " << time.duration_cast_to_string() << '\n';
     }
     for (ImpureTensor &IMT : IMTs) {
         file << IMT.distance;
@@ -147,42 +134,41 @@ int main() {
     double K = 1.8; // inverse temperature
     int n_data_point = 8; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
 
-    std::chrono::system_clock::time_point start;
-    std::chrono::system_clock::time_point end;
+    time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
-//    start = std::chrono::system_clock::now();
-//    fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//    time.start();
+//    fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
 //    dataFile.open(fileName, std::ios::trunc);
 //    Trace(n_data_point, K, D_cut, n_node, N, dataFile);
 //    dataFile.close();
-//    end = std::chrono::system_clock::now();
-//    cout << "合計計算時間 : " << duration_cast_to_string(start, end) << '\n';
+//    time.end();
+//    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     /* vs D_cut */
     for (D_cut = 16; D_cut <= 64; D_cut += 8) {
-        start = std::chrono::system_clock::now();
+        time.start();
         cout << "---------- " << D_cut << " ----------\n";
-        fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+        fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         Trace(n_data_point, K, D_cut, n_node, N, dataFile);
         dataFile.close();
-        end = std::chrono::system_clock::now();
-        cout << "合計計算時間 : " << duration_cast_to_string(start, end) << '\n';
+        time.end();
+        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
     }
 
     /* vs n_node */
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
-//        start = std::chrono::system_clock::now();
+//        time.start();
 //        cout << "---------- " << n_node << " ----------\n";
-//        fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//        fileName = "gauss_quadrature_HOTRG_mass_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
 //        dataFile.close();
-//        end = std::chrono::system_clock::now();
-//        cout << "合計計算時間 : " << duration_cast_to_string(start, end) << '\n';
+//        time.end();
+//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
 //    }
     return 0;
 }

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <iomanip>
-#include <chrono>
 #include <string>
 #include <cmath>
 #include <vector>
@@ -9,6 +8,7 @@
 #include <gauss_quadrature.hpp>
 #include <TRG.hpp>
 #include <tensor.hpp>
+#include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -21,15 +21,20 @@ using std::cerr;
 using std::string;
 
 void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+    time_counter time;
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
+    time.start();
+    cout << "initialize tensor " << std::flush;
     Tensor T(D, D, D_cut, D_cut);
     GaussQuadrature::initTensor(K, n_node, D_cut, T);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
 
     auto order = new int[N];
+    time.start();
 
     for (int n = 1; n <= N; ++n) {
         order[n - 1] = Tensor::normalization(T);
@@ -52,9 +57,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
     }
     file << '\n';
-    cout << '\n';
-    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-    cout << "計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+    time.end();
+    cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
 int main() {
@@ -63,17 +67,18 @@ int main() {
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 16; // bond dimension
 
-    /* calculation */
-    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-    const string fileName =
-            "gauss_quadrature_node" +
-            std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) +
-            ".txt";
-    std::ofstream dataFile;
-    dataFile.open(fileName, std::ios::trunc);
     double K_start = 0.1;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
+
+    time_counter time;
+    string fileName;
+    std::ofstream dataFile;
+
+    /* calculation */
+    time.start();
+    fileName = "gauss_quadrature_TRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+    dataFile.open(fileName, std::ios::trunc);
     while (K <= K_end) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
         dataFile << std::setprecision(1) << K;
@@ -81,8 +86,8 @@ int main() {
         K += MESH;
     }
     dataFile.close();
-    std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+    time.end();
+    cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
 
     return 0;
 }

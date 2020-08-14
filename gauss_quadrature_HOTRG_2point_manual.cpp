@@ -1,6 +1,5 @@
 #include <iostream>
 #include <iomanip>
-#include <chrono>
 #include <string>
 #include <vector>
 #include <mkl.h>
@@ -10,6 +9,7 @@
 #include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 #include <cmath>
+#include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -93,16 +93,20 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
 
 
 void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::vector<int> d, std::ofstream &file) {
+    time_counter time;
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
     const int DATA_POINTS = d.size();
 
     // initialize tensor network : max index size is D_cut
+    time.start();
+    cout << "initialize tensor " << std::flush;
     Tensor T(D, D, D_cut, D_cut);
     ImpureTensor originIMT(D, D, D_cut, D_cut);
-
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
     std::vector<ImpureTensor> IMTs(DATA_POINTS);
     REP(i, DATA_POINTS) {
@@ -115,12 +119,13 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
-        std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+        time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
         order[n - 1] = normalization(T, originIMT, IMTs);
 
-        if (n <= N / 2) { // compression along x-axis
+        if (n % 2) { // compression along x-axis
+            cout << " compress along x-axis " << std::flush;
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             bool isAllMerged = true;
@@ -161,6 +166,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compression along y-axis
+            cout << " compress along y-axis " << std::flush;
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             for (ImpureTensor &IMT : IMTs) {
@@ -176,8 +182,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         Dy = T.GetDy();
 
         if (!isMerged) {
-            std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
-            cout << " 計算時間 " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
+            time.end();
+            cout << " in " << time.duration_cast_to_string() << '\n';
             continue;
         }
 
@@ -200,7 +206,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             IMT.corrs.push_back(res);
             cout << '\t' << std::fixed << std::setprecision(10) << res << std::flush;
         }
-        cout << '\n';
+        time.end();
+        cout << "  in " << time.duration_cast_to_string() << '\n';
     }
     for (ImpureTensor &IMT : IMTs) {
         file << IMT.distance;
@@ -220,45 +227,44 @@ int main() {
     MKL_INT D_cut; // bond dimension
     std::vector<int> d = {64}; // distances
 
-    std::chrono::system_clock::time_point start;
-    std::chrono::system_clock::time_point end;
+    time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
-//    n_node = 32;
-//    D_cut = 32;
-//    start = std::chrono::system_clock::now();
-//    fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-//    dataFile.open(fileName, std::ios::trunc);
-//    Trace(K, D_cut, n_node, N, d, dataFile);
-//    dataFile.close();
-//    end = std::chrono::system_clock::now();
-//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+    n_node = 32;
+    D_cut = 32;
+    time.start();
+    fileName = "gauss_quadrature_HOTRG_2point_manual_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+    dataFile.open(fileName, std::ios::trunc);
+    Trace(K, D_cut, n_node, N, d, dataFile);
+    dataFile.close();
+    time.end();
+    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     /* vs D_cut */
     n_node = 32;
     for (D_cut = 8; D_cut <= 32; D_cut += 4) {
-        start = std::chrono::system_clock::now();
+        time.start();
         cout << "---------- " << D_cut << " ----------\n";
-        fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_x" + std::to_string(d[0]) + ".txt";
+        fileName = "gauss_quadrature_HOTRG_2point_manual_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         Trace(K, D_cut, n_node, N, d, dataFile);
         dataFile.close();
-        end = std::chrono::system_clock::now();
-        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+        time.end();
+        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
     }
 
     /* vs n_node */
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
-//        start = std::chrono::system_clock::now();
+//        time.start();
 //        cout << "---------- " << n_node << " ----------\n";
-//        fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//        fileName = "gauss_quadrature_HOTRG_2point_manual_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(K, D_cut, n_node, N, d, dataFile);
 //        dataFile.close();
-//        end = std::chrono::system_clock::now();
-//        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+//        time.end();
+//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
 //    }
 
     return 0;
