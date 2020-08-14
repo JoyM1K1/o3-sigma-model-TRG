@@ -1,15 +1,15 @@
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 #include <string>
-#include <cmath>
 #include <vector>
 #include <mkl.h>
 #include <fstream>
-#include <spherical_harmonics.hpp>
-#include <HOTRG.hpp>
+#include <gauss_quadrature.hpp>
 #include <tensor.hpp>
 #include <impure_tensor.hpp>
-#include <time_counter.hpp>
+#include <HOTRG.hpp>
+#include <cmath>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -60,36 +60,30 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
     }
     auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    REP(t, std::abs(o)) {
-                        if (o > 0) {
-                            T(i, j, k, l) /= 10;
-                        } else {
-                            T(i, j, k, l) *= 10;
-                        }
+                    if (o > 0) {
+                        REP(t, std::abs(o)) T(i, j, k, l) /= 10;
+                    } else {
+                        REP(t, std::abs(o)) T(i, j, k, l) *= 10;
                     }
                 }
-    for (ImpureTensor &IMT : IMTs) {
-        for (Tensor &tensor : IMT.tensors) {
+    if (!isAllMerged) {
+        for (Tensor &tensor : originIMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            REP(t, std::abs(o)) {
-                                if (o > 0) {
-                                    tensor(i, j, k, l) /= 10;
-                                } else {
-                                    tensor(i, j, k, l) *= 10;
-                                }
+                            if (o > 0) {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
+                            } else {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) *= 10;
                             }
                         }
         }
     }
-    if (!isAllMerged) {
-        for (Tensor &tensor : originIMT.tensors) {
+    for (ImpureTensor &IMT : IMTs) {
+        for (Tensor &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            REP(t, std::abs(o)) {
-                                if (o > 0) {
-                                    tensor(i, j, k, l) /= 10;
-                                } else {
-                                    tensor(i, j, k, l) *= 10;
-                                }
+                            if (o > 0) {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
+                            } else {
+                                REP(t, std::abs(o)) tensor(i, j, k, l) *= 10;
                             }
                         }
         }
@@ -97,19 +91,18 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
     return o;
 }
 
-void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N, std::vector<int> &d, std::ofstream &file) {
-    time_counter time;
+
+void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::vector<int> d, std::ofstream &file) {
+    // index dimension
+    MKL_INT D = std::min(D_cut, n_node * n_node);
 
     const int DATA_POINTS = d.size();
 
     // initialize tensor network : max index size is D_cut
-    time.start();
-    cout << "initialize tensor " << std::flush;
-    Tensor T(D_cut);
-    ImpureTensor originIMT(D_cut);
-    SphericalHarmonics::initTensorWithImpure(K, l_max, T, originIMT);
-    time.end();
-    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
+    Tensor T(D, D, D_cut, D_cut);
+    ImpureTensor originIMT(D, D, D_cut, D_cut);
+
+    GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
 
     std::vector<ImpureTensor> IMTs(DATA_POINTS);
     REP(i, DATA_POINTS) {
@@ -117,17 +110,17 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     }
 
     auto order = new int[N];
-    MKL_INT Dx = D_cut, Dy = D_cut;
+    MKL_INT Dx = D, Dy = D;
 
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
+        std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
         order[n - 1] = normalization(T, originIMT, IMTs);
 
         if (n <= N / 2) { // compression along x-axis
-            cout << " compress along x-axis " << std::flush;
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             bool isAllMerged = true;
@@ -168,7 +161,6 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compression along y-axis
-            cout << " compress along y-axis " << std::flush;
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             for (ImpureTensor &IMT : IMTs) {
@@ -184,8 +176,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
         Dy = T.GetDy();
 
         if (!isMerged) {
-            time.end();
-            cout << "in " << time.duration_cast_to_string() << '\n';
+            std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+            cout << " 計算時間 " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << '\n';
             continue;
         }
 
@@ -204,12 +196,11 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
                     Tr2 += IMT.tensors[1](i, j, i, j);
                     Tr3 += IMT.tensors[2](i, j, i, j);
                 }
-            double res = (Tr1 - Tr2 + Tr3) / Tr;
+            double res = (Tr1 + Tr2 + Tr3) / Tr;
             IMT.corrs.push_back(res);
             cout << '\t' << std::fixed << std::setprecision(16) << res << std::flush;
         }
-        time.end();
-        cout << "  in " << time.duration_cast_to_string() << '\n';
+        cout << '\n';
     }
     for (ImpureTensor &IMT : IMTs) {
         file << IMT.distance;
@@ -224,27 +215,51 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
 int main() {
     /* inputs */
     MKL_INT N = 16;     // volume : 2^N
-    MKL_INT l_max;  // l_max
-    MKL_INT D_cut; // bond dimension
     double K = 1.9; // inverse temperature
-    std::vector<int> d = {8};
+    MKL_INT n_node;  // n_node
+    MKL_INT D_cut; // bond dimension
+    std::vector<int> d = {64}; // distances
 
-    time_counter time;
+    std::chrono::system_clock::time_point start;
+    std::chrono::system_clock::time_point end;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
-    for (l_max = 1; l_max <= 4; ++l_max) {
-        time.start();
-        cout << "---------- " << l_max << " ----------\n";
-        fileName = "spherical_harmonics_HOTRG_2point_manual_l" + std::to_string(l_max) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+//    n_node = 32;
+//    D_cut = 32;
+//    start = std::chrono::system_clock::now();
+//    fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//    dataFile.open(fileName, std::ios::trunc);
+//    Trace(K, D_cut, n_node, N, d, dataFile);
+//    dataFile.close();
+//    end = std::chrono::system_clock::now();
+//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+
+    /* vs D_cut */
+    n_node = 32;
+    for (D_cut = 8; D_cut <= 32; D_cut += 4) {
+        start = std::chrono::system_clock::now();
+        cout << "---------- " << D_cut << " ----------\n";
+        fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_x" + std::to_string(d[0]) + ".txt";
         dataFile.open(fileName, std::ios::trunc);
-        D_cut = (l_max + 1) * (l_max + 1);
-        Trace(K, D_cut, l_max, N, d, dataFile);
+        Trace(K, D_cut, n_node, N, d, dataFile);
         dataFile.close();
-        time.end();
-        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+        end = std::chrono::system_clock::now();
+        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
     }
+
+    /* vs n_node */
+//    for (n_node = 8; n_node <= 32; n_node += 8) {
+//        start = std::chrono::system_clock::now();
+//        cout << "---------- " << n_node << " ----------\n";
+//        fileName = "2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        Trace(K, D_cut, n_node, N, d, dataFile);
+//        dataFile.close();
+//        end = std::chrono::system_clock::now();
+//        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+//    }
 
     return 0;
 }

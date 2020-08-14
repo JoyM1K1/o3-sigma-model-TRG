@@ -50,8 +50,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
             Tr += tmp;
         }
         Tr += std::log(M_PI / (2 * K));
-        file << '\t' << std::fixed << std::setprecision(10) << Tr;
-        cout << '\t' << std::fixed << std::setprecision(10) << Tr << std::flush;
+        file << '\t' << std::fixed << std::setprecision(16) << Tr;
+        cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }
     delete[] order;
     file << '\n';
