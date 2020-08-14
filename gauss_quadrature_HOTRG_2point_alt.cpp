@@ -125,8 +125,8 @@ int main() {
     /* inputs */
     MKL_INT N = 40;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 12; // bond dimension
-    double K = 1.9; // inverse temperature
+    MKL_INT D_cut = 64; // bond dimension
+    double K = 1.8; // inverse temperature
     int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
 
     std::chrono::system_clock::time_point start;
@@ -135,25 +135,25 @@ int main() {
     std::ofstream dataFile;
 
     /* calculation */
-//    start = std::chrono::system_clock::now();
-//    fileName = "new_2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-//    dataFile.open(fileName, std::ios::trunc);
-//    Trace(n_data_point, K, D_cut, n_node, N, dataFile);
-//    dataFile.close();
-//    end = std::chrono::system_clock::now();
-//    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+    start = std::chrono::system_clock::now();
+    fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+    dataFile.open(fileName, std::ios::trunc);
+    Trace(n_data_point, K, D_cut, n_node, N, dataFile);
+    dataFile.close();
+    end = std::chrono::system_clock::now();
+    cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
     /* vs D_cut */
-    for (D_cut = 44; D_cut <= 60; D_cut += 8) {
-        start = std::chrono::system_clock::now();
-        cout << "---------- " << D_cut << " ----------\n";
-        fileName = "new_2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
-        dataFile.open(fileName, std::ios::trunc);
-        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
-        dataFile.close();
-        end = std::chrono::system_clock::now();
-        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
-    }
+//    for (D_cut = 44; D_cut <= 60; D_cut += 8) {
+//        start = std::chrono::system_clock::now();
+//        cout << "---------- " << D_cut << " ----------\n";
+//        fileName = "new_2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
+//        dataFile.close();
+//        end = std::chrono::system_clock::now();
+//        cout << "合計計算時間 : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n\n";
+//    }
 
     /* vs n_node */
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
