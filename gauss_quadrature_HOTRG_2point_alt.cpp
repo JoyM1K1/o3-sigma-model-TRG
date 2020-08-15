@@ -135,7 +135,7 @@ int main() {
     /* inputs */
     MKL_INT N = 40;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
+    MKL_INT D_cut = 64; // bond dimension
     double K = 1.8; // inverse temperature
     int n_data_point_start = 8; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
     int n_data_point_end = 14;
