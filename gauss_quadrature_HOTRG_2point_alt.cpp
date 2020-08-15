@@ -9,6 +9,7 @@
 #include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
+#include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
@@ -20,8 +21,9 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
+void Trace(const int n_data_point_start, const int n_data_point_end, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
     time_counter time;
+    const int n_data_point = n_data_point_end - n_data_point_start + 1;
     // index dimension
     MKL_INT D = std::min(D_cut, n_node * n_node);
 
@@ -52,21 +54,25 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             const int times = (n + 1) / 2;
-            if (times <= n_data_point) {
+            if (times < n_data_point_start) {
+                for (Tensor &tensor : originIMT.tensors) {
+                    HOTRG::contractionX(D_cut, tensor, T, U, "left");
+                }
+            } else if (times <= n_data_point_end) {
                 int d = 1;
                 REP(i, times - 1) d *= 2;
-                IMTs[times - 1] = ImpureTensor(d, originIMT);
-                IMTs[times - 1].isMerged = true;
+                IMTs[times - n_data_point_start] = ImpureTensor(d, originIMT);
+                IMTs[times - n_data_point_start].isMerged = true;
                 for (int i = 0; i < 3; ++i) {
-                    HOTRG::contractionX(D_cut, IMTs[times - 1].tensors[i], originIMT.tensors[i], U, "left");
+                    HOTRG::contractionX(D_cut, IMTs[times - n_data_point_start].tensors[i], originIMT.tensors[i], U, "left");
                 }
-                for (int i = 0; i < times - 1; ++i) {
+                for (int i = 0; i < times - n_data_point_start; ++i) {
                     for (auto &tensor : IMTs[i].tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
                 }
                 for (Tensor &tensor : originIMT.tensors) {
                     HOTRG::contractionX(D_cut, tensor, T, U, "left");
                 }
-                if (times == n_data_point) isMerged = true;
+                if (times == n_data_point_end) isMerged = true;
             } else {
                 for (auto &IMT : IMTs) {
                     for (auto &tensor : IMT.tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
@@ -92,7 +98,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         Dx = T.GetDx();
         Dy = T.GetDy();
 
-        if (n <= N / 2) {
+        if (!isMerged) {
             time.end();
             cout << " in " << time.duration_cast_to_string() << '\n';
             continue;
@@ -129,19 +135,22 @@ int main() {
     /* inputs */
     MKL_INT N = 40;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 64; // bond dimension
+    MKL_INT D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
-    int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
+    int n_data_point_start = 8; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
+    int n_data_point_end = 14;
 
     time_counter time;
     string fileName;
     std::ofstream dataFile;
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     time.start();
-    fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+    fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
-    Trace(n_data_point, K, D_cut, n_node, N, dataFile);
+    Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
