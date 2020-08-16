@@ -98,7 +98,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
         Dx = T.GetDx();
         Dy = T.GetDy();
 
-        if (!isMerged) {
+        if (n <= 30) {
             time.end();
             cout << " in " << time.duration_cast_to_string() << '\n';
             continue;
@@ -137,7 +137,7 @@ int main() {
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 64; // bond dimension
     double K = 1.8; // inverse temperature
-    int n_data_point_start = 8; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
+    int n_data_point_start = 1; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
     int n_data_point_end = 14;
 
     time_counter time;
@@ -147,25 +147,25 @@ int main() {
     ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
-    time.start();
-    fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
-    dataFile.open(fileName, std::ios::trunc);
-    Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
-    dataFile.close();
-    time.end();
-    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
+//    time.start();
+//    fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//    dataFile.open(fileName, std::ios::trunc);
+//    Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
+//    dataFile.close();
+//    time.end();
+//    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     /* vs D_cut */
-//    for (D_cut = 44; D_cut <= 60; D_cut += 8) {
-//        time.start();
-//        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
+    for (D_cut = 16; D_cut <= 56; D_cut += 8) {
+        time.start();
+        cout << "---------- " << D_cut << " ----------\n";
+        fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K) + ".txt";
+        dataFile.open(fileName, std::ios::trunc);
+        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
+        dataFile.close();
+        time.end();
+        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+    }
 
     /* vs n_node */
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
