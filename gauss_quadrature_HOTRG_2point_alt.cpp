@@ -156,28 +156,28 @@ int main() {
 //    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     /* vs D_cut */
-    for (D_cut = 16; D_cut <= 56; D_cut += 8) {
+//    for (D_cut = 16; D_cut <= 56; D_cut += 8) {
+//        time.start();
+//        cout << "---------- " << D_cut << " ----------\n";
+//        fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
+//        dataFile.close();
+//        time.end();
+//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+//    }
+
+    /* vs n_node */
+    for (n_node = 48; n_node <= 64; n_node += 16) {
         time.start();
-        cout << "---------- " << D_cut << " ----------\n";
-        fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K) + ".txt";
+        cout << "---------- " << n_node << " ----------\n";
+        fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
         dataFile.close();
         time.end();
         cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
     }
-
-    /* vs n_node */
-//    for (n_node = 8; n_node <= 32; n_node += 8) {
-//        time.start();
-//        cout << "---------- " << n_node << " ----------\n";
-//        fileName = "gauss_quadrature_HOTRG_2point_alt_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
 
     return 0;
 }
