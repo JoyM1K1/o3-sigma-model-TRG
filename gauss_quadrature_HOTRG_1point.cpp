@@ -74,8 +74,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
                 Tr3 += originIMT.tensors[2](i, j, i, j);
             }
         time.end();
-        file << '\t' << std::fixed << std::setprecision(16) << Tr1 / Tr << '\t' << Tr2 / Tr << '\t' << Tr3 / Tr << '\n' << std::flush;
-        cout << '\t' << std::fixed << std::setprecision(16) << Tr1 / Tr << '\t' << Tr2 / Tr << '\t' << Tr3 / Tr << "  in " << time.duration_cast_to_string()
+        file << std::scientific << std::setprecision(16) << Tr1 / Tr << '\t' << Tr2 / Tr << '\t' << Tr3 / Tr << '\n' << std::flush;
+        cout << std::scientific << std::setprecision(16) << Tr1 / Tr << '\t' << Tr2 / Tr << '\t' << Tr3 / Tr << "  in " << time.duration_cast_to_string()
              << '\n' << std::flush;
     }
     delete[] order;
