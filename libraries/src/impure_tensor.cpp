@@ -53,6 +53,52 @@ ImpureTensor &ImpureTensor::operator=(const ImpureTensor &rhs) {
     return *this;
 }
 
+int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT) {
+    double _max = 0;
+    int Dx = T.GetDx();
+    int Dy = T.GetDy();
+    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                    double t = std::abs(T(i, j, k, l));
+                    if (std::isnan(t)) {
+                        std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
+                        exit(1);
+                    }
+                    if (t > 0) {
+                        _max = std::max(_max, t);
+                    }
+                }
+    for (int n = 0; n < 3; ++n) {
+        REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                        double t = std::abs(originIMT.tensors[n](i, j, k, l));
+                        if (std::isnan(t)) {
+                            std::cerr << "originIMT[" << n << "](" << i << ',' << j << ',' << k << ',' << l << ") is nan";
+                            exit(1);
+                        }
+                        if (t > 0) {
+                            _max = std::max(_max, t);
+                        }
+                    }
+    }
+    auto o = static_cast<int>(std::floor(std::log10(_max)));
+    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                    if (o > 0) {
+                        REP(t, std::abs(o)) T(i, j, k, l) /= 10;
+                    } else {
+                        REP(t, std::abs(o)) T(i, j, k, l) *= 10;
+                    }
+                }
+    for (Tensor &tensor : originIMT.tensors) {
+        REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
+                        if (o > 0) {
+                            REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
+                        } else {
+                            REP(t, std::abs(o)) tensor(i, j, k, l) *= 10;
+                        }
+                    }
+    }
+    return o;
+}
+
 int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs) {
 //    double _min = LINF;
     double _max = 0;

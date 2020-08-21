@@ -1,7 +1,3 @@
-//
-// Created by Joy on 2020/06/28.
-//
-
 #ifndef O3_SIGMA_MODEL_IMPURE_TENSOR_HPP
 #define O3_SIGMA_MODEL_IMPURE_TENSOR_HPP
 
@@ -28,6 +24,8 @@ public:
     ~ImpureTensor();
 
     ImpureTensor &operator=(const ImpureTensor &rhs);
+
+    static int normalization(Tensor &T, ImpureTensor &originIMT);
 
     static int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs);
 };
