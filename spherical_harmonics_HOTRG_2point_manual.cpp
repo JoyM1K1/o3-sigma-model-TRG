@@ -207,7 +207,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
                 }
             double res = (Tr1 - Tr2 + Tr3) / Tr;
             IMT.corrs.push_back(res);
-            cout << '\t' << std::fixed << std::setprecision(16) << res << std::flush;
+            cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
         }
         time.end();
         cout << "  in " << time.duration_cast_to_string() << '\n';
@@ -215,7 +215,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     for (ImpureTensor &IMT : IMTs) {
         file << IMT.distance;
         for (double corr : IMT.corrs) {
-            file << '\t' << std::fixed << std::setprecision(16) << corr << std::flush;
+            file << '\t' << std::scientific << std::setprecision(16) << corr << std::flush;
         }
         file << '\n';
     }

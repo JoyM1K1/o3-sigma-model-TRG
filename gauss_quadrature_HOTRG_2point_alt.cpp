@@ -137,7 +137,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
             }
             double res = (impure_Tr[0] + impure_Tr[1] + impure_Tr[2]) / Tr;
             IMT.corrs.push_back(res);
-            cout << '\t' << std::fixed << std::setprecision(16) << res << std::flush;
+            cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
         }
         time.end();
         cout << "  in " << time.duration_cast_to_string() << '\n';
@@ -145,7 +145,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
     for (ImpureTensor &IMT : IMTs) {
         file << IMT.distance;
         for (double corr : IMT.corrs) {
-            file << '\t' << std::fixed << std::setprecision(16) << corr << std::flush;
+            file << '\t' << std::scientific << std::setprecision(16) << corr << std::flush;
         }
         file << '\n';
     }
