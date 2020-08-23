@@ -14,9 +14,9 @@ using std::cerr;
 
 void HOTRG::SVD_X(const int &D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
-    Tensor MM(Dx);
-    Tensor A(Dx, Dy);
-    Tensor B(Dx, Dy);
+    Tensor MM(Dx, 1);
+    Tensor A(Dx, Dy, Dx, Dy, 1);
+    Tensor B(Dx, Dy, Dx, Dy, 1);
     auto tmp1 = new double[Dx * Dx * Dy * Dy];
     auto tmp2 = new double[Dx * Dx * Dy * Dy];
     /* compute Right Unitary matrix */
@@ -112,9 +112,9 @@ void HOTRG::SVD_X(const int &D_cut, Tensor &T, double *U) {
 
 void HOTRG::SVD_Y(const int &D_cut, Tensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
-    Tensor MM(Dy);
-    Tensor A(Dx, Dy);
-    Tensor B(Dx, Dy);
+    Tensor MM(Dy, 1);
+    Tensor A(Dx, Dy, Dx, Dy, 1);
+    Tensor B(Dx, Dy, Dx, Dy, 1);
     auto tmp1 = new double[Dx * Dx * Dy * Dy];
     auto tmp2 = new double[Dx * Dx * Dy * Dy];
     /* compute Up Unitary matrix */

@@ -6,7 +6,7 @@
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-#define LINF 1e300
+//#define LINF 1e300
 
 ImpureTensor::ImpureTensor() {
     tensors[0] = Tensor();
@@ -14,16 +14,28 @@ ImpureTensor::ImpureTensor() {
     tensors[2] = Tensor();
 }
 
-ImpureTensor::ImpureTensor(int D) {
-    tensors[0] = Tensor(D);
-    tensors[1] = Tensor(D);
-    tensors[2] = Tensor(D);
+ImpureTensor::ImpureTensor(int D, int N) {
+    tensors[0] = Tensor(D, N);
+    tensors[1] = Tensor(D, N);
+    tensors[2] = Tensor(D, N);
 }
 
-ImpureTensor::ImpureTensor(int Dx, int Dy, int Dx_max, int Dy_max) {
-    tensors[0] = Tensor(Dx, Dy, Dx_max, Dy_max);
-    tensors[1] = Tensor(Dx, Dy, Dx_max, Dy_max);
-    tensors[2] = Tensor(Dx, Dy, Dx_max, Dy_max);
+ImpureTensor::ImpureTensor(int D, int D_max, int N) {
+    tensors[0] = Tensor(D, D_max, N);
+    tensors[1] = Tensor(D, D_max, N);
+    tensors[2] = Tensor(D, D_max, N);
+}
+
+ImpureTensor::ImpureTensor(int Di, int Dj, int Dk, int Dl, int N) {
+    tensors[0] = Tensor(Di, Dj, Dk, Dl, N);
+    tensors[1] = Tensor(Di, Dj, Dk, Dl, N);
+    tensors[2] = Tensor(Di, Dj, Dk, Dl, N);
+}
+
+ImpureTensor::ImpureTensor(int Di, int Dj, int Dk, int Dl, int D_max, int N) {
+    tensors[0] = Tensor(Di, Dj, Dk, Dl, D_max, N);
+    tensors[1] = Tensor(Di, Dj, Dk, Dl, D_max, N);
+    tensors[2] = Tensor(Di, Dj, Dk, Dl, D_max, N);
 }
 
 ImpureTensor::ImpureTensor(int d, ImpureTensor &T) {

@@ -9,6 +9,7 @@
 #include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
+#include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
@@ -28,15 +29,14 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D, D, D_cut, D_cut);
-    ImpureTensor originIMT(D, D, D_cut, D_cut);
+    Tensor T(D, D_cut, N);
+    ImpureTensor originIMT(D, D_cut, N);
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
     std::vector<ImpureTensor> IMTs(n_data_point);
 
-    auto order = new int[N];
     MKL_INT Dx = D, Dy = D;
 
     bool isMerged = false;
@@ -45,7 +45,15 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        order[n - 1] = ImpureTensor::normalization(T, originIMT, IMTs);
+        T.normalization(n - 1);
+        for (ImpureTensor & IMT : IMTs) {
+            if (IMT.isMerged) {
+                for (Tensor & tensor : IMT.tensors) tensor.normalization(n - 1);
+            }
+        }
+        if (!isMerged) {
+            for (Tensor & tensor : originIMT.tensors) tensor.normalization(n - 1);
+        }
 
         if (n <= N / 2) { // compress along x-axis
             cout << " compress along x-axis " << std::flush;
@@ -117,7 +125,6 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         }
         file << '\n';
     }
-    delete[] order;
 }
 
 int main() {
@@ -128,13 +135,16 @@ int main() {
     double K = 1.9; // inverse temperature
     int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
 
+    const string dir = "gauss_quadrature_HOTRG_2point";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     time.start();
-    fileName = "gauss_quadrature_HOTRG_2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(n_data_point, K, D_cut, n_node, N, dataFile);
     dataFile.close();
@@ -145,7 +155,7 @@ int main() {
 //    for (D_cut = 44; D_cut <= 60; D_cut += 8) {
 //        time.start();
 //        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = "gauss_quadrature_HOTRG_2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
 //        dataFile.close();
@@ -157,7 +167,7 @@ int main() {
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
 //        time.start();
 //        cout << "---------- " << n_node << " ----------\n";
-//        fileName = "gauss_quadrature_HOTRG_2point_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
 //        dataFile.close();

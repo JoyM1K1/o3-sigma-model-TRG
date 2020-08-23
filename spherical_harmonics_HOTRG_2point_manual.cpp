@@ -10,6 +10,7 @@
 #include <tensor.hpp>
 #include <impure_tensor.hpp>
 #include <time_counter.hpp>
+#include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -105,8 +106,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D_cut);
-    ImpureTensor originIMT(D_cut);
+    Tensor T(D_cut, N);
+    ImpureTensor originIMT(D_cut, N);
     SphericalHarmonics::initTensorWithImpure(K, l_max, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
@@ -229,15 +230,18 @@ int main() {
     double K = 1.9; // inverse temperature
     std::vector<int> d = {8};
 
+    const string dir = "spherical_harmonics_HOTRG_2point_manual";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     for (l_max = 1; l_max <= 4; ++l_max) {
         time.start();
         cout << "---------- " << l_max << " ----------\n";
-        fileName = "spherical_harmonics_HOTRG_2point_manual_l" + std::to_string(l_max) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+        fileName = dir + "_l" + std::to_string(l_max) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         D_cut = (l_max + 1) * (l_max + 1);
         Trace(K, D_cut, l_max, N, d, dataFile);

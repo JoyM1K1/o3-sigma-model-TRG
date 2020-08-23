@@ -9,6 +9,7 @@
 #include <impure_tensor.hpp>
 #include <spherical_harmonics.hpp>
 #include <time_counter.hpp>
+#include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -25,25 +26,31 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D_cut);
-    ImpureTensor originIMT(D_cut);
+    Tensor T(D_cut, N);
+    ImpureTensor originIMT(D_cut, N);
     SphericalHarmonics::initTensorWithImpure(K, l_max, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
     std::vector<ImpureTensor> IMTs(n_data_point);
 
-    auto order = new int[N];
     MKL_INT Dx = D_cut, Dy = D_cut;
 
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
         time.start();
-
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        order[n - 1] = ImpureTensor::normalization(T, originIMT, IMTs);
+        T.normalization(n - 1);
+        for (ImpureTensor & IMT : IMTs) {
+            if (IMT.isMerged) {
+                for (Tensor & tensor : IMT.tensors) tensor.normalization(n - 1);
+            }
+        }
+        if (!isMerged) {
+            for (Tensor & tensor : originIMT.tensors) tensor.normalization(n - 1);
+        }
 
         if (n % 2) { // compress along x-axis
             cout << " compress along x-axis " << std::flush;
@@ -97,21 +104,29 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         }
 
         double Tr = 0;
-        REP(i, Dx) {
-            REP(j, Dy) {
-                Tr += T(i, j, i, j);
-            }
-        }
+        REP(i, Dx)REP(j, Dy) Tr += T(i, j, i, j);
 
         for (ImpureTensor &IMT : IMTs) {
-            double Tr1 = 0, Tr2 = 0, Tr3 = 0;
-            REP(i, Dx)
-                REP(j, Dy) {
-                    Tr1 += IMT.tensors[0](i, j, i, j);
-                    Tr2 += IMT.tensors[1](i, j, i, j);
-                    Tr3 += IMT.tensors[2](i, j, i, j);
+            double impure_Tr[3];
+            REP(k, 3) {
+                impure_Tr[k] = 0;
+                int order = 0;
+                REP(i, Dx)REP(j, Dy) {
+                        impure_Tr[k] += IMT.tensors[k](i, j, i, j);
+                    }
+                REP(i, n) {
+                    int m = IMT.tensors[k].GetOrder()[i] - T.GetOrder()[i];
+                    if (i < IMT.mergeIndex) m *= 2;
+                    order += m;
                 }
-            double res = (Tr1 - Tr2 + Tr3) / Tr;
+                const int times = std::abs(order);
+                if (order > 0) {
+                    REP(i, times) impure_Tr[k] *= 10;
+                } else {
+                    REP(i, times) impure_Tr[k] /= 10;
+                }
+            }
+            double res = (impure_Tr[0] - impure_Tr[1] + impure_Tr[2]) / Tr;
             IMT.corrs.push_back(res);
             cout << '\t' << std::fixed << std::setprecision(16) << res << std::flush;
         }
@@ -125,7 +140,6 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         }
         file << '\n';
     }
-    delete[] order;
 }
 
 int main() {
@@ -136,15 +150,18 @@ int main() {
     double K = 1.9; // inverse temperature
     const int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, ...
 
+    const string dir = "spherical_harmonics_HOTRG_2point_alt";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     for (l_max = 4; l_max <= 6; ++l_max) {
         time.start();
         cout << "---------- " << l_max << " ----------\n" << std::flush;
-        fileName = "spherical_harmonics_HOTRG_2point_alt_l" + std::to_string(l_max) + "_N" + std::to_string(N) + "_beta" + std::to_string(K * 10) + ".txt";
+        fileName = dir + "_l" + std::to_string(l_max) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         D_cut = (l_max + 1) * (l_max + 1);
         Trace(n_data_point, K, D_cut, l_max, N, dataFile);

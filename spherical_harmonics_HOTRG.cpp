@@ -26,17 +26,16 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
     // initialize tensor network : max index size is D_cut
     cout << "initialize tensor " << std::flush;
     time.start();
-    Tensor T(D_cut);
+    Tensor T(D_cut, N);
     SphericalHarmonics::initTensor(K, l_max, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
 
-    auto order = new int[N];
     int Dx = D_cut, Dy = D_cut;
     time.start();
 
     for (int n = 1; n <= N; ++n) {
-        order[n - 1] = Tensor::normalization(T);
+        T.normalization(n - 1);
 
         if (n % 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
@@ -62,7 +61,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
         Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
         REP(i, n) {
-            double tmp = order[i] * std::log(10);
+            double tmp = T.GetOrder()[i] * std::log(10);
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
@@ -70,7 +69,6 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }
-    delete[] order;
     file << '\n';
     time.end();
     cout << "  in " << time.duration_cast_to_string() << '\n';
@@ -86,6 +84,7 @@ int main() {
     double K_end = 4.01;
     double K; // inverse temperature
 
+    const string dir = "spherical_harmonics_HOTRG";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
@@ -94,7 +93,7 @@ int main() {
     for (l_max = 4; l_max <= 5; ++l_max) {
         time.start();
         cout << "---------- " << l_max << " ----------\n" << std::flush;
-        fileName = "spherical_harmonics_HOTRG_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
+        fileName = dir + "_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
         dataFile.open(fileName, std::ios::trunc);
         D_cut = (l_max + 1) * (l_max + 1);
         K = K_start;

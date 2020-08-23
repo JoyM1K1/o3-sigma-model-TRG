@@ -14,7 +14,7 @@ using std::string;
 void TRG::solver(const int &D_cut, Tensor &T) {
     const int D = T.GetDx(); // same as T.GetDy()
     const int D_new = std::min(D * D, D_cut);
-    auto M = new Tensor(D);
+    auto M = new Tensor(D, 1);
     REP4(i, j, k, l, D) (*M)(i, j, k, l) = T(i, j, k, l); // M(ij)(kl)
     auto sigma = new double[D * D];
     auto U = new double[D * D * D * D], VT = new double[D * D * D * D];

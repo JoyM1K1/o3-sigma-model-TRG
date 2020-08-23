@@ -29,21 +29,23 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D, D, D_cut, D_cut);
-    ImpureTensor originIMT(D, D, D_cut, D_cut);
+    Tensor T(D, D_cut, N);
+    ImpureTensor originIMT(D, D_cut, N);
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
 
-    auto order = new int[N];
     MKL_INT Dx = D, Dy = D;
 
     for (int n = 1; n <= N; ++n) {
         time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        order[n - 1] = ImpureTensor::normalization(T, originIMT);
+        T.normalization(n - 1);
+        for (Tensor &tensor : originIMT.tensors) {
+            tensor.normalization(n - 1);
+        }
 
         if (n % 2) { // compress along x-axis
             cout << " compress along x-axis " << std::flush;
@@ -67,25 +69,33 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         double Tr = 0;
         REP(i, Dx)REP(j, Dy) Tr += T(i, j, i, j);
 
-        double Tr1 = 0, Tr2 = 0, Tr3 = 0;
-        REP(i, Dx)REP(j, Dy) {
-                Tr1 += originIMT.tensors[0](i, j, i, j);
-                Tr2 += originIMT.tensors[1](i, j, i, j);
-                Tr3 += originIMT.tensors[2](i, j, i, j);
+        double impure_Tr[3];
+        REP(k, 3) {
+            impure_Tr[k] = 0;
+            int order = 0;
+            REP(i, Dx)REP(j, Dy) {
+                    impure_Tr[k] += originIMT.tensors[k](i, j, i, j);
+                }
+            REP(i, n) order += originIMT.tensors[k].GetOrder()[i] - T.GetOrder()[i];
+            const int times = std::abs(order);
+            if (order > 0) {
+                REP(i, times) impure_Tr[k] *= 10;
+            } else {
+                REP(i, times) impure_Tr[k] /= 10;
             }
+        }
         time.end();
-        file << std::scientific << std::setprecision(16) << Tr1 / Tr << '\t' << Tr2 / Tr << '\t' << Tr3 / Tr << '\n' << std::flush;
-        cout << std::scientific << std::setprecision(16) << Tr1 / Tr << '\t' << Tr2 / Tr << '\t' << Tr3 / Tr << "  in " << time.duration_cast_to_string()
-             << '\n' << std::flush;
+        file << std::scientific << std::setprecision(16) << impure_Tr[0] / Tr << '\t' << impure_Tr[1] / Tr << '\t' << impure_Tr[2] / Tr << '\n' << std::flush;
+        cout << std::scientific << std::setprecision(16) << impure_Tr[0] / Tr << '\t' << impure_Tr[1] / Tr << '\t' << impure_Tr[2] / Tr
+             << "  in " << time.duration_cast_to_string() << '\n' << std::flush;
     }
-    delete[] order;
 }
 
 int main() {
     /* inputs */
     MKL_INT N = 40;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 64; // bond dimension
+    MKL_INT D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
 
     const string dir = "gauss_quadrature_HOTRG_1point";

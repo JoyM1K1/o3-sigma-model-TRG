@@ -30,18 +30,16 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D, D, D_cut, D_cut);
+    Tensor T(D, D_cut, N);
     GaussQuadrature::initTensor(K, n_node, D_cut, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
 
-    auto order = new int[N];
     MKL_INT Dx = D, Dy = D;
     time.start();
 
     for (int n = 1; n <= N; ++n) {
-        time.start();
-        order[n - 1] = Tensor::normalization(T);
+        T.normalization(n - 1);
 
         if (n % 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
@@ -67,7 +65,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
         REP(i, n) {
-            double tmp = order[i] * std::log(10);
+            double tmp = T.GetOrder()[i] * std::log(10);
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
@@ -75,7 +73,6 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }
-    delete[] order;
     file << '\n';
     time.end();
     cout << "  in " << time.duration_cast_to_string() << '\n';
@@ -85,19 +82,19 @@ int main() {
     /* inputs */
     MKL_INT N = 20;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 64; // bond dimension
-
-    double K_start = 1.9;
+    MKL_INT D_cut = 16; // bond dimension
+    double K_start = 0.1;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
 
+    const string dir = "gauss_quadrature_HOTRG";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    fileName = "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     while (K <= K_end) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
@@ -113,13 +110,12 @@ int main() {
 //    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
 //        K = K_start;
 //        time.start();
-//        fileName =
-//                "gauss_quadrature_HOTRG_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        while (K <= K_end) {
 //            cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
 //            dataFile << std::fixed << std::setprecision(1) << K;
-//            Trace(K, D_cut, n_node, N/*, dataFile*/);
+//            Trace(K, D_cut, n_node, N, dataFile);
 //            K += MESH;
 //        }
 //        dataFile.close();

@@ -30,9 +30,9 @@ void GaussQuadrature::initTensor(const double &K, const int &n_node, const int &
         w[i] = 2 * (1 - x[i] * x[i]) / (n_node * n_node * p[i] * p[i]);
     }
 
-    std::function<double(double, double, double, double)> f = [=](double theta1, double phi1, double theta2, double phi2) {
-        std::function<double(double)> s = [=](double theta) { return std::sin(M_PI * theta / 2); };
-        std::function<double(double)> c = [=](double theta) { return std::cos(M_PI * theta / 2); };
+    std::function<double(double, double, double, double)> f = [&](double theta1, double phi1, double theta2, double phi2) {
+        std::function<double(double)> s = [&](double theta) { return std::sin(M_PI * theta / 2); };
+        std::function<double(double)> c = [&](double theta) { return std::cos(M_PI * theta / 2); };
         return std::exp(K * (s(theta1) * s(theta2) + c(theta1) * c(theta2) * std::cos(M_PI * (phi1 - phi2))));
     };
     auto M = new double[n_node * n_node * n_node * n_node];
