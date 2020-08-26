@@ -8,10 +8,10 @@
 #include <legendre_zero_point.hpp>
 #include <gsl/gsl_specfunc.h>
 
-#define N 32
+#define N 100
 
 int main() {
-    std::cout << std::setprecision(10);
+    std::cout << std::setprecision(16);
     std::vector<double> v = math::solver::legendre_zero_point(N);
     for (int i = 0; i < N; ++i) {
         std::cout << v[i] << ' ';
