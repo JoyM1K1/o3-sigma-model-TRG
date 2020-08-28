@@ -155,7 +155,7 @@ int main() {
     /* inputs */
     MKL_INT N = 40;     // volume : 2^N
     MKL_INT n_node = 64;  // n_node
-    MKL_INT D_cut = 72; // bond dimension
+    MKL_INT D_cut = 24; // bond dimension
     double K = 1.8; // inverse temperature
     int n_data_point_start = 1; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
     int n_data_point_end = 14;
@@ -168,25 +168,25 @@ int main() {
     ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
-    time.start();
-    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
-    dataFile.open(fileName, std::ios::trunc);
-    Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
-    dataFile.close();
-    time.end();
-    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
+//    time.start();
+//    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//    dataFile.open(fileName, std::ios::trunc);
+//    Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
+//    dataFile.close();
+//    time.end();
+//    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     /* vs D_cut */
-//    for (D_cut = 16; D_cut <= 56; D_cut += 8) {
-//        time.start();
-//        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
+    for (D_cut = 56; D_cut <= 64; D_cut += 8) {
+        time.start();
+        cout << "---------- " << D_cut << " ----------\n";
+        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+        dataFile.open(fileName, std::ios::trunc);
+        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
+        dataFile.close();
+        time.end();
+        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+    }
 
     /* vs n_node */
 //    for (n_node = 48; n_node <= 64; n_node += 16) {
