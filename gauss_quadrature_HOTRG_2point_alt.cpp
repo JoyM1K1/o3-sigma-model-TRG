@@ -160,6 +160,8 @@ int main() {
     int n_data_point_start = 1; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
     int n_data_point_end = 14;
 
+    cin >> N >> n_node >> D_cut >> K >> n_data_point_start >> n_data_point_end;
+
     const string dir = "gauss_quadrature_HOTRG_2point_alt";
     time_counter time;
     string fileName;
