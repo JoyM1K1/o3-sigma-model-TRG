@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     N = std::stoi(argv[1]);
     n_node = std::stoi(argv[2]);
     D_cut = std::stoi(argv[3]);
-    K = std::stoi(argv[4]);
+    K = std::stod(argv[4]);
     n_data_point_start = std::stoi(argv[5]);
     n_data_point_end = std::stoi(argv[6]);
 
