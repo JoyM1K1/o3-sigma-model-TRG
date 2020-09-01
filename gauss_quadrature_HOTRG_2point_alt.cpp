@@ -176,6 +176,7 @@ int main(int argc, char *argv[]) {
 
     /* calculation */
     time.start();
+    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K << ", " << n_data_point_start << '-' << n_data_point_end << '\n';
     fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
