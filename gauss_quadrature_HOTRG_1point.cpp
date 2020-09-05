@@ -91,12 +91,17 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* inputs */
     MKL_INT N = 40;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
+
+    N = std::stoi(argv[1]);
+    n_node = std::stoi(argv[2]);
+    D_cut = std::stoi(argv[3]);
+    K = std::stod(argv[4]);
 
     const string dir = "gauss_quadrature_HOTRG_1point";
     time_counter time;
