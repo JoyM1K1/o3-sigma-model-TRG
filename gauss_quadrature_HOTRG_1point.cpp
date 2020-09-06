@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
     /* calculation */
     time.start();
-    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+    fileName = dir + "_N" + std::to_string(N) +  "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(K, D_cut, n_node, N, dataFile);
     dataFile.close();
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 //    for (D_cut = 16; D_cut <= 56; D_cut += 8) {
 //        time.start();
 //        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(K, D_cut, n_node, N, dataFile);
 //        dataFile.close();
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 //    for (n_node = 48; n_node <= 64; n_node += 16) {
 //        time.start();
 //        cout << "---------- " << n_node << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(K, D_cut, n_node, N, dataFile);
 //        dataFile.close();
