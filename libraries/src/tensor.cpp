@@ -178,15 +178,15 @@ double &Tensor::operator()(int i, int j, int k, int l) {
     return M[Dj * Dk * Dl * i + Dk * Dl * j + Dl * k + l];
 }
 
-void Tensor::forEach(const std::function<void(double)> &f) {
+void Tensor::forEach(const std::function<void(double*)> &f) {
     REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
-                    f((*this)(i, j, k, l));
+                    f(&(*this)(i, j, k, l));
                 }
 }
 
-void Tensor::forEach(const std::function<void(int, int, int, int, double)> &f) {
+void Tensor::forEach(const std::function<void(int, int, int, int, double*)> &f) {
     REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
-                    f(i, j, k, l, (*this)(i, j, k, l));
+                    f(i, j, k, l, &(*this)(i, j, k, l));
                 }
 }
 

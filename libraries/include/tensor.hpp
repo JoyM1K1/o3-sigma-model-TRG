@@ -50,9 +50,9 @@ public:
 
     double &operator()(int i, int j, int k, int l);
 
-    void forEach(const std::function<void(double)> &f);
+    void forEach(const std::function<void(double*)> &f);
 
-    void forEach(const std::function<void(int, int, int, int, double)> &f);
+    void forEach(const std::function<void(int, int, int, int, double*)> &f);
 
     void normalization(int n);
 };
