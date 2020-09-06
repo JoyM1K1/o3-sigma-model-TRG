@@ -53,6 +53,9 @@ if (APPLE)
     add_executable(spherical_harmonics_HOTRG_2point_manual spherical_harmonics_HOTRG_2point_manual.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_2point_manual mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor impure_tensor time_counter)
 
+    add_executable(test test.cpp)
+    target_link_libraries(test mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor impure_tensor time_counter)
+
     add_executable(gauss_legendre_test gauss_legendre_test.cpp)
     target_link_libraries(gauss_legendre_test legendre_zero_point)
 else ()
