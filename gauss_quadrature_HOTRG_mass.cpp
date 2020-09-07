@@ -119,6 +119,9 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
                 }
             }
             HOTRG::contractionY(D_cut, T, T, U, "bottom");
+            T.forEach([&](double *t) {
+               *t *= 2;
+            });
             delete[] U;
         }
 
@@ -172,19 +175,19 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 20;     // volume : 2^N
+    MKL_INT N = 16;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
     int n_data_point_start = 1; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
-    int n_data_point_end = 10;
+    int n_data_point_end = 8;
 
-    N = std::stoi(argv[1]);
-    n_node = std::stoi(argv[2]);
-    D_cut = std::stoi(argv[3]);
-    K = std::stod(argv[4]);
-    n_data_point_start = std::stoi(argv[5]);
-    n_data_point_end = std::stoi(argv[6]);
+//    N = std::stoi(argv[1]);
+//    n_node = std::stoi(argv[2]);
+//    D_cut = std::stoi(argv[3]);
+//    K = std::stod(argv[4]);
+//    n_data_point_start = std::stoi(argv[5]);
+//    n_data_point_end = std::stoi(argv[6]);
 
     const string dir = "gauss_quadrature_HOTRG_mass";
     time_counter time;
