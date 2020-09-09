@@ -120,7 +120,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
             }
             HOTRG::contractionY(D_cut, T, T, U, "bottom");
             T.forEach([&](double *t) {
-               *t *= 2;
+               *t *= 4;
             });
             delete[] U;
         }
@@ -175,12 +175,12 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 16;     // volume : 2^N
+    MKL_INT N = 14;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
     int n_data_point_start = 1; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
-    int n_data_point_end = 8;
+    int n_data_point_end = 7;
 
     N = std::stoi(argv[1]);
     n_node = std::stoi(argv[2]);
