@@ -57,11 +57,11 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
             for (Tensor & tensor : originIMT.tensors) tensor.normalization(n - 1);
         }
 
-        if (n % 2) { // compress along x-axis
+        if (n > N / 2) { // compress along x-axis
             cout << " compress along x-axis " << std::flush;
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
-            const int times = (n + 1) / 2;
+            const int times = n - N / 2;
             if (times < n_data_point_start) {
                 for (Tensor & tensor : originIMT.tensors) {
                     HOTRG::contractionX(D_cut, tensor, T, U, "left");
@@ -119,9 +119,6 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
                 }
             }
             HOTRG::contractionY(D_cut, T, T, U, "bottom");
-            T.forEach([&](double *t) {
-               *t *= 4;
-            });
             delete[] U;
         }
 
@@ -199,7 +196,7 @@ int main(int argc, char *argv[]) {
     /* calculation */
     time.start();
     cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K << ", " << n_data_point_start << '-' << n_data_point_end << '\n';
-    fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + ".txt";
+    fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "alpha.txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
     dataFile.close();
