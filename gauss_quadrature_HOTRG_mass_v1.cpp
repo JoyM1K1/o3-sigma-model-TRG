@@ -163,11 +163,11 @@ int main(int argc, char *argv[]) {
     double K = 1.8; // inverse temperature
     int merge_t_point = 7; // d = 2^(merge_t_point - 1)
 
-//    N = std::stoi(argv[1]);
-//    n_node = std::stoi(argv[2]);
-//    D_cut = std::stoi(argv[3]);
-//    K = std::stod(argv[4]);
-//    merge_t_point = std::stoi(argv[5]);
+    N = std::stoi(argv[1]);
+    n_node = std::stoi(argv[2]);
+    D_cut = std::stoi(argv[3]);
+    K = std::stod(argv[4]);
+    merge_t_point = std::stoi(argv[5]);
 
     const string dir = "gauss_quadrature_HOTRG_mass_v1";
     time_counter time;
