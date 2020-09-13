@@ -35,8 +35,14 @@ if (APPLE)
     add_executable(gauss_quadrature_HOTRG_mass gauss_quadrature_HOTRG_mass.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_mass mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
+    add_executable(gauss_quadrature_HOTRG_mass_alt gauss_quadrature_HOTRG_mass_alt.cpp)
+    target_link_libraries(gauss_quadrature_HOTRG_mass_alt mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
+
     add_executable(gauss_quadrature_HOTRG_mass_manual gauss_quadrature_HOTRG_mass_manual.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_mass_manual mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
+
+    add_executable(gauss_quadrature_HOTRG_mass_v1 gauss_quadrature_HOTRG_mass_v1.cpp)
+    target_link_libraries(gauss_quadrature_HOTRG_mass_v1 mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics TRG tensor time_counter)
@@ -83,8 +89,14 @@ else ()
     add_executable(gauss_quadrature_HOTRG_mass gauss_quadrature_HOTRG_mass.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_mass gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
+    add_executable(gauss_quadrature_HOTRG_mass_alt gauss_quadrature_HOTRG_mass_alt.cpp)
+    target_link_libraries(gauss_quadrature_HOTRG_mass_alt gauss_quadrature HOTRG tensor impure_tensor time_counter)
+
     add_executable(gauss_quadrature_HOTRG_mass_manual gauss_quadrature_HOTRG_mass_manual.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_mass_manual gauss_quadrature HOTRG tensor impure_tensor time_counter)
+
+    add_executable(gauss_quadrature_HOTRG_mass_v1 gauss_quadrature_HOTRG_mass_v1.cpp)
+    target_link_libraries(gauss_quadrature_HOTRG_mass_v1 gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG spherical_harmonics TRG tensor time_counter)
