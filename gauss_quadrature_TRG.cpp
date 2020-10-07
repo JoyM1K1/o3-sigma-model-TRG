@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 
     /* calculation */
     time.start();
-    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+    fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     while (K <= K_end) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
