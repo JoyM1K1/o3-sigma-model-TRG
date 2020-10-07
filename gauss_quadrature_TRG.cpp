@@ -60,11 +60,15 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 10;     // volume : 2^N
-    MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
+    int N = 20;     // volume : 2^N
+    int n_node = 32;  // n_node
+    int D_cut = 16; // bond dimension
+
+    N = std::stoi(argv[1]);
+    n_node = std::stoi(argv[2]);
+    D_cut = std::stoi(argv[3]);
 
     double K_start = 0.1;
     double K_end = 4.01;
