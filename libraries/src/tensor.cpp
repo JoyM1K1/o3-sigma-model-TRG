@@ -9,160 +9,137 @@
 
 //#define LINF 1e300
 
-Tensor::Tensor() {
+BaseTensor::BaseTensor() {
     Di = 0;
     Dj = 0;
     Dk = 0;
     Dl = 0;
     D_max = 0;
-    N = 0;
     M = new double[1];
-    order = new int[1];
 }
 
-Tensor::Tensor(int D, int N) {
-    assert(N > 0);
+BaseTensor::BaseTensor(int D) {
     this->Di = D;
     this->Dj = D;
     this->Dk = D;
     this->Dl = D;
     this->D_max = D;
-    this->N = N;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
-    order = new int[N];
-    for (int i = 0; i < N; ++i) order[i] = 0;
 }
 
-Tensor::Tensor(int D, int D_max, int N) {
-    assert(N > 0);
+BaseTensor::BaseTensor(int D, int D_max) {
     this->Di = D;
     this->Dj = D;
     this->Dk = D;
     this->Dl = D;
     this->D_max = D_max;
-    this->N = N;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
-    order = new int[N];
-    for (int i = 0; i < N; ++i) order[i] = 0;
 }
 
-Tensor::Tensor(int Di, int Dj, int Dk, int Dl, int N) {
-    assert(N > 0);
+BaseTensor::BaseTensor(int Di, int Dj, int Dk, int Dl) {
     this->Di = Di;
     this->Dj = Dj;
     this->Dk = Dk;
     this->Dl = Dl;
     this->D_max = std::max(Di, std::max(Dj, std::max(Dk, Dl)));
-    this->N = N;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
-    order = new int[N];
-    for (int i = 0; i < N; ++i) order[i] = 0;
 }
 
-Tensor::Tensor(int Di, int Dj, int Dk, int Dl, int D_max, int N) {
-    assert(N > 0);
+BaseTensor::BaseTensor(int Di, int Dj, int Dk, int Dl, int D_max) {
     this->Di = Di;
     this->Dj = Dj;
     this->Dk = Dk;
     this->Dl = Dl;
     this->D_max = D_max;
-    this->N = N;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
-    order = new int[N];
-    for (int i = 0; i < N; ++i) order[i] = 0;
 }
 
-Tensor::Tensor(Tensor &rhs) {
+BaseTensor::BaseTensor(BaseTensor &rhs) {
     this->Di = rhs.Di;
     this->Dj = rhs.Dj;
     this->Dk = rhs.Dk;
     this->Dl = rhs.Dl;
     this->D_max = rhs.D_max;
-    this->N = rhs.N;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
-    order = new int[rhs.N];
-    for (int i = 0; i < this->N; ++i) order[i] = rhs.order[i];
 }
 
-Tensor::~Tensor() {
+BaseTensor::~BaseTensor() {
     Di = 0;
     Dj = 0;
     Dk = 0;
     Dl = 0;
     D_max = 0;
-    N = 0;
     delete[] M;
     M = nullptr;
-    delete[] order;
-    order = nullptr;
 }
 
-int Tensor::GetDx() const {
+int BaseTensor::GetDx() const {
     return Di; // same as Dk
 }
 
-int Tensor::GetDy() const {
+int BaseTensor::GetDy() const {
     return Dj; // same as Dl
 }
 
-int Tensor::GetDi() const {
+int BaseTensor::GetDi() const {
     return Di;
 }
 
-int Tensor::GetDj() const {
+int BaseTensor::GetDj() const {
     return Dj;
 }
 
-int Tensor::GetDk() const {
+int BaseTensor::GetDk() const {
     return Dk;
 }
 
-int Tensor::GetDl() const {
+int BaseTensor::GetDl() const {
     return Dl;
 }
 
-double *Tensor::GetMatrix() const {
+double *BaseTensor::GetMatrix() const {
     return M;
 }
 
-int *Tensor::GetOrder() const {
-    return order;
-}
+//int *BaseTensor::GetOrder() const {
+//    return orders;
+//}
 
-void Tensor::UpdateDx(int Dx) {
+void BaseTensor::UpdateDx(int Dx) {
     assert(Dx <= D_max);
     this->Di = Dx;
     this->Dk = Dx;
 }
 
-void Tensor::UpdateDy(int Dy) {
+void BaseTensor::UpdateDy(int Dy) {
     assert(Dy <= D_max);
     this->Dj = Dy;
     this->Dl = Dy;
 }
 
-Tensor &Tensor::operator=(const Tensor &rhs) {
+BaseTensor &BaseTensor::operator=(const BaseTensor &rhs) {
     this->Di = rhs.Di;
     this->Dj = rhs.Dj;
     this->Dk = rhs.Dk;
     this->Dl = rhs.Dl;
     this->D_max = rhs.D_max;
-    this->N = rhs.N;
     delete[] M;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
-    delete[] order;
-    order = new int[rhs.N];
-    for (int i = 0; i < rhs.N; ++i) order[i] = rhs.order[i];
+//    orders.clear();
+//    for (auto o : rhs.orders) {
+//        orders.push_back(o);
+//    }
+    order = rhs.order;
     return *this;
 }
 
-const double &Tensor::operator()(int i, int j, int k, int l) const {
+const double &BaseTensor::operator()(int i, int j, int k, int l) const {
     assert(0 <= i && i <= Di);
     assert(0 <= j && j <= Dj);
     assert(0 <= k && k <= Dk);
@@ -170,7 +147,7 @@ const double &Tensor::operator()(int i, int j, int k, int l) const {
     return M[Dj * Dk * Dl * i + Dk * Dl * j + Dl * k + l];
 }
 
-double &Tensor::operator()(int i, int j, int k, int l) {
+double &BaseTensor::operator()(int i, int j, int k, int l) {
     assert(0 <= i && i <= Di);
     assert(0 <= j && j <= Dj);
     assert(0 <= k && k <= Dk);
@@ -178,19 +155,19 @@ double &Tensor::operator()(int i, int j, int k, int l) {
     return M[Dj * Dk * Dl * i + Dk * Dl * j + Dl * k + l];
 }
 
-void Tensor::forEach(const std::function<void(double*)> &f) {
+void BaseTensor::forEach(const std::function<void(double *)> &f) {
     REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
                     f(&(*this)(i, j, k, l));
                 }
 }
 
-void Tensor::forEach(const std::function<void(int, int, int, int, double*)> &f) {
+void BaseTensor::forEach(const std::function<void(int, int, int, int, double *)> &f) {
     REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
                     f(i, j, k, l, &(*this)(i, j, k, l));
                 }
 }
 
-void Tensor::normalization(int n) {
+void BaseTensor::normalization(int c) {
 //    double _min = LINF;
     double _max = 0;
     REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
@@ -205,13 +182,13 @@ void Tensor::normalization(int n) {
                     }
                 }
 //    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
-    auto o = static_cast<int>(std::floor(std::log10(_max)));
+    auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
     REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
                     if (o > 0) {
-                        REP(t, std::abs(o)) (*this)(i, j, k, l) /= 10;
+                        REP(t, std::abs(o)) (*this)(i, j, k, l) /= c;
                     } else {
-                        REP(t, std::abs(o)) (*this)(i, j, k, l) *= 10;
+                        REP(t, std::abs(o)) (*this)(i, j, k, l) *= c;
                     }
                 }
-    order[n] = o;
+    order += o;
 }

@@ -6,8 +6,6 @@
 #include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
-#include <tensor.hpp>
-#include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 #include <cmath>
 #include <sstream>
@@ -18,13 +16,14 @@
 
 #define MESH 1e-1
 #define LINF 1e300
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
 using std::cerr;
 using std::string;
 
-int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs) {
+int normalization(HOTRG::Tensor &T, HOTRG::ImpureTensor &originIMT, std::vector<HOTRG::ImpureTensor> &IMTs) {
     double _min = LINF;
     double _max = 0;
     int Dx = T.GetDx();
@@ -37,9 +36,9 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
                         _max = std::max(_max, t);
                     }
                 }
-    for (ImpureTensor &IMT : IMTs) {
+    for (auto &IMT : IMTs) {
         if (!IMT.isMerged) isAllMerged = false;
-        for (Tensor &tensor : IMT.tensors) {
+        for (auto &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             double t = std::abs(tensor(i, j, k, l));
                             if (t > 0) {
@@ -50,7 +49,7 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
         }
     }
     if (!isAllMerged) {
-        for (Tensor &tensor : originIMT.tensors) {
+        for (auto &tensor : originIMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             double t = std::abs(tensor(i, j, k, l));
                             if (t > 0) {
@@ -69,7 +68,7 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
                     }
                 }
     if (!isAllMerged) {
-        for (Tensor &tensor : originIMT.tensors) {
+        for (auto &tensor : originIMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             if (o > 0) {
                                 REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
@@ -79,8 +78,8 @@ int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> 
                         }
         }
     }
-    for (ImpureTensor &IMT : IMTs) {
-        for (Tensor &tensor : IMT.tensors) {
+    for (auto &IMT : IMTs) {
+        for (auto &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             if (o > 0) {
                                 REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
@@ -101,14 +100,14 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     const int DATA_POINTS = d.size();
 
     // initialize tensor network : max index size is D_cut
-    Tensor T(D, D_cut, N);
-    ImpureTensor originIMT(D, D_cut, N);
+    HOTRG::Tensor T(D, D_cut);
+    HOTRG::ImpureTensor originIMT(D, D_cut);
 
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
 
-    std::vector<ImpureTensor> IMTs(DATA_POINTS);
+    std::vector<HOTRG::ImpureTensor> IMTs(DATA_POINTS);
     REP(i, DATA_POINTS) {
-        IMTs[i] = ImpureTensor(d[i], originIMT);
+        IMTs[i] = HOTRG::ImpureTensor(d[i], originIMT);
     }
 
     auto order = new int[N];
@@ -126,19 +125,19 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             bool isAllMerged = true;
-            for (ImpureTensor &IMT : IMTs) {
+            for (auto &IMT : IMTs) {
                 if (IMT.isMerged) {
-                    for (Tensor &tensor : IMT.tensors) {
+                    for (auto &tensor : IMT.tensors) {
                         HOTRG::contractionX(D_cut, tensor, T, U, "left");
                     }
                 } else {
                     if (IMT.distance >> n) {
                         if (IMT.distance & (1 << (n - 1))) {
-                            for (Tensor &tensor : IMT.tensors) {
+                            for (auto &tensor : IMT.tensors) {
                                 HOTRG::contractionX(D_cut, T, tensor, U, "right");
                             }
                         } else {
-                            for (Tensor &tensor : IMT.tensors) {
+                            for (auto &tensor : IMT.tensors) {
                                 HOTRG::contractionX(D_cut, tensor, T, U, "left");
                             }
                         }
@@ -155,7 +154,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
                 if (isAllMerged) {
                     isMerged = true;
                 } else {
-                    for (Tensor &tensor : originIMT.tensors) {
+                    for (auto &tensor : originIMT.tensors) {
                         HOTRG::contractionX(D_cut, tensor, T, U, "left");
                     }
                 }
@@ -165,8 +164,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         } else { // compression along y-axis
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
-            for (ImpureTensor &IMT : IMTs) {
-                for (Tensor &tensor : IMT.tensors) {
+            for (auto &IMT : IMTs) {
+                for (auto &tensor : IMT.tensors) {
                     HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
                 }
             }
@@ -190,7 +189,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             }
         }
 
-        for (ImpureTensor &IMT : IMTs) {
+        for (auto &IMT : IMTs) {
             double Tr1 = 0, Tr2 = 0, Tr3 = 0;
             REP(i, Dx)
                 REP(j, Dy) {
@@ -204,7 +203,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         }
         cout << '\n';
     }
-    for (ImpureTensor &IMT : IMTs) {
+    for (auto &IMT : IMTs) {
         file << IMT.distance;
         for (double corr : IMT.corrs) {
             file << '\t' << std::fixed << std::setprecision(16) << corr << std::flush;

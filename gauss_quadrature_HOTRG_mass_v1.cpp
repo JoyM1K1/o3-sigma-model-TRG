@@ -6,8 +6,6 @@
 #include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
-#include <tensor.hpp>
-#include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
 #include <sstream>
@@ -16,6 +14,7 @@
 #define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
 
 #define MESH 1e-1
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
@@ -30,13 +29,13 @@ void Trace(const int merge_t_point, double const K, MKL_INT const D_cut, MKL_INT
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D, D_cut, N);
-    ImpureTensor originIMT(D, D_cut, N);
+    HOTRG::Tensor T(D, D_cut);
+    HOTRG::ImpureTensor originIMT(D, D_cut);
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
-    ImpureTensor IMT;
+    HOTRG::ImpureTensor IMT;
 
     MKL_INT Dx = D, Dy = D;
 
@@ -47,11 +46,11 @@ void Trace(const int merge_t_point, double const K, MKL_INT const D_cut, MKL_INT
         time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        T.normalization(n - 1);
+        T.normalization(NORMALIZE_FACTOR);
         if (IMT.isMerged) {
-            for (Tensor &tensor : IMT.tensors) tensor.normalization(n - 1);
+            for (auto &tensor : IMT.tensors) tensor.normalization(NORMALIZE_FACTOR);
         } else {
-            for (Tensor &tensor : originIMT.tensors) tensor.normalization(n - 1);
+            for (auto &tensor : originIMT.tensors) tensor.normalization(NORMALIZE_FACTOR);
         }
 
         if ((n % 2 && mergeTCount < merge_t_point - 1) || mergeXCount == N / 2) { // compress along t-axis
@@ -60,7 +59,7 @@ void Trace(const int merge_t_point, double const K, MKL_INT const D_cut, MKL_INT
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             if (mergeTCount < merge_t_point) {
-                for (Tensor &tensor : originIMT.tensors) {
+                for (auto &tensor : originIMT.tensors) {
                     HOTRG::contractionX(D_cut, tensor, T, U, "left");
                 }
             } else if (mergeTCount == merge_t_point) {
@@ -85,8 +84,8 @@ void Trace(const int merge_t_point, double const K, MKL_INT const D_cut, MKL_INT
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             if (IMT.isMerged) {
-                ImpureTensor imt1 = IMT;
-                ImpureTensor imt2 = IMT;
+                auto imt1 = IMT;
+                auto imt2 = IMT;
                 for (int a = 0; a < 3; ++a) {
                     HOTRG::contractionY(D_cut, imt1.tensors[a], T, U, "bottom");
                     HOTRG::contractionY(D_cut, T, imt2.tensors[a], U, "top");
@@ -96,8 +95,8 @@ void Trace(const int merge_t_point, double const K, MKL_INT const D_cut, MKL_INT
                     });
                 }
             } else {
-                ImpureTensor imt1 = originIMT;
-                ImpureTensor imt2 = originIMT;
+                auto imt1 = originIMT;
+                auto imt2 = originIMT;
                 for (int a = 0; a < 3; ++a) {
                     HOTRG::contractionY(D_cut, imt1.tensors[a], T, U, "bottom");
                     HOTRG::contractionY(D_cut, T, imt2.tensors[a], U, "top");
@@ -127,19 +126,20 @@ void Trace(const int merge_t_point, double const K, MKL_INT const D_cut, MKL_INT
         REP(k, 3) {
             impure_Tr[k] = 0;
             int order = 0;
-            REP(i, Dx)REP(j, Dy) {
+            REP(i, Dx)
+                REP(j, Dy) {
                     impure_Tr[k] += IMT.tensors[k](i, j, i, j);
                 }
-            REP(i, n) {
-                int m = IMT.tensors[k].GetOrder()[i] - T.GetOrder()[i];
+            REP(i, T.orders.size()) {
+                int m = IMT.tensors[k].orders[i] - T.orders[i];
                 if (i < IMT.mergeIndex) m *= 2;
                 order += m;
             }
             const int t = std::abs(order);
             if (order > 0) {
-                REP(i, t) impure_Tr[k] *= 10;
+                REP(i, t) impure_Tr[k] *= NORMALIZE_FACTOR;
             } else {
-                REP(i, t) impure_Tr[k] /= 10;
+                REP(i, t) impure_Tr[k] /= NORMALIZE_FACTOR;
             }
         }
         double res = (impure_Tr[0] + impure_Tr[1] + impure_Tr[2]) / Tr;

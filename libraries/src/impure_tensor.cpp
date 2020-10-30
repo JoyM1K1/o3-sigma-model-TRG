@@ -1,4 +1,6 @@
 #include "../include/impure_tensor.hpp"
+#include "../include/TRG.hpp"
+#include "../include/HOTRG.hpp"
 #include <cmath>
 #include <algorithm>
 #include <iostream>
@@ -8,64 +10,8 @@
 
 //#define LINF 1e300
 
-ImpureTensor::ImpureTensor() {
-    tensors[0] = Tensor();
-    tensors[1] = Tensor();
-    tensors[2] = Tensor();
-}
-
-ImpureTensor::ImpureTensor(int D, int N) {
-    tensors[0] = Tensor(D, N);
-    tensors[1] = Tensor(D, N);
-    tensors[2] = Tensor(D, N);
-}
-
-ImpureTensor::ImpureTensor(int D, int D_max, int N) {
-    tensors[0] = Tensor(D, D_max, N);
-    tensors[1] = Tensor(D, D_max, N);
-    tensors[2] = Tensor(D, D_max, N);
-}
-
-ImpureTensor::ImpureTensor(int Di, int Dj, int Dk, int Dl, int N) {
-    tensors[0] = Tensor(Di, Dj, Dk, Dl, N);
-    tensors[1] = Tensor(Di, Dj, Dk, Dl, N);
-    tensors[2] = Tensor(Di, Dj, Dk, Dl, N);
-}
-
-ImpureTensor::ImpureTensor(int Di, int Dj, int Dk, int Dl, int D_max, int N) {
-    tensors[0] = Tensor(Di, Dj, Dk, Dl, D_max, N);
-    tensors[1] = Tensor(Di, Dj, Dk, Dl, D_max, N);
-    tensors[2] = Tensor(Di, Dj, Dk, Dl, D_max, N);
-}
-
-ImpureTensor::ImpureTensor(int d, ImpureTensor &T) {
-    this->distance = d;
-    tensors[0] = Tensor(T.tensors[0]);
-    tensors[1] = Tensor(T.tensors[1]);
-    tensors[2] = Tensor(T.tensors[2]);
-}
-
-ImpureTensor::ImpureTensor(ImpureTensor &rhs) {
-    distance = rhs.distance;
-    corrs.clear();
-    tensors[0] = rhs.tensors[0];
-    tensors[1] = rhs.tensors[1];
-    tensors[2] = rhs.tensors[2];
-}
-
-ImpureTensor::~ImpureTensor() {
-    corrs.clear();
-}
-
-ImpureTensor &ImpureTensor::operator=(const ImpureTensor &rhs) {
-    distance = rhs.distance;
-    tensors[0] = rhs.tensors[0];
-    tensors[1] = rhs.tensors[1];
-    tensors[2] = rhs.tensors[2];
-    return *this;
-}
-
-int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT) {
+template<class Tensor>
+int BaseImpureTensor<Tensor>::normalization(Tensor &T, BaseImpureTensor<Tensor> &originIMT) {
     double _max = 0;
     int Dx = T.GetDx();
     int Dy = T.GetDy();
@@ -99,7 +45,7 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT) {
                         REP(t, std::abs(o)) T(i, j, k, l) *= 10;
                     }
                 }
-    for (Tensor &tensor : originIMT.tensors) {
+    for (BaseTensor &tensor : originIMT.tensors) {
         REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                         if (o > 0) {
                             REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
@@ -111,7 +57,8 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT) {
     return o;
 }
 
-int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs) {
+template<class Tensor>
+int BaseImpureTensor<Tensor>::normalization(Tensor &T, BaseImpureTensor<Tensor> &originIMT, std::vector<BaseImpureTensor<Tensor>> &IMTs) {
 //    double _min = LINF;
     double _max = 0;
     int Dx = T.GetDx();
@@ -128,7 +75,7 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<
                         _max = std::max(_max, t);
                     }
                 }
-    for (ImpureTensor &IMT : IMTs) {
+    for (BaseImpureTensor &IMT : IMTs) {
         if (!IMT.isMerged) {
             isAllMerged = false;
             continue;
@@ -172,7 +119,7 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<
                     }
                 }
     if (!isAllMerged) {
-        for (Tensor &tensor : originIMT.tensors) {
+        for (BaseTensor &tensor : originIMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             if (o > 0) {
                                 REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
@@ -182,9 +129,9 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<
                         }
         }
     }
-    for (ImpureTensor &IMT : IMTs) {
+    for (BaseImpureTensor &IMT : IMTs) {
         if (!IMT.isMerged) continue;
-        for (Tensor &tensor : IMT.tensors) {
+        for (BaseTensor &tensor : IMT.tensors) {
             REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                             if (o > 0) {
                                 REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
@@ -196,3 +143,7 @@ int ImpureTensor::normalization(Tensor &T, ImpureTensor &originIMT, std::vector<
     }
     return o;
 }
+
+/* 明示的インスタンス生成 */
+template class BaseImpureTensor<TRG::Tensor>;
+template class BaseImpureTensor<HOTRG::Tensor>;

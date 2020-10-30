@@ -6,7 +6,7 @@
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-void SphericalHarmonics::initTensor(const double &K, const int &l_max, Tensor &T) {
+void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTensor &T) {
     auto A = new double[l_max + 1];
     REP(i, l_max + 1) {
         A[i] = gsl_sf_bessel_Inu(i + 0.5, K) * (i * 2 + 1);
@@ -74,7 +74,8 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, Tensor &T
     delete[] A;
 }
 
-void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, Tensor &T, ImpureTensor &IMT) {
+template<class Tensor>
+void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
     auto A = new double[l_max + 1];
     REP(i, l_max + 1) {
         A[i] = gsl_sf_bessel_Inu(i + 0.5, K) * (i * 2 + 1);
@@ -156,3 +157,6 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
 
     delete[] A;
 }
+
+template void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
+template void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);

@@ -6,8 +6,6 @@
 #include <fstream>
 #include <spherical_harmonics.hpp>
 #include <HOTRG.hpp>
-#include <tensor.hpp>
-#include <impure_tensor.hpp>
 #include <time_counter.hpp>
 #include <sstream>
 
@@ -15,6 +13,7 @@
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
@@ -27,13 +26,13 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D_cut, N);
-    ImpureTensor originIMT(D_cut, N);
+    HOTRG::Tensor T(D_cut);
+    HOTRG::ImpureTensor originIMT(D_cut);
     SphericalHarmonics::initTensorWithImpure(K, l_max, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
-    std::vector<ImpureTensor> IMTs(n_data_point);
+    std::vector<HOTRG::ImpureTensor> IMTs(n_data_point);
 
     MKL_INT Dx = D_cut, Dy = D_cut;
 
@@ -43,14 +42,14 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        T.normalization(n - 1);
-        for (ImpureTensor & IMT : IMTs) {
+        T.normalization(NORMALIZE_FACTOR);
+        for (auto & IMT : IMTs) {
             if (IMT.isMerged) {
-                for (Tensor & tensor : IMT.tensors) tensor.normalization(n - 1);
+                for (auto & tensor : IMT.tensors) tensor.normalization(NORMALIZE_FACTOR);
             }
         }
         if (!isMerged) {
-            for (Tensor & tensor : originIMT.tensors) tensor.normalization(n - 1);
+            for (auto & tensor : originIMT.tensors) tensor.normalization(NORMALIZE_FACTOR);
         }
 
         if (n <= N / 2) { // compress along x-axis
@@ -60,7 +59,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             if (n <= n_data_point) {
                 int d = 1;
                 REP(i, n - 1) d *= 2;
-                IMTs[n - 1] = ImpureTensor(d, originIMT);
+                IMTs[n - 1] = HOTRG::ImpureTensor(d, originIMT);
                 IMTs[n - 1].isMerged = true;
                 for (int i = 0; i < 3; ++i) {
                     HOTRG::contractionX(D_cut, IMTs[n - 1].tensors[i], originIMT.tensors[i], U, "left");
@@ -68,7 +67,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
                 for (int i = 0; i < n - 1; ++i) {
                     for (auto &tensor : IMTs[i].tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
                 }
-                for (Tensor &tensor : originIMT.tensors) {
+                for (auto &tensor : originIMT.tensors) {
                     HOTRG::contractionX(D_cut, tensor, T, U, "left");
                 }
             } else {
@@ -102,7 +101,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         double Tr = 0;
         REP(i, Dx)REP(j, Dy) Tr += T(i, j, i, j);
 
-        for (ImpureTensor &IMT : IMTs) {
+        for (auto &IMT : IMTs) {
             double impure_Tr[3];
             REP(k, 3) {
                 impure_Tr[k] = 0;
@@ -110,16 +109,16 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
                 REP(i, Dx)REP(j, Dy) {
                         impure_Tr[k] += IMT.tensors[k](i, j, i, j);
                     }
-                REP(i, n) {
-                    int m = IMT.tensors[k].GetOrder()[i] - T.GetOrder()[i];
+                REP(i, T.orders.size()) {
+                    int m = IMT.tensors[k].orders[i] - T.orders[i];
                     if (i < IMT.mergeIndex) m *= 2;
                     order += m;
                 }
                 const int times = std::abs(order);
                 if (order > 0) {
-                    REP(i, times) impure_Tr[k] *= 10;
+                    REP(i, times) impure_Tr[k] *= NORMALIZE_FACTOR;
                 } else {
-                    REP(i, times) impure_Tr[k] /= 10;
+                    REP(i, times) impure_Tr[k] /= NORMALIZE_FACTOR;
                 }
             }
             double res = (impure_Tr[0] - impure_Tr[1] + impure_Tr[2]) / Tr;
@@ -129,7 +128,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         time.end();
         cout << "  in " << time.duration_cast_to_string() << '\n';
     }
-    for (ImpureTensor &IMT : IMTs) {
+    for (auto &IMT : IMTs) {
         file << IMT.distance;
         for (double corr : IMT.corrs) {
             file << '\t' << std::scientific << std::setprecision(16) << corr << std::flush;

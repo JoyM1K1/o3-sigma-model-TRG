@@ -14,6 +14,7 @@
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
@@ -26,34 +27,42 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D_cut);
-    SphericalHarmonics::initTensor(K, l_max, T);
+    TRG::Tensor T1(D_cut); /* (ij)(kl) -> S1 S3 */
+    TRG::Tensor T2(D_cut); /* (jk)(li) -> S2 S4 */
+    T1.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
+    T2.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
+    SphericalHarmonics::initTensor(K, l_max, T1);
     time.end();
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
 
-    auto order = new int[N];
     time.start();
 
     for (int n = 1; n <= N; ++n) {
-        order[n - 1] = Tensor::normalization(T);
+        /* normalization */
+        T1.normalization(NORMALIZE_FACTOR);
 
-        TRG::solver(D_cut, T);
+        /* SVD */
+        T2 = T1;
+        TRG::SVD(D_cut, D_cut, T1, true);
+        TRG::SVD(D_cut, D_cut, T2, false);
+
+        /* contraction */
+        TRG::contraction(D_cut, D_cut, T1, T1.S.first, T2.S.first, T1.S.second, T2.S.second);
 
         double Tr = 0;
-        int D = T.GetDx(); // same as T.GetDy()
-        REP(i, D)REP(j, D) Tr += T(i, j, i, j);
-        Tr = std::log(Tr);
+        int D = T1.GetDx(); // same as T.GetDy()
+        REP(i, D)REP(j, D) Tr += T1(i, j, i, j);
+        Tr = std::log(Tr) + std::log(NORMALIZE_FACTOR) * T1.order;
         REP(i, n) Tr /= 2; // 体積で割る
-        REP(i, n) {
-            double tmp = order[i] * std::log(10);
-            REP(j, i) tmp /= 2;
-            Tr += tmp;
-        }
+//        REP(i, n) {
+//            double tmp = order[i] * std::log(10);
+//            REP(j, i) tmp /= 2;
+//            Tr += tmp;
+//        }
         Tr += std::log(M_PI / (2 * K));
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }
-    delete[] order;
     file << '\n';
     time.end();
     cout << "  in " << time.duration_cast_to_string() << '\n';

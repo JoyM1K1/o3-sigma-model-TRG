@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <cassert>
 #include <vector>
+#include <cmath>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
@@ -12,11 +13,34 @@
 using std::cout;
 using std::cerr;
 
-void HOTRG::SVD_X(const int &D_cut, Tensor &T, double *U) {
+void HOTRG::Tensor::normalization(int c) {
+    double _max = 0;
+    this->forEach([&](int i, int j, int k, int l, const double *t) {
+        const double absT = std::abs(*t);
+        if (std::isnan(absT)) {
+            std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
+            exit(1);
+        }
+        _max = std::max(_max, absT);
+    });
+    auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
+    if (o > 0) {
+        this->forEach([&](int i, int j, int k, int l, double *t) {
+            REP(a, std::abs(o)) *t /= c;
+        });
+    } else {
+        this->forEach([&](int i, int j, int k, int l, double *t) {
+            REP(a, std::abs(o)) *t *= c;
+        });
+    }
+    orders.push_back(o);
+}
+
+void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
-    Tensor MM(Dx, 1);
-    Tensor A(Dx, Dy, Dx, Dy, 1);
-    Tensor B(Dx, Dy, Dx, Dy, 1);
+    BaseTensor MM(Dx);
+    BaseTensor A(Dx, Dy, Dx, Dy);
+    BaseTensor B(Dx, Dy, Dx, Dy);
     auto tmp1 = new double[Dx * Dx * Dy * Dy];
     auto tmp2 = new double[Dx * Dx * Dy * Dy];
     /* compute Right Unitary matrix */
@@ -110,11 +134,11 @@ void HOTRG::SVD_X(const int &D_cut, Tensor &T, double *U) {
     delete[] tmp2;
 }
 
-void HOTRG::SVD_Y(const int &D_cut, Tensor &T, double *U) {
+void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
-    Tensor MM(Dy, 1);
-    Tensor A(Dx, Dy, Dx, Dy, 1);
-    Tensor B(Dx, Dy, Dx, Dy, 1);
+    BaseTensor MM(Dy);
+    BaseTensor A(Dx, Dy, Dx, Dy);
+    BaseTensor B(Dx, Dy, Dx, Dy);
     auto tmp1 = new double[Dx * Dx * Dy * Dy];
     auto tmp2 = new double[Dx * Dx * Dy * Dy];
     /* compute Up Unitary matrix */
@@ -209,7 +233,7 @@ void HOTRG::SVD_Y(const int &D_cut, Tensor &T, double *U) {
 }
 
 // contraction right tensor into left tensor or vice versa
-void HOTRG::contractionX(const int &D_cut, Tensor &leftT, Tensor &rightT, const double *U, const std::string mergeT) {
+void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT) {
     assert(mergeT == "right" || mergeT == "left");
     const int Dx = leftT.GetDx(), Dy = leftT.GetDy(), Dy_new = std::min(Dy * Dy, D_cut);
     auto lT = new double[Dx * Dx * Dy * Dy];
@@ -260,7 +284,7 @@ void HOTRG::contractionX(const int &D_cut, Tensor &leftT, Tensor &rightT, const 
 }
 
 // contraction top tensor into bottom tensor
-void HOTRG::contractionY(const int &D_cut, Tensor &bottomT, Tensor &topT, const double *U, const std::string mergeT) {
+void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string mergeT) {
     assert(mergeT == "bottom" || mergeT == "top");
     const int Dx = bottomT.GetDx(), Dy = bottomT.GetDy(), Dx_new = std::min(Dx * Dx, D_cut);
     auto bT = new double[Dx * Dx * Dy * Dy];

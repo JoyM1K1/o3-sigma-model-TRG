@@ -5,8 +5,6 @@
 #include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
-#include <tensor.hpp>
-#include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
 #include <sstream>
@@ -15,6 +13,7 @@
 #define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
 
 #define MESH 1e-1
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
@@ -29,8 +28,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D, D_cut, N);
-    ImpureTensor originIMT(D, D_cut, N);
+    HOTRG::Tensor T(D, D_cut);
+    HOTRG::ImpureTensor originIMT(D, D_cut);
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
@@ -42,16 +41,16 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        T.normalization(n - 1);
-        for (Tensor &tensor : originIMT.tensors) {
-            tensor.normalization(n - 1);
+        T.normalization(NORMALIZE_FACTOR);
+        for (auto &tensor : originIMT.tensors) {
+            tensor.normalization(NORMALIZE_FACTOR);
         }
 
         if (n % 2) { // compress along x-axis
             cout << " compress along x-axis " << std::flush;
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
-            for (Tensor &tensor : originIMT.tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
+            for (auto &tensor : originIMT.tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compress along y-axis
@@ -76,12 +75,12 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
             REP(i, Dx)REP(j, Dy) {
                     impure_Tr[k] += originIMT.tensors[k](i, j, i, j);
                 }
-            REP(i, n) order += originIMT.tensors[k].GetOrder()[i] - T.GetOrder()[i];
+            REP(i, T.orders.size()) order += originIMT.tensors[k].orders[i] - T.orders[i];
             const int times = std::abs(order);
             if (order > 0) {
-                REP(i, times) impure_Tr[k] *= 10;
+                REP(i, times) impure_Tr[k] *= NORMALIZE_FACTOR;
             } else {
-                REP(i, times) impure_Tr[k] /= 10;
+                REP(i, times) impure_Tr[k] /= NORMALIZE_FACTOR;
             }
         }
         time.end();

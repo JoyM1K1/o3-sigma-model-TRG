@@ -7,13 +7,13 @@
 #include <fstream>
 #include <gauss_quadrature.hpp>
 #include <HOTRG.hpp>
-#include <tensor.hpp>
 #include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
@@ -30,7 +30,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D, D_cut, N);
+    HOTRG::Tensor T(D, D_cut);
     GaussQuadrature::initTensor(K, n_node, D_cut, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
@@ -39,7 +39,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     time.start();
 
     for (int n = 1; n <= N; ++n) {
-        T.normalization(n - 1);
+        T.normalization(NORMALIZE_FACTOR);
 
         if (n % 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
@@ -64,8 +64,8 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         }
         Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
-        REP(i, n) {
-            double tmp = T.GetOrder()[i] * std::log(10);
+        REP(i, T.orders.size()) {
+            double tmp = T.orders[i] * std::log(NORMALIZE_FACTOR);
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
@@ -78,7 +78,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* inputs */
     MKL_INT N = 20;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
@@ -86,6 +86,10 @@ int main() {
     double K_start = 0.1;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
+
+    N = std::stoi(argv[1]);
+    n_node = std::stoi(argv[2]);
+    D_cut = std::stoi(argv[3]);
 
     const string dir = "gauss_quadrature_HOTRG";
     time_counter time;

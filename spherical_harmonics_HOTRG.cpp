@@ -7,13 +7,13 @@
 #include <fstream>
 #include <spherical_harmonics.hpp>
 #include <HOTRG.hpp>
-#include <tensor.hpp>
 #include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 #define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
@@ -26,7 +26,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
     // initialize tensor network : max index size is D_cut
     cout << "initialize tensor " << std::flush;
     time.start();
-    Tensor T(D_cut, N);
+    HOTRG::Tensor T(D_cut);
     SphericalHarmonics::initTensor(K, l_max, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
@@ -35,7 +35,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
     time.start();
 
     for (int n = 1; n <= N; ++n) {
-        T.normalization(n - 1);
+        T.normalization(NORMALIZE_FACTOR);
 
         if (n % 2) { // compression along x-axis
             auto U = new double[Dy * Dy * Dy * Dy];
@@ -60,8 +60,8 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
         }
         Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
-        REP(i, n) {
-            double tmp = T.GetOrder()[i] * std::log(10);
+        REP(i, T.orders.size()) {
+            double tmp = T.orders[i] * std::log(NORMALIZE_FACTOR);
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }

@@ -5,8 +5,6 @@
 #include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
-#include <tensor.hpp>
-#include <impure_tensor.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
 #include <sstream>
@@ -15,6 +13,7 @@
 #define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
 
 #define MESH 1e-1
+#define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
@@ -29,13 +28,13 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
-    Tensor T(D, D_cut, N);
-    ImpureTensor originIMT(D, D_cut, N);
+    HOTRG::Tensor T(D, D_cut);
+    HOTRG::ImpureTensor originIMT(D, D_cut);
     GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
-    std::vector<ImpureTensor> IMTs(n_data_point);
+    std::vector<HOTRG::ImpureTensor> IMTs(n_data_point);
 
     MKL_INT Dx = D, Dy = D;
 
@@ -45,14 +44,14 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         time.start();
         cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
 
-        T.normalization(n - 1);
-        for (ImpureTensor & IMT : IMTs) {
+        T.normalization(NORMALIZE_FACTOR);
+        for (auto &IMT : IMTs) {
             if (IMT.isMerged) {
-                for (Tensor & tensor : IMT.tensors) tensor.normalization(n - 1);
+                for (auto &tensor : IMT.tensors) tensor.normalization(NORMALIZE_FACTOR);
             }
         }
         if (!isMerged) {
-            for (Tensor & tensor : originIMT.tensors) tensor.normalization(n - 1);
+            for (auto &tensor : originIMT.tensors) tensor.normalization(NORMALIZE_FACTOR);
         }
 
         if (n <= N / 2) { // compress along x-axis
@@ -62,7 +61,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
             if (n <= n_data_point) {
                 int d = 1;
                 REP(i, n - 1) d *= 2;
-                IMTs[n - 1] = ImpureTensor(d, originIMT);
+                IMTs[n - 1] = HOTRG::ImpureTensor(d, originIMT);
                 IMTs[n - 1].isMerged = true;
                 for (int i = 0; i < 3; ++i) {
                     HOTRG::contractionX(D_cut, IMTs[n - 1].tensors[i], originIMT.tensors[i], U, "left");
@@ -70,7 +69,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
                 for (int i = 0; i < n - 1; ++i) {
                     for (auto &tensor : IMTs[i].tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
                 }
-                for (Tensor &tensor : originIMT.tensors) {
+                for (auto &tensor : originIMT.tensors) {
                     HOTRG::contractionX(D_cut, tensor, T, U, "left");
                 }
             } else {
@@ -104,9 +103,10 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         double Tr = 0;
         REP(i, Dx)REP(j, Dy) Tr += T(i, j, i, j);
 
-        for (ImpureTensor &IMT : IMTs) {
+        for (auto &IMT : IMTs) {
             double Tr1 = 0, Tr2 = 0, Tr3 = 0;
-            REP(i, Dx)REP(j, Dy) {
+            REP(i, Dx)
+                REP(j, Dy) {
                     Tr1 += IMT.tensors[0](i, j, i, j);
                     Tr2 += IMT.tensors[1](i, j, i, j);
                     Tr3 += IMT.tensors[2](i, j, i, j);
@@ -118,7 +118,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
         time.end();
         cout << "  in " << time.duration_cast_to_string() << '\n';
     }
-    for (ImpureTensor &IMT : IMTs) {
+    for (auto &IMT : IMTs) {
         cout << IMT.distance;
         for (double corr : IMT.corrs) {
             file << '\t' << std::scientific << std::setprecision(16) << corr << std::flush;

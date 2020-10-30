@@ -2,27 +2,29 @@
 #define O3_SIGMA_MODEL_TENSOR_HPP
 
 #include <functional>
+#include <vector>
 
-class Tensor {
+class BaseTensor {
 private:
     int Di, Dj, Dk, Dl, D_max;
-    int N;
     double *M;
-    int *order;
 public:
-    Tensor();
+    unsigned long long int order{0};
+    std::vector<int> orders;
 
-    Tensor(int D, int N);
+    BaseTensor();
 
-    Tensor(int D, int D_max, int N);
+    BaseTensor(int D);
 
-    Tensor(int Di, int Dj, int Dk, int Dl, int N);
+    BaseTensor(int D, int D_max);
 
-    Tensor(int Di, int Dj, int Dk, int Dl, int D_max, int N);
+    BaseTensor(int Di, int Dj, int Dk, int Dl);
 
-    Tensor(Tensor &rhs);
+    BaseTensor(int Di, int Dj, int Dk, int Dl, int D_max);
 
-    ~Tensor();
+    BaseTensor(BaseTensor &rhs);
+
+    ~BaseTensor();
 
     int GetDx() const;
 
@@ -38,23 +40,23 @@ public:
 
     double *GetMatrix() const;
 
-    int *GetOrder() const;
+//    int *GetOrder() const;
 
     void UpdateDx(int Dx);
 
     void UpdateDy(int Dy);
 
-    Tensor &operator=(const Tensor &rhs);
+    BaseTensor &operator=(const BaseTensor &rhs);
 
     const double &operator()(int i, int j, int k, int l) const;
 
     double &operator()(int i, int j, int k, int l);
 
-    void forEach(const std::function<void(double*)> &f);
+    void forEach(const std::function<void(double *)> &f);
 
-    void forEach(const std::function<void(int, int, int, int, double*)> &f);
+    void forEach(const std::function<void(int, int, int, int, double *)> &f);
 
-    void normalization(int n);
+    virtual void normalization(int c);
 };
 
 #endif //O3_SIGMA_MODEL_TENSOR_HPP
