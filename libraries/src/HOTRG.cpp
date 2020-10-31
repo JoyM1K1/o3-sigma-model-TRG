@@ -28,7 +28,7 @@ void HOTRG::Tensor::normalization(int c) {
         this->forEach([&](int i, int j, int k, int l, double *t) {
             REP(a, std::abs(o)) *t /= c;
         });
-    } else {
+    } else if (o < 0) {
         this->forEach([&](int i, int j, int k, int l, double *t) {
             REP(a, std::abs(o)) *t *= c;
         });
