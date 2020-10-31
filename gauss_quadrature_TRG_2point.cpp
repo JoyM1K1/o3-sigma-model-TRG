@@ -214,36 +214,36 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
                 if (n % 2) {
                     /* 0 */
                     REP(i, DIMENSION) {
-                        TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, IMTs[0].tensors[i].S.first, T1.S.second, T2.S.second);
+                        TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, T2.S.first, T1.S.second, IMTs[0].tensors[i].S.second);
                     }
                     /* 1 */
                     REP(i, DIMENSION) {
-                        TRG::contraction(D, D_new, IMTs[1].tensors[i], T1.S.first, T2.S.first, T1.S.second, IMTs[0].tensors[i].S.second);
+                        TRG::contraction(D, D_new, IMTs[1].tensors[i], T1.S.first, IMTs[0].tensors[i].S.first, T1.S.second, T2.S.second);
                     }
                     IMTs[1].isImpure = true;
                 } else {
                     /* 0 */
                     REP(i, DIMENSION) {
                         TRG::Tensor tmp(D);
-                        TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.second, T2.S.second);
+                        TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[1].tensors[i].S.second, T2.S.second);
                         index_rotation(IMTs[0].tensors[i], tmp);
                     }
                     /* 1 */
                     REP(i, DIMENSION) {
                         TRG::Tensor tmp(D);
-                        TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.second, IMTs[1].tensors[i].S.second);
+                        TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
                         index_rotation(IMTs[1].tensors[i], tmp);
                     }
                     /* 2 */
                     REP(i, DIMENSION) {
                         TRG::Tensor tmp(D);
-                        TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, T1.S.second, IMTs[1].tensors[i].S.second);
+                        TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, T1.S.second, IMTs[0].tensors[i].S.second);
                         index_rotation(IMTs[2].tensors[i], tmp);
                     }
                     /* 4 */
                     REP(i, DIMENSION) {
                         TRG::Tensor tmp(D);
-                        TRG::contraction(D, D_new, tmp, IMTs[0].tensors[i].S.first, T2.S.first, T1.S.second, T2.S.second);
+                        TRG::contraction(D, D_new, tmp, IMTs[1].tensors[i].S.first, T2.S.first, T1.S.second, T2.S.second);
                         index_rotation(IMTs[4].tensors[i], tmp);
                     }
                     /* 5 */
@@ -254,13 +254,6 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
                             IMTs[5].tensors[a](i, j, k, l) = *t;
                         });
                         IMTs[5].tensors[a].order = IMTs[4].tensors[a].order;
-                    }
-                    for (auto & tensor : IMTs[3].tensors) {
-                        if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
-                            delete tensor.S.first;
-                            delete tensor.S.second;
-                            tensor.S = T1.S;
-                        }
                     }
                     IMTs[2].isImpure = true;
                     IMTs[4].isImpure = true;
