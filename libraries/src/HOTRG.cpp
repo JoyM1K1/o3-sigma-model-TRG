@@ -24,13 +24,14 @@ void HOTRG::Tensor::normalization(int c) {
         _max = std::max(_max, absT);
     });
     auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
+    auto absO = std::abs(o);
     if (o > 0) {
-        this->forEach([&](int i, int j, int k, int l, double *t) {
-            REP(a, std::abs(o)) *t /= c;
+        this->forEach([&](double *t) {
+            REP(a, absO) *t /= c;
         });
     } else if (o < 0) {
-        this->forEach([&](int i, int j, int k, int l, double *t) {
-            REP(a, std::abs(o)) *t *= c;
+        this->forEach([&](double *t) {
+            REP(a, absO) *t *= c;
         });
     }
     orders.push_back(o);

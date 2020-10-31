@@ -121,7 +121,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
                 REP(i, Dx)REP(j, Dy) {
                     impure_Tr[k] += IMT.tensors[k](i, j, i, j);
                 }
-                REP(i, T.orders.size()) {
+                REP(i, n) {
                     int m = IMT.tensors[k].orders[i] - T.orders[i];
                     if (i < IMT.mergeIndex) m *= 2;
                     order += m;

@@ -5,9 +5,6 @@
 #include <iostream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
-
-//#define LINF 1e300
 
 BaseTensor::BaseTensor() {
     Di = 0;
@@ -66,6 +63,10 @@ BaseTensor::BaseTensor(BaseTensor &rhs) {
     this->D_max = rhs.D_max;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
+    orders.clear();
+    for (auto o : rhs.orders) {
+        orders.push_back(o);
+    }
 }
 
 BaseTensor::~BaseTensor() {
@@ -106,10 +107,6 @@ double *BaseTensor::GetMatrix() const {
     return M;
 }
 
-//int *BaseTensor::GetOrder() const {
-//    return orders;
-//}
-
 void BaseTensor::UpdateDx(int Dx) {
     assert(Dx <= D_max);
     this->Di = Dx;
@@ -131,10 +128,10 @@ BaseTensor &BaseTensor::operator=(const BaseTensor &rhs) {
     delete[] M;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
-//    orders.clear();
-//    for (auto o : rhs.orders) {
-//        orders.push_back(o);
-//    }
+    orders.clear();
+    for (auto o : rhs.orders) {
+        orders.push_back(o);
+    }
     order = rhs.order;
     return *this;
 }
@@ -168,27 +165,25 @@ void BaseTensor::forEach(const std::function<void(int, int, int, int, double *)>
 }
 
 void BaseTensor::normalization(int c) {
-//    double _min = LINF;
     double _max = 0;
-    REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
-                    const double t = std::abs((*this)(i, j, k, l));
-                    if (std::isnan(t)) {
-                        std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
-                        exit(1);
-                    }
-                    if (t > 0) {
-//                        _min = std::min(_min, t);
-                        _max = std::max(_max, t);
-                    }
-                }
-//    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
+    this->forEach([&](int i, int j, int k, int l, const double *t) {
+        const double absT = std::abs(*t);
+        if (std::isnan(absT)) {
+            std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
+            exit(1);
+        }
+        _max = std::max(_max, absT);
+    });
     auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
-    REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
-                    if (o > 0) {
-                        REP(t, std::abs(o)) (*this)(i, j, k, l) /= c;
-                    } else {
-                        REP(t, std::abs(o)) (*this)(i, j, k, l) *= c;
-                    }
-                }
+    auto absO = std::abs(o);
+    if (o > 0) {
+        this->forEach([&](double *t) {
+            REP(a, absO) *t /= c;
+        });
+    } else if (o < 0) {
+        this->forEach([&](double *t) {
+            REP(a, absO) *t *= c;
+        });
+    }
     order += o;
 }
