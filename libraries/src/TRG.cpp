@@ -50,13 +50,7 @@ void TRG::SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp) {
     delete[] VT_;
     delete[] sigma;
     delete[] superb;
-    /* order */
-//    T.S.first->orders.clear();
-//    for (auto order : T.orders) {
-//        T.S.first->orders.push_back(order);
-//    }
-//    T.orders.clear();
-    T.S.first->order = T.order;
+//    T.S.first->order = T.order;
 }
 
 void TRG::contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, Unitary_S *S2, Unitary_S *S3, Unitary_S *S4) {
@@ -93,7 +87,7 @@ void TRG::contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, 
 //    for (auto order : S4->orders) {
 //        T.orders.push_back(order);
 //    }
-    T.order = S1->order + S2->order + S3->order + S4->order;
+//    T.order = S1->order + S2->order + S3->order + S4->order;
 }
 
 TRG::Unitary_S::Unitary_S() {
@@ -140,4 +134,28 @@ TRG::Tensor::Tensor(int D_cut) : BaseTensor(D_cut) {
 TRG::Tensor &TRG::Tensor::operator=(const Tensor &rhs) {
     BaseTensor::operator=(rhs);
     return *this;
+}
+
+void TRG::Tensor::normalization(int c) {
+    double _max = 0;
+    this->forEach([&](int i, int j, int k, int l, const double *t) {
+        const double absT = std::abs(*t);
+        if (std::isnan(absT)) {
+            std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
+            exit(1);
+        }
+        _max = std::max(_max, absT);
+    });
+    auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
+    auto absO = std::abs(o);
+    if (o > 0) {
+        this->forEach([&](double *t) {
+            REP(a, absO) *t /= c;
+        });
+    } else if (o < 0) {
+        this->forEach([&](double *t) {
+            REP(a, absO) *t *= c;
+        });
+    }
+    order = o;
 }

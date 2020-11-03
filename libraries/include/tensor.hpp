@@ -40,8 +40,6 @@ public:
 
     double *GetMatrix() const;
 
-//    int *GetOrder() const;
-
     void UpdateDx(int Dx);
 
     void UpdateDy(int Dy);
@@ -56,7 +54,9 @@ public:
 
     void forEach(const std::function<void(int, int, int, int, double *)> &f);
 
-    virtual void normalization(int c);
+    virtual void normalization(int c) {};
+
+    double trace();
 };
 
 #endif //O3_SIGMA_MODEL_TENSOR_HPP

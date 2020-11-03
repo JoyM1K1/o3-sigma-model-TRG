@@ -36,6 +36,10 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
     // index dimension
     int D = std::min(D_cut, n_node * n_node);
 
+    /* distance */
+    long long int distance = 1;
+    REP(i, merge_point - 1) distance *= 2;
+
     // initialize tensor network : max index size is D_cut
     time.start();
     cout << "initialize tensor " << std::flush;
@@ -58,12 +62,15 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
         for (auto & tensor : IMTs[i].tensors) {
             if (i % 2) {
                 tensor.S = T1.S;
-//                cout << " T1.S " << &T1.S << " tensor.S " << &tensor.S << " " << std::flush;
             } else {
                 tensor.S = T2.S;
             }
         }
     }
+
+    /* orders */
+    auto orders = new long long int[DIMENSION];
+    REP(i, DIMENSION) orders[i] = 0;
 
     for (int n = 1; n <= N; ++n) {
         const int count = (n + 1) / 2;
@@ -479,15 +486,12 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
         T1.normalization(NORMALIZE_FACTOR);
         for (auto &IMT : IMTs) {
             if (IMT.isImpure) {
-                for (auto &tensor : IMT.tensors) {
-                    tensor.normalization(NORMALIZE_FACTOR);
+                REP(i, DIMENSION) {
+                    IMT.tensors[i].normalization(NORMALIZE_FACTOR);
+                    orders[i] += IMT.tensors[i].order - T1.order;
                 }
             }
         }
-
-        cout << " pure order " << T1.order << " : impure order ";
-        REP(i, MAX_IMT_NUM) cout << IMTs[i].tensors[0].order << " ";
-        cout << ":" << std::flush;
 
         if (n < N) {
             time.end();
@@ -495,49 +499,36 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
             continue;
         }
 
-        double Tr = 0;
-        REP(i, D)REP(j, D) Tr += T1(i, j, i, j);
+        double Tr = T1.trace();
 
         double impure_Tr[DIMENSION];
         REP(k, DIMENSION) {
-            impure_Tr[k] = 0;
-            long long int order = IMTs[0].tensors[k].order - T1.order;
-            REP(i, D)REP(j, D) {
-                    impure_Tr[k] += IMTs[0].tensors[k](i, j, i, j);
-                }
-//            REP(i, T1.orders.size()) {
-//                order += IMTs[0].tensors[k].orders[i] - T1.orders[i];
-//            }
-            const long long int times = std::abs(order);
+            long long int order = orders[k];
+            double tmp_Tr = IMTs[0].tensors[k].trace();
+            long long int times = std::abs(order);
             if (order > 0) {
-                REP(i, times) impure_Tr[k] *= NORMALIZE_FACTOR;
+                REP(i, times) tmp_Tr *= NORMALIZE_FACTOR;
             } else {
-                REP(i, times) impure_Tr[k] /= NORMALIZE_FACTOR;
+                REP(i, times) tmp_Tr /= NORMALIZE_FACTOR;
             }
+            impure_Tr[k] = tmp_Tr;
         }
         double res = (impure_Tr[0] + impure_Tr[1] + impure_Tr[2]) / Tr;
-        IMTs[0].corrs.push_back(res);
         cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
+        file << distance << '\t' << std::scientific << std::setprecision(16) << res << '\n' << std::flush;
 
         time.end();
         cout << "  in " << time.duration_cast_to_string() << '\n';
-    }
-    for (auto &IMT : IMTs) {
-        file << IMT.distance;
-        for (double corr : IMT.corrs) {
-            file << '\t' << std::scientific << std::setprecision(16) << corr << std::flush;
-        }
-        file << '\n';
     }
 }
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 20;     // volume : 2^N
+    MKL_INT N = 40;     // volume : 2^N
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
-    int merge_point = 7; // d = 2^(merge_point - 1)
+    int merge_point = 1; // d = 2^(merge_point - 1)
 
     N = std::stoi(argv[1]);
     n_node = std::stoi(argv[2]);

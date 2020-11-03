@@ -164,26 +164,8 @@ void BaseTensor::forEach(const std::function<void(int, int, int, int, double *)>
                 }
 }
 
-void BaseTensor::normalization(int c) {
-    double _max = 0;
-    this->forEach([&](int i, int j, int k, int l, const double *t) {
-        const double absT = std::abs(*t);
-        if (std::isnan(absT)) {
-            std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
-            exit(1);
-        }
-        _max = std::max(_max, absT);
-    });
-    auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
-    auto absO = std::abs(o);
-    if (o > 0) {
-        this->forEach([&](double *t) {
-            REP(a, absO) *t /= c;
-        });
-    } else if (o < 0) {
-        this->forEach([&](double *t) {
-            REP(a, absO) *t *= c;
-        });
-    }
-    order += o;
+double BaseTensor::trace() {
+    double res = 0;
+    REP(i, Di)REP(j, Dj) res += (*this)(i, j, i, j);
+    return res;
 }

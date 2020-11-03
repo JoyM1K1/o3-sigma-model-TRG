@@ -38,6 +38,8 @@ namespace TRG {
         Tensor(int Di, int Dj, int Dk, int Dl, int D_max) : BaseTensor(Di, Dj, Dk, Dl, D_max) {};
 
         Tensor &operator=(const Tensor &rhs);
+
+        void normalization(int c) override;
     };
 
     class ImpureTensor : public BaseImpureTensor<Tensor> {
