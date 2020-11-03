@@ -484,11 +484,35 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
 
         /* normalization */
         T1.normalization(NORMALIZE_FACTOR);
-        for (auto &IMT : IMTs) {
-            if (IMT.isImpure) {
-                REP(i, DIMENSION) {
-                    IMT.tensors[i].normalization(NORMALIZE_FACTOR);
-                    orders[i] += IMT.tensors[i].order - T1.order;
+        REP(i, MAX_IMT_NUM) {
+            auto IMT = &IMTs[i];
+            if ((*IMT).isImpure) {
+                REP(a, DIMENSION) {
+                    auto tensor = &(*IMT).tensors[a];
+                    (*tensor).normalization(NORMALIZE_FACTOR);
+                    long long int diff = (*tensor).order - T1.order;
+                    if (merge_point == 2) {
+                        if (n == 1) {
+                            diff *= 2;
+                        }
+                    } else if (merge_point == 3) {
+                        if (n <= 2) {
+                            diff *= 2;
+                        } else if (n == 3) {
+                            if (i == 0 || i == 2) {
+                                diff *= 2;
+                            }
+                        }
+                    } else {
+                        if (count < merge_point - 1) {
+                            diff *= 2;
+                        } else if (n % 2 == 1 && count == merge_point - 1) {
+                            if (i == 0 || i == 2) {
+                                diff *= 2;
+                            }
+                        }
+                    }
+                    orders[a] += diff;
                 }
             }
         }
@@ -528,7 +552,7 @@ int main(int argc, char *argv[]) {
     MKL_INT n_node = 32;  // n_node
     MKL_INT D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
-    int merge_point = 1; // d = 2^(merge_point - 1)
+    int merge_point = 14; // d = 2^(merge_point - 1)
 
     N = std::stoi(argv[1]);
     n_node = std::stoi(argv[2]);
@@ -552,6 +576,18 @@ int main(int argc, char *argv[]) {
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
+
+    /* vs merge_point */
+//    for (int mp = 1; mp <= 14; ++mp) {
+//        time.start();
+//        cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << ", merge_point = " << mp << '\n';
+//        fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "_" + std::to_string(mp) + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        Trace(mp, K, D_cut, n_node, N, dataFile);
+//        dataFile.close();
+//        time.end();
+//        cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
+//    }
 
     /* vs D_cut */
 //    for (D_cut = 56; D_cut <= 64; D_cut += 8) {
