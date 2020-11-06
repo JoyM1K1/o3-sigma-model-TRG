@@ -35,6 +35,7 @@ void HOTRG::Tensor::normalization(int c) {
         });
     }
     orders.push_back(o);
+    order = o;
 }
 
 void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *U) {
