@@ -264,12 +264,12 @@ int main(int argc, char *argv[]) {
     int D_cut = 16; // bond dimension
     std::pair<int, int> p(3, 0); // impure tensorの座標
 
-//    N = std::stoi(argv[1]);
-//    n_node = std::stoi(argv[2]);
-//    D_cut = std::stoi(argv[3]);
-//    K = std::stod(argv[4]);
-//    p.first = std::stoi(argv[5]);
-//    p.second = std::stoi(argv[6]);
+    N = std::stoi(argv[1]);
+    n_node = std::stoi(argv[2]);
+    D_cut = std::stoi(argv[3]);
+    K = std::stod(argv[4]);
+    p.first = std::stoi(argv[5]);
+    p.second = std::stoi(argv[6]);
 
     const string dir = "gauss_quadrature_HOTRG_2point_manual";
     time_counter time;
