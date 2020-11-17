@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="c14f8091-91d8-4779-b067-8ddcad3f692b" name="Remote Host (c14f8091-91d8-4779-b067-8ddcad3f692b)" url="">
+        <fileTransfer rootFolder="/work/xg18i040/x10581/" accessType="SFTP" host="ofp.jcahpc.jp" port="22" sshConfigId="ef48ac06-2f31-4cc8-8dd6-94afab824f73" sshConfig="x10581@ofp.jcahpc.jp:22 key" keyPair="true" />
+      </webServer>
+    </option>
+  </component>
+</project>

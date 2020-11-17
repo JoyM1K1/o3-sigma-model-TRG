@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="Remote Host (c14f8091-91d8-4779-b067-8ddcad3f692b)" createEmptyFolders="true" exclude=".svn;.cvs;.idea;.DS_Store;.git;.hg;*.hprof;*.pyc;cmake-build-debug;pdf;.vscode;data" autoUploadExternalChanges="true">
+    <serverData>
+      <paths name="Remote Host (c14f8091-91d8-4779-b067-8ddcad3f692b)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="o3-sigma-model/" local="$PROJECT_DIR$" web="" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
