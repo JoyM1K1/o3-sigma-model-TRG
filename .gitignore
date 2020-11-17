@@ -73,3 +73,9 @@ fabric.properties
 # Custum
 pdf/
 data/
+.idea/deployment.xml
+.idea/webServers.xml
+gauss_legendre_test.cpp
+test.cpp
+.vscode
+.DS_Store
