@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
 #include <HOTRG.hpp>
@@ -11,7 +10,6 @@
 #include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
 
 #define MESH 1e-1
 #define NORMALIZE_FACTOR 10
@@ -21,12 +19,11 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void
-Trace(const int n_data_point_start, const int n_data_point_end, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
+void Trace(const int n_data_point_start, const int n_data_point_end, double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
     time_counter time;
     const int n_data_point = n_data_point_end - n_data_point_start + 1;
     // index dimension
-    MKL_INT D = std::min(D_cut, n_node * n_node);
+    int D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
     time.start();
@@ -42,7 +39,7 @@ Trace(const int n_data_point_start, const int n_data_point_end, double const K, 
     HOTRG::ImpureTensor leftIMT(D, D_cut);
     HOTRG::ImpureTensor rightIMT(D, D_cut);
 
-    MKL_INT Dx = D, Dy = D;
+    int Dx = D, Dy = D;
 
     bool isMerged = false;
 
@@ -175,9 +172,9 @@ Trace(const int n_data_point_start, const int n_data_point_end, double const K, 
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 14;     // volume : 2^N
-    MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
+    int N = 14;     // volume : 2^N
+    int n_node = 32;  // n_node
+    int D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
     int n_data_point_start = 1; // d = 2^(n_data_point_start - 1), ..., 2^(n_data_point_end - 1)
     int n_data_point_end = 7;
@@ -189,17 +186,17 @@ int main(int argc, char *argv[]) {
     n_data_point_start = std::stoi(argv[5]);
     n_data_point_end = std::stoi(argv[6]);
 
-    const string dir = "gauss_quadrature_HOTRG_mass_alt";
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
+    const string dir = "../data/gauss_quadrature/HOTRG_mass_alt/beta" + ss.str() + "/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     time.start();
     cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K << ", " << n_data_point_start << '-' << n_data_point_end << '\n';
-    fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "alpha.txt";
+    fileName = dir + "D" + std::to_string(D_cut) + "_" + std::to_string(n_data_point_start) + "-" + std::to_string(n_data_point_end) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
     dataFile.close();
@@ -210,7 +207,7 @@ int main(int argc, char *argv[]) {
 //    for (D_cut = 16; D_cut <= 64; D_cut += 8) {
 //        time.start();
 //        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "D" + std::to_string(D_cut) + "_" + std::to_string(n_data_point_start) + "-" + std::to_string(n_data_point_end) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
 //        dataFile.close();
@@ -222,7 +219,7 @@ int main(int argc, char *argv[]) {
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
 //        time.start();
 //        cout << "---------- " << n_node << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "D" + std::to_string(D_cut) + "_" + std::to_string(n_data_point_start) + "-" + std::to_string(n_data_point_end) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
 //        dataFile.close();

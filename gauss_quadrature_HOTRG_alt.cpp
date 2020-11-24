@@ -3,14 +3,12 @@
 #include <string>
 #include <cmath>
 #include <vector>
-#include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
 #define NORMALIZE_FACTOR 10
@@ -21,11 +19,11 @@ using std::cerr;
 using std::string;
 
 
-void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
+void Trace(double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
     time_counter time;
 
     // index dimension
-    MKL_INT D = std::min(D_cut, n_node * n_node);
+    int D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
     time.start();
@@ -35,7 +33,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     time.end();
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
 
-    MKL_INT Dx = D, Dy = D;
+    int Dx = D, Dy = D;
     time.start();
 
     for (int n = 1; n <= N; ++n) {
@@ -56,12 +54,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         Dx = T.GetDx();
         Dy = T.GetDy();
 
-        double Tr = 0;
-        REP(i, Dx) {
-            REP(j, Dy) {
-                Tr += T(i, j, i, j);
-            }
-        }
+        double Tr = T.trace();
         Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
         REP(i, T.orders.size()) {
@@ -80,9 +73,9 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 20;     // volume : 2^N
-    MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
+    int N = 20;     // volume : 2^N
+    int n_node = 32;  // n_node
+    int D_cut = 16; // bond dimension
     double K_start = 0.1;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
@@ -91,14 +84,14 @@ int main(int argc, char *argv[]) {
     n_node = std::stoi(argv[2]);
     D_cut = std::stoi(argv[3]);
 
-    const string dir = "gauss_quadrature_HOTRG";
+    const string dir = "../data/gauss_quadrature/HOTRG_alt/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+    fileName = dir + "D" + std::to_string(D_cut) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     while (K <= K_end) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
@@ -114,7 +107,7 @@ int main(int argc, char *argv[]) {
 //    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
 //        K = K_start;
 //        time.start();
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + ".txt";
+//        fileName = dir + "D" + std::to_string(D_cut) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        while (K <= K_end) {
 //            cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;

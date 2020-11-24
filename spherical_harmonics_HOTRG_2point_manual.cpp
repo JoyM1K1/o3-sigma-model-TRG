@@ -3,7 +3,6 @@
 #include <string>
 #include <cmath>
 #include <vector>
-#include <mkl.h>
 #include <fstream>
 #include <spherical_harmonics.hpp>
 #include <HOTRG.hpp>
@@ -11,7 +10,6 @@
 #include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
 #define LINF 1e300
@@ -58,7 +56,7 @@ int normalization(HOTRG::Tensor &T, HOTRG::ImpureTensor &originIMT, std::vector<
                         }
         }
     }
-    auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
+    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
     REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
                     REP(t, std::abs(o)) {
                         if (o > 0) {
@@ -97,7 +95,7 @@ int normalization(HOTRG::Tensor &T, HOTRG::ImpureTensor &originIMT, std::vector<
     return o;
 }
 
-void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N, std::vector<int> &d, std::ofstream &file) {
+void Trace(double const K, int const D_cut, int const l_max, int const N, std::vector<int> &d, std::ofstream &file) {
     time_counter time;
 
     const int DATA_POINTS = d.size();
@@ -117,7 +115,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     }
 
     auto order = new int[N];
-    MKL_INT Dx = D_cut, Dy = D_cut;
+    int Dx = D_cut, Dy = D_cut;
 
     bool isMerged = false;
 
@@ -221,33 +219,50 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     delete[] order;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 16;     // volume : 2^N
-    MKL_INT l_max;  // l_max
-    MKL_INT D_cut; // bond dimension
+    int N = 16;     // volume : 2^N
+    int l_max;  // l_max
+    int D_cut; // bond dimension
     double K = 1.9; // inverse temperature
     std::vector<int> d = {8};
+    // TODO gauss_quadrature_HOTRG_2point_manual のようにする
 
-    const string dir = "spherical_harmonics_HOTRG_2point_manual";
+    N = std::stoi(argv[1]);
+    l_max = std::stoi(argv[2]);
+    K = std::stod(argv[3]);
+//    d =
+
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
+    const string dir = "../data/spherical_harmonics/HOTRG_2point_manual/beta" + ss.str() + "/N" + std::to_string(N) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
-    for (l_max = 1; l_max <= 4; ++l_max) {
-        time.start();
-        cout << "---------- " << l_max << " ----------\n";
-        fileName = dir + "_l" + std::to_string(l_max) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
-        dataFile.open(fileName, std::ios::trunc);
-        D_cut = (l_max + 1) * (l_max + 1);
-        Trace(K, D_cut, l_max, N, d, dataFile);
-        dataFile.close();
-        time.end();
-        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-    }
+    time.start();
+    cout << "N = " << N << ", l_max = " << l_max << ", beta = " << K << ", d = " << d[0] <<  '\n';
+    fileName = dir + "l" + std::to_string(l_max) + ".txt";
+    dataFile.open(fileName, std::ios::trunc);
+    D_cut = (l_max + 1) * (l_max + 1);
+    Trace(K, D_cut, l_max, N, d, dataFile);
+    dataFile.close();
+    time.end();
+    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
+
+    /* vs l_max */
+//    for (l_max = 1; l_max <= 4; ++l_max) {
+//        time.start();
+//        cout << "---------- " << l_max << " ----------\n";
+//        fileName = dir + "l" + std::to_string(l_max) + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        D_cut = (l_max + 1) * (l_max + 1);
+//        Trace(K, D_cut, l_max, N, d, dataFile);
+//        dataFile.close();
+//        time.end();
+//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+//    }
 
     return 0;
 }

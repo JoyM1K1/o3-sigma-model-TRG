@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <string>
 #include <vector>
-#include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
 #include <HOTRG.hpp>
@@ -20,76 +19,6 @@ using std::cin;
 using std::cout;
 using std::cerr;
 using std::string;
-
-int normalization(HOTRG::Tensor &T, HOTRG::ImpureTensor &originIMT, std::vector<HOTRG::ImpureTensor> &IMTs) {
-    double _min = LINF;
-    double _max = 0;
-    int Dx = T.GetDx();
-    int Dy = T.GetDy();
-    bool isAllMerged = true;
-    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    double t = std::abs(T(i, j, k, l));
-                    if (t > 0) {
-                        _min = std::min(_min, t);
-                        _max = std::max(_max, t);
-                    }
-                }
-    for (auto &IMT : IMTs) {
-        if (!IMT.isMerged) isAllMerged = false;
-        for (auto &tensor : IMT.tensors) {
-            REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            double t = std::abs(tensor(i, j, k, l));
-                            if (t > 0) {
-                                _min = std::min(_min, t);
-                                _max = std::max(_max, t);
-                            }
-                        }
-        }
-    }
-    if (!isAllMerged) {
-        for (auto &tensor : originIMT.tensors) {
-            REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            double t = std::abs(tensor(i, j, k, l));
-                            if (t > 0) {
-                                _min = std::min(_min, t);
-                                _max = std::max(_max, t);
-                            }
-                        }
-        }
-    }
-    auto o = static_cast<MKL_INT>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
-    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    if (o > 0) {
-                        REP(t, std::abs(o)) T(i, j, k, l) /= 10;
-                    } else {
-                        REP(t, std::abs(o)) T(i, j, k, l) *= 10;
-                    }
-                }
-    if (!isAllMerged) {
-        for (auto &tensor : originIMT.tensors) {
-            REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            if (o > 0) {
-                                REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
-                            } else {
-                                REP(t, std::abs(o)) tensor(i, j, k, l) *= 10;
-                            }
-                        }
-        }
-    }
-    for (auto &IMT : IMTs) {
-        for (auto &tensor : IMT.tensors) {
-            REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                            if (o > 0) {
-                                REP(t, std::abs(o)) tensor(i, j, k, l) /= 10;
-                            } else {
-                                REP(t, std::abs(o)) tensor(i, j, k, l) *= 10;
-                            }
-                        }
-        }
-    }
-    return o;
-}
-
 
 void Trace(double const K, int const D_cut, int const n_node, int const N, std::pair<int, int> p, std::ofstream &file) {
     time_counter time;
@@ -111,7 +40,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
 
     auto orders = new long long int[DIMENSION];
     REP(i, DIMENSION) orders[i] = 0;
-    MKL_INT Dx = D, Dy = D;
+    int Dx = D, Dy = D;
 
     for (int n = 1; n <= N; ++n) {
         time.start();
@@ -258,11 +187,11 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    int N = 40;     // volume : 2^N
-    double K = 1.8; // inverse temperature
+    int N = 12;     // volume : 2^N
+    double K = 1.4; // inverse temperature
     int n_node = 32;  // n_node
-    int D_cut = 16; // bond dimension
-    std::pair<int, int> p(3, 0); // impure tensorの座標
+    int D_cut = 8; // bond dimension
+    std::pair<int, int> p(16, 16); // impure tensorの座標
 
     N = std::stoi(argv[1]);
     n_node = std::stoi(argv[2]);
@@ -271,17 +200,17 @@ int main(int argc, char *argv[]) {
     p.first = std::stoi(argv[5]);
     p.second = std::stoi(argv[6]);
 
-    const string dir = "gauss_quadrature_HOTRG_2point_manual";
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
+    const string dir = "../data/gauss_quadrature/HOTRG_2point_manual/beta" + ss.str() + "/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/data/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     time.start();
     cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K << ", impure tensor coordinate = (" << p.first << "," << p.second << ")" << '\n';
-    fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "_" + std::to_string(p.first) + "-" + std::to_string(p.second) + ".txt";
+    fileName = dir + std::to_string(p.first) + "-" + std::to_string(p.second) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(K, D_cut, n_node, N, p, dataFile);
     dataFile.close();
@@ -292,7 +221,7 @@ int main(int argc, char *argv[]) {
 //    for (D_cut = 8; D_cut <= 32; D_cut += 4) {
 //        time.start();
 //        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "_" + std::to_string(p.first) + "-" + std::to_string(p.second) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(K, D_cut, n_node, N, d, dataFile);
 //        dataFile.close();
@@ -304,7 +233,7 @@ int main(int argc, char *argv[]) {
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
 //        time.start();
 //        cout << "---------- " << n_node << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "_" + std::to_string(p.first) + "-" + std::to_string(p.second) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(K, D_cut, n_node, N, d, dataFile);
 //        dataFile.close();

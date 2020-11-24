@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <string>
 #include <vector>
-#include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
 #include <impure_tensor.hpp>
@@ -11,7 +10,6 @@
 #include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
 
 #define MESH 1e-1
 #define MAX_IMT_NUM 6
@@ -548,9 +546,9 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 40;     // volume : 2^N
-    MKL_INT n_node = 32;  // n_node
-    MKL_INT D_cut = 16; // bond dimension
+    int N = 40;     // volume : 2^N
+    int n_node = 32;  // n_node
+    int D_cut = 16; // bond dimension
     double K = 1.8; // inverse temperature
     int merge_point = 14; // d = 2^(merge_point - 1)
 
@@ -560,17 +558,17 @@ int main(int argc, char *argv[]) {
     K = std::stod(argv[4]);
     merge_point = std::stoi(argv[5]);
 
-    const string dir = "gauss_quadrature_TRG_2point";
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
+    const string dir = "../data/gauss_quadrature/TRG_2point/beta" + ss.str() + "/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     time.start();
     cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K << ", merge_point = " << merge_point << '\n';
-    fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "_" + std::to_string(merge_point) + ".txt";
+    fileName = dir + "D" + std::to_string(D_cut) + "_" + std::to_string(merge_point) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(merge_point, K, D_cut, n_node, N, dataFile);
     dataFile.close();
