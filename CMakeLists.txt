@@ -14,9 +14,6 @@ if (APPLE)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
 
-    add_executable(gauss_quadrature_HOTRG gauss_quadrature_HOTRG.cpp)
-    target_link_libraries(gauss_quadrature_HOTRG mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor time_counter)
-
     add_executable(gauss_quadrature_HOTRG_1point gauss_quadrature_HOTRG_1point.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_1point mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
@@ -28,6 +25,9 @@ if (APPLE)
 
     add_executable(gauss_quadrature_HOTRG_2point_manual gauss_quadrature_HOTRG_2point_manual.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_2point_manual mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
+
+    add_executable(gauss_quadrature_HOTRG_alt gauss_quadrature_HOTRG_alt.cpp)
+    target_link_libraries(gauss_quadrature_HOTRG_alt mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor time_counter)
 
     add_executable(gauss_quadrature_HOTRG_mass gauss_quadrature_HOTRG_mass.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_mass mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
@@ -47,9 +47,6 @@ if (APPLE)
     add_executable(gauss_quadrature_TRG_2point gauss_quadrature_TRG_2point.cpp)
     target_link_libraries(gauss_quadrature_TRG_2point mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature TRG tensor time_counter)
 
-    add_executable(spherical_harmonics_HOTRG spherical_harmonics_HOTRG.cpp)
-    target_link_libraries(spherical_harmonics_HOTRG mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor time_counter)
-
     add_executable(spherical_harmonics_HOTRG_2point spherical_harmonics_HOTRG_2point.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_2point mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor impure_tensor time_counter)
 
@@ -58,6 +55,9 @@ if (APPLE)
 
     add_executable(spherical_harmonics_HOTRG_2point_manual spherical_harmonics_HOTRG_2point_manual.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_2point_manual mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor impure_tensor time_counter)
+
+    add_executable(spherical_harmonics_HOTRG_alt spherical_harmonics_HOTRG_alt.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG_alt mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor time_counter)
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics TRG tensor time_counter)
@@ -71,9 +71,6 @@ else ()
     set(CMAKE_CXX_COMPILER icpc)
     set(CMAKE_CXX_FLAGS "-std=c++11 -mkl -axMIC-AVX512 -qopenmp -lgsl -lgslcblas")
 
-    add_executable(gauss_quadrature_HOTRG gauss_quadrature_HOTRG.cpp)
-    target_link_libraries(gauss_quadrature_HOTRG gauss_quadrature HOTRG tensor time_counter)
-
     add_executable(gauss_quadrature_HOTRG_1point gauss_quadrature_HOTRG_1point.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_1point gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
@@ -85,6 +82,9 @@ else ()
 
     add_executable(gauss_quadrature_HOTRG_2point_manual gauss_quadrature_HOTRG_2point_manual.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_2point_manual gauss_quadrature HOTRG tensor impure_tensor time_counter)
+
+    add_executable(gauss_quadrature_HOTRG_alt gauss_quadrature_HOTRG_alt.cpp)
+    target_link_libraries(gauss_quadrature_HOTRG_alt gauss_quadrature HOTRG tensor time_counter)
 
     add_executable(gauss_quadrature_HOTRG_mass gauss_quadrature_HOTRG_mass.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_mass gauss_quadrature HOTRG tensor impure_tensor time_counter)
@@ -104,9 +104,6 @@ else ()
     add_executable(gauss_quadrature_TRG_2point gauss_quadrature_TRG_2point.cpp)
     target_link_libraries(gauss_quadrature_TRG_2point gauss_quadrature TRG tensor time_counter)
 
-    add_executable(spherical_harmonics_HOTRG spherical_harmonics_HOTRG.cpp)
-    target_link_libraries(spherical_harmonics_HOTRG spherical_harmonics HOTRG tensor time_counter)
-
     add_executable(spherical_harmonics_HOTRG_2point spherical_harmonics_HOTRG_2point.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_2point spherical_harmonics HOTRG tensor impure_tensor time_counter)
 
@@ -115,6 +112,9 @@ else ()
 
     add_executable(spherical_harmonics_HOTRG_2point_manual spherical_harmonics_HOTRG_2point_manual.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_2point_manual spherical_harmonics HOTRG tensor impure_tensor time_counter)
+
+    add_executable(spherical_harmonics_HOTRG_alt spherical_harmonics_HOTRG_alt.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG_alt spherical_harmonics HOTRG tensor time_counter)
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG spherical_harmonics TRG tensor time_counter)

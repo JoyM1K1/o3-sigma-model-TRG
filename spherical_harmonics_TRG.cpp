@@ -3,15 +3,12 @@
 #include <string>
 #include <cmath>
 #include <vector>
-#include <mkl.h>
 #include <fstream>
 #include <spherical_harmonics.hpp>
 #include <TRG.hpp>
-#include <tensor.hpp>
 #include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
 #define NORMALIZE_FACTOR 10
@@ -21,7 +18,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT const N, std::ofstream &file) {
+void Trace(double const K, int const D_cut, int const l_max, int const N, std::ofstream &file) {
     time_counter time;
 
     // initialize tensor network : max index size is D_cut
@@ -36,10 +33,13 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
 
     time.start();
+    auto orders = new long long int[N];
 
     for (int n = 1; n <= N; ++n) {
         /* normalization */
         T1.normalization(NORMALIZE_FACTOR);
+        // TODO 応急処置
+        orders[n - 1] = T1.order;
 
         /* SVD */
         T2 = T1;
@@ -54,11 +54,11 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
         REP(i, D)REP(j, D) Tr += T1(i, j, i, j);
         Tr = std::log(Tr) + std::log(NORMALIZE_FACTOR) * T1.order;
         REP(i, n) Tr /= 2; // 体積で割る
-//        REP(i, n) {
-//            double tmp = order[i] * std::log(10);
-//            REP(j, i) tmp /= 2;
-//            Tr += tmp;
-//        }
+        REP(i, n) {
+            double tmp = orders[i] * std::log(NORMALIZE_FACTOR);
+            REP(j, i) tmp /= 2;
+            Tr += tmp;
+        }
         Tr += std::log(M_PI / (2 * K));
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
@@ -68,38 +68,59 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const l_max, MKL_INT con
     cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT D_cut; // bond dimension
-    MKL_INT N = 20;     // volume : 2^N
-    MKL_INT l_max; // max l
+    int N = 20;     // volume : 2^N
+    int l_max; // max l
+    int D_cut; // bond dimension
 
     double K_start = 0.1;
     double K_end = 4.01;
     double K; // inverse temperature
 
+    N = std::stoi(argv[1]);
+    l_max = std::stoi(argv[2]);
+
+    const string dir = "../data/spherical_harmonics/TRG/N" + std::to_string(N) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
-    for (l_max = 1; l_max <= 3; ++l_max) {
-        time.start();
-        cout << "---------- " << l_max << " ----------\n";
-        fileName = "spherical_harmonics_TRG_l" + std::to_string(l_max) + "_N" + std::to_string(N) + ".txt";
-        dataFile.open(fileName, std::ios::trunc);
-        D_cut = (l_max + 1) * (l_max + 1);
-        K = K_start;
-        while (K <= K_end) {
-            cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
-            dataFile << std::fixed << std::setprecision(1) << K;
-            Trace(K, D_cut, l_max, N, dataFile);
-            K += MESH;
-        }
-        dataFile.close();
-        time.end();
-        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+    time.start();
+    cout << "N = " << N << ", l_max = " << l_max <<  '\n';
+    fileName = dir + "l" + std::to_string(l_max) + ".txt";
+    dataFile.open(fileName, std::ios::trunc);
+    D_cut = (l_max + 1) * (l_max + 1);
+    K = K_start;
+    while (K <= K_end) {
+        cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
+        dataFile << std::fixed << std::setprecision(1) << K;
+        Trace(K, D_cut, l_max, N, dataFile);
+        K += MESH;
     }
+    dataFile.close();
+    time.end();
+    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
+
+    /* vs l_max */
+//    for (l_max = 1; l_max <= 3; ++l_max) {
+//        time.start();
+//        cout << "---------- " << l_max << " ----------\n";
+//        fileName = dir + "l" + std::to_string(l_max) + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        D_cut = (l_max + 1) * (l_max + 1);
+//        K = K_start;
+//        while (K <= K_end) {
+//            cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
+//            dataFile << std::fixed << std::setprecision(1) << K;
+//            Trace(K, D_cut, l_max, N, dataFile);
+//            K += MESH;
+//        }
+//        dataFile.close();
+//        time.end();
+//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+//    }
 
     return 0;
 }

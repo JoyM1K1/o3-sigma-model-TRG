@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <string>
 #include <vector>
-#include <mkl.h>
 #include <fstream>
 #include <gauss_quadrature.hpp>
 #include <HOTRG.hpp>
@@ -10,7 +9,6 @@
 #include <sstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N)REP(j, N)REP(k, N)REP(l, N)
 
 #define MESH 1e-1
 #define NORMALIZE_FACTOR 10
@@ -20,10 +18,10 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
+void Trace(const int n_data_point, double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
     time_counter time;
     // index dimension
-    MKL_INT D = std::min(D_cut, n_node * n_node);
+    int D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
     time.start();
@@ -36,7 +34,7 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
 
     std::vector<HOTRG::ImpureTensor> IMTs(n_data_point);
 
-    MKL_INT Dx = D, Dy = D;
+    int Dx = D, Dy = D;
 
     bool isMerged = false;
 
@@ -127,24 +125,31 @@ void Trace(const int n_data_point, double const K, MKL_INT const D_cut, MKL_INT 
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     /* inputs */
-    MKL_INT N = 40;     // volume : 2^N
-    MKL_INT n_node = 48;  // n_node
-    MKL_INT D_cut = 12; // bond dimension
+    int N = 40;     // volume : 2^N
+    int n_node = 48;  // n_node
+    int D_cut = 12; // bond dimension
     double K = 1.9; // inverse temperature
     int n_data_point = 7; // number of d. d = 1, 2, 4, 8, 16, 32, 64, ...
 
-    const string dir = "gauss_quadrature_HOTRG_2point";
+    N = std::stoi(argv[1]);
+    n_node = std::stoi(argv[2]);
+    D_cut = std::stoi(argv[3]);
+    K = std::stod(argv[4]);
+    n_data_point = std::stoi(argv[5]);
+
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << K;
+    const string dir = "../data/gauss_quadrature/HOTRG_2point/beta" + ss.str() + "/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
-    std::stringstream ss;
-    ss << std::fixed << std::setprecision(1) << K;
 
     /* calculation */
     time.start();
-    fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K << ", n_data_point = " << n_data_point << '\n';
+    fileName = dir + "D" + std::to_string(D_cut) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(n_data_point, K, D_cut, n_node, N, dataFile);
     dataFile.close();
@@ -155,7 +160,7 @@ int main() {
 //    for (D_cut = 44; D_cut <= 60; D_cut += 8) {
 //        time.start();
 //        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "D" + std::to_string(D_cut) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
 //        dataFile.close();
@@ -167,7 +172,7 @@ int main() {
 //    for (n_node = 8; n_node <= 32; n_node += 8) {
 //        time.start();
 //        cout << "---------- " << n_node << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
+//        fileName = dir + "D" + std::to_string(D_cut) + ".txt";
 //        dataFile.open(fileName, std::ios::trunc);
 //        Trace(n_data_point, K, D_cut, n_node, N, dataFile);
 //        dataFile.close();

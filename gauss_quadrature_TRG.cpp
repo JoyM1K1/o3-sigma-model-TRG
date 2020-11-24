@@ -3,7 +3,6 @@
 #include <string>
 #include <cmath>
 #include <vector>
-#include <mkl.h>
 #include <fstream>
 #include <sstream>
 #include <gauss_quadrature.hpp>
@@ -11,7 +10,6 @@
 #include <time_counter.hpp>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 #define MESH 1e-1
 #define NORMALIZE_FACTOR 10
@@ -21,11 +19,11 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT const N, std::ofstream &file) {
+void Trace(double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
     time_counter time;
     std::stringstream ss;
     // index dimension
-    MKL_INT D = std::min(D_cut, n_node * n_node);
+    int D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
     time.start();
@@ -39,12 +37,15 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
 
     time.start();
+    auto orders = new long long int[N];
 
     for (int n = 1; n <= N; ++n) {
         const int D_new = std::min(D * D, D_cut);
 
         /* normalization */
         T1.normalization(NORMALIZE_FACTOR);
+        // TODO 応急処置
+        orders[n - 1] = T1.order;
 
         /* SVD */
         T2 = T1;
@@ -54,23 +55,18 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
         /* contraction */
         TRG::contraction(D, D_new, T1, T1.S.first, T2.S.first, T1.S.second, T2.S.second);
 
-
-        double Tr = 0;
-        REP(i, D)REP(j, D) {
-                Tr += T1(i, j, i, j);
-            }
+        double Tr = T1.trace();
         if (std::isnan(std::log(Tr))) {
             cout << "\nTrace is " << Tr;
             exit(1);
         }
         Tr = std::log(Tr);
-//        int order = 0;
-//        for (auto o : T1.orders) {
-//            order += o;
-//        }
-//        cout << " order " << T1.order << " :" << std::flush;
-        Tr += std::log(NORMALIZE_FACTOR) * T1.order;
         REP(i, n) Tr /= 2; // 体積で割る
+        REP(i, n) {
+            double tmp = orders[i] * std::log(NORMALIZE_FACTOR);
+            REP(j, i) tmp /= 2;
+            Tr += tmp;
+        }
         Tr += std::log(M_PI / 8);
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
@@ -79,6 +75,7 @@ void Trace(double const K, MKL_INT const D_cut, MKL_INT const n_node, MKL_INT co
     delete T1.S.second;
     delete T2.S.first;
     delete T2.S.second;
+    delete[] orders;
     file << '\n';
     time.end();
     cout << "  in " << time.duration_cast_to_string() << '\n';
@@ -90,22 +87,22 @@ int main(int argc, char *argv[]) {
     int n_node = 32;  // n_node
     int D_cut = 16; // bond dimension
 
-//    N = std::stoi(argv[1]);
-//    n_node = std::stoi(argv[2]);
-//    D_cut = std::stoi(argv[3]);
+    N = std::stoi(argv[1]);
+    n_node = std::stoi(argv[2]);
+    D_cut = std::stoi(argv[3]);
 
     double K_start = 0.1;
     double K_end = 4.01;
     double K = K_start; // inverse temperature
 
-    const string dir = "gauss_quadrature_TRG";
+    const string dir = "../data/gauss_quadrature/TRG/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + ".txt";
+    fileName = dir + "D" + std::to_string(D_cut) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     while (K <= K_end) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
