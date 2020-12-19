@@ -43,9 +43,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
         const int D_new = std::min(D * D, D_cut);
 
         /* normalization */
-        T1.normalization(NORMALIZE_FACTOR);
-        // TODO 応急処置
-        orders[n - 1] = T1.order;
+        orders[n - 1] = T1.normalization(NORMALIZE_FACTOR);
 
         /* SVD */
         T2 = T1;
@@ -67,7 +65,6 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
-        Tr += std::log(M_PI / 8);
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }
@@ -86,14 +83,17 @@ int main(int argc, char *argv[]) {
     int N = 20;     // volume : 2^N
     int n_node = 32;  // n_node
     int D_cut = 16; // bond dimension
+    double K_start = 0.1;
+    double K_end = 4.0;
+    double K_interval = 0.1;
+    double K; // inverse temperature
 
     N = std::stoi(argv[1]);
     n_node = std::stoi(argv[2]);
     D_cut = std::stoi(argv[3]);
-
-    double K_start = 0.1;
-    double K_end = 4.01;
-    double K = K_start; // inverse temperature
+    K_start = std::stod(argv[4]);
+    K_end = std::stod(argv[5]);
+    K_interval = std::stod(argv[6]);
 
     const string dir = "../data/gauss_quadrature/TRG/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/";
     time_counter time;
@@ -102,13 +102,15 @@ int main(int argc, char *argv[]) {
 
     /* calculation */
     time.start();
+    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K_start << "-" << K_end << " (" << K_interval << " step)" <<  '\n';
     fileName = dir + "D" + std::to_string(D_cut) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
+    K = K_start;
     while (K <= K_end) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
         dataFile << std::setprecision(1) << K;
         Trace(K, D_cut, n_node, N, dataFile);
-        K += MESH;
+        K += K_interval;
     }
     dataFile.close();
     time.end();

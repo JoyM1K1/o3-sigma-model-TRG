@@ -9,7 +9,6 @@
 //#include <fstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 void GaussQuadrature::initTensor(const double &K, const int &n_node, const int &D_cut, BaseTensor &T) {
     const int D = std::min(n_node * n_node, D_cut);
@@ -35,16 +34,15 @@ void GaussQuadrature::initTensor(const double &K, const int &n_node, const int &
         std::function<double(double)> c = [&](double theta) { return std::cos(M_PI * theta / 2); };
         return std::exp(K * (s(theta1) * s(theta2) + c(theta1) * c(theta2) * std::cos(M_PI * (phi1 - phi2))));
     };
-    auto M = new double[n_node * n_node * n_node * n_node];
-    REP4(theta1, phi1, theta2, phi2, n_node) {
-        M[n_node * n_node * n_node * theta1 + n_node * n_node * phi1 + n_node * theta2 + phi2] = f(
-                x[theta1], x[phi1], x[theta2], x[phi2]);
-    }
+    BaseTensor M(n_node);
+    M.forEach([&](int theta1, int phi1, int theta2, int phi2, double *m) {
+        *m = f(x[theta1], x[phi1], x[theta2], x[phi2]);
+    });
     auto U = new double[n_node * n_node * n_node * n_node];
     auto VT = new double[n_node * n_node * n_node * n_node];
     auto sigma = new double[n_node * n_node];
     auto buffer = new double[n_node * n_node - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M, n_node * n_node,
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.GetMatrix(), n_node * n_node,
                                   sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         std::cerr << "The algorithm computing SVD failed to converge.\n";
@@ -58,18 +56,17 @@ void GaussQuadrature::initTensor(const double &K, const int &n_node, const int &
         }
     }
     double sum;
-    REP4(i, j, k, l, D) {
+    T.forEach([&](int i, int j, int k, int l, double *t) {
         sum = 0;
         REP(theta, n_node)REP(phi, n_node) {
-            const double a = U[n_node * n_node * n_node * theta + n_node * n_node * phi + i];
-            const double b = U[n_node * n_node * n_node * theta + n_node * n_node * phi + j];
-            const double c = VT[n_node * n_node * k + n_node * theta + phi];
-            const double d = VT[n_node * n_node * l + n_node * theta + phi];
-            sum += a * b * c * d * w[theta] * w[phi] * std::cos(M_PI * x[theta] / 2);
-        }
-        T(i, j, k, l) = sum;
-    }
-    delete[] M;
+                const double a = U[n_node * n_node * n_node * theta + n_node * n_node * phi + i];
+                const double b = U[n_node * n_node * n_node * theta + n_node * n_node * phi + j];
+                const double c = VT[n_node * n_node * k + n_node * theta + phi];
+                const double d = VT[n_node * n_node * l + n_node * theta + phi];
+                sum += a * b * c * d * w[theta] * w[phi] * std::cos(M_PI * x[theta] / 2);
+            }
+        *t = sum * M_PI / 8;
+    });
     delete[] U;
     delete[] VT;
     delete[] sigma;
@@ -97,16 +94,15 @@ void GaussQuadrature::initTensorWithImpure(const double &K, const int &n_node, c
         std::function<double(double)> c = [=](double theta) { return std::cos(M_PI * theta / 2); };
         return std::exp(K * (s(theta1) * s(theta2) + c(theta1) * c(theta2) * std::cos(M_PI * (phi1 - phi2))));
     };
-    auto M = new double[n_node * n_node * n_node * n_node];
-    REP4(theta1, phi1, theta2, phi2, n_node) {
-                    M[n_node * n_node * n_node * theta1 + n_node * n_node * phi1 + n_node * theta2 + phi2]
-                            = f(x[theta1], x[phi1], x[theta2], x[phi2]);
-                }
+    BaseTensor M(n_node);
+    M.forEach([&](int theta1, int phi1, int theta2, int phi2, double *m) {
+        *m = f(x[theta1], x[phi1], x[theta2], x[phi2]);
+    });
     auto U = new double[n_node * n_node * n_node * n_node];
     auto VT = new double[n_node * n_node * n_node * n_node];
     auto sigma = new double[n_node * n_node];
     auto buffer = new double[n_node * n_node - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M, n_node * n_node,
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.GetMatrix(), n_node * n_node,
                                   sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         std::cerr << "The algorithm computing SVD failed to converge.\n";
@@ -120,34 +116,33 @@ void GaussQuadrature::initTensorWithImpure(const double &K, const int &n_node, c
                 VT[n_node * n_node * k + n_node * i + j] *= s;
             }
     }
-    REP4(i, j, k, l, D) {
-                    double sum = 0;
-                    double sum1 = 0;
-                    double sum2 = 0;
-                    double sum3 = 0;
-                    REP(theta, n_node) {
-                        const double cosTheta = std::cos(M_PI * x[theta] / 2);
-                        const double sinTheta = std::sin(M_PI * x[theta] / 2);
-                        REP(phi, n_node) {
-                            const double cosPhi = std::cos(M_PI * x[phi]);
-                            const double sinPhi = std::sin(M_PI * x[phi]);
-                            const double a = U[n_node * n_node * n_node * theta + n_node * n_node * phi + i];
-                            const double b = U[n_node * n_node * n_node * theta + n_node * n_node * phi + j];
-                            const double c = VT[n_node * n_node * k + n_node * theta + phi];
-                            const double d = VT[n_node * n_node * l + n_node * theta + phi];
-                            const double t = a * b * c * d * w[theta] * w[phi] * cosTheta;
-                            sum += t;
-                            sum1 += t * cosTheta * cosPhi;
-                            sum2 += -t * cosTheta * sinPhi;
-                            sum3 += -t * sinTheta;
-                        }
-                    }
-                    T(i, j, k, l) = sum;
-                    IMT.tensors[0](i, j, k, l) = sum1;
-                    IMT.tensors[1](i, j, k, l) = sum2;
-                    IMT.tensors[2](i, j, k, l) = sum3;
-                }
-    delete[] M;
+    T.forEach([&](int i, int j, int k, int l, double *t) {
+        double sum = 0;
+        double sum1 = 0;
+        double sum2 = 0;
+        double sum3 = 0;
+        REP(theta, n_node) {
+            const double cosTheta = std::cos(M_PI * x[theta] / 2);
+            const double sinTheta = std::sin(M_PI * x[theta] / 2);
+            REP(phi, n_node) {
+                const double cosPhi = std::cos(M_PI * x[phi]);
+                const double sinPhi = std::sin(M_PI * x[phi]);
+                const double a = U[n_node * n_node * n_node * theta + n_node * n_node * phi + i];
+                const double b = U[n_node * n_node * n_node * theta + n_node * n_node * phi + j];
+                const double c = VT[n_node * n_node * k + n_node * theta + phi];
+                const double d = VT[n_node * n_node * l + n_node * theta + phi];
+                const double p = a * b * c * d * w[theta] * w[phi] * cosTheta;
+                sum += p;
+                sum1 += p * cosTheta * cosPhi;
+                sum2 += -p * cosTheta * sinPhi;
+                sum3 += -p * sinTheta;
+            }
+        }
+        *t = sum * M_PI / 8;
+        IMT.tensors[0](i, j, k, l) = sum1 * M_PI / 8;
+        IMT.tensors[1](i, j, k, l) = sum2 * M_PI / 8;
+        IMT.tensors[2](i, j, k, l) = sum3 * M_PI / 8;
+    });
     delete[] U;
     delete[] VT;
     delete[] sigma;

@@ -44,7 +44,7 @@ void Trace(const int merge_t_point, double const K, int const D_cut, int const n
 
     for (int n = 1; n <= N; ++n) {
         time.start();
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         T.normalization(NORMALIZE_FACTOR);
         if (IMT.isMerged) {

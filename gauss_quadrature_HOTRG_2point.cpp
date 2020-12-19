@@ -40,7 +40,7 @@ void Trace(const int n_data_point, double const K, int const D_cut, int const n_
 
     for (int n = 1; n <= N; ++n) {
         time.start();
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         T.normalization(NORMALIZE_FACTOR);
         for (auto &IMT : IMTs) {
@@ -98,17 +98,10 @@ void Trace(const int n_data_point, double const K, int const D_cut, int const n_
             continue;
         }
 
-        double Tr = 0;
-        REP(i, Dx)REP(j, Dy) Tr += T(i, j, i, j);
+        double Tr = T.trace();
 
         for (auto &IMT : IMTs) {
-            double Tr1 = 0, Tr2 = 0, Tr3 = 0;
-            REP(i, Dx)
-                REP(j, Dy) {
-                    Tr1 += IMT.tensors[0](i, j, i, j);
-                    Tr2 += IMT.tensors[1](i, j, i, j);
-                    Tr3 += IMT.tensors[2](i, j, i, j);
-                }
+            double Tr1 = IMT.tensors[0].trace(), Tr2 = IMT.tensors[1].trace(), Tr3 = IMT.tensors[2].trace();
             double res = (Tr1 + Tr2 + Tr3) / Tr;
             IMT.corrs.push_back(res);
             cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;

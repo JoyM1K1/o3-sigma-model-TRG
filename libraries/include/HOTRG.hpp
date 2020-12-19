@@ -18,7 +18,7 @@ namespace HOTRG {
 
         Tensor(int Di, int Dj, int Dk, int Dl, int D_max) : BaseTensor(Di, Dj, Dk, Dl, D_max) {};
 
-        void normalization(int c) override;
+        long long int normalization(int c) override;
     };
 
     class ImpureTensor : public BaseImpureTensor<Tensor> {
@@ -42,9 +42,9 @@ namespace HOTRG {
 
     void contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string mergeT);
 
-    void SVD_X(const int &D_cut, BaseTensor &T, double *U);
+    void SVD_X(const int &D_cut, BaseTensor &T, double *&U);
 
-    void SVD_Y(const int &D_cut, BaseTensor &T, double *U);
+    void SVD_Y(const int &D_cut, BaseTensor &T, double *&U);
 }
 
 #endif //O3_SIGMA_MODEL_HOTRG_HPP

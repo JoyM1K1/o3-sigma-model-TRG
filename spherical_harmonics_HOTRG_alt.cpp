@@ -50,12 +50,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
         Dx = T.GetDx();
         Dy = T.GetDy();
 
-        double Tr = 0;
-        REP(i, Dx) {
-            REP(j, Dy) {
-                Tr += T(i, j, i, j);
-            }
-        }
+        double Tr = T.trace();
         Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
         REP(i, T.orders.size()) {
@@ -63,7 +58,6 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
-        Tr += std::log(M_PI / (2 * K));
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }

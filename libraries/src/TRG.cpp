@@ -4,7 +4,6 @@
 #include <cmath>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 using std::cin;
 using std::cout;
@@ -136,7 +135,7 @@ TRG::Tensor &TRG::Tensor::operator=(const Tensor &rhs) {
     return *this;
 }
 
-void TRG::Tensor::normalization(int c) {
+long long int TRG::Tensor::normalization(int c) {
     double _max = 0;
     this->forEach([&](int i, int j, int k, int l, const double *t) {
         const double absT = std::abs(*t);
@@ -157,5 +156,5 @@ void TRG::Tensor::normalization(int c) {
             REP(a, absO) *t *= c;
         });
     }
-    order = o;
+    return order = o;
 }

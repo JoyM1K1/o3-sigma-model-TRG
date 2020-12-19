@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -10,7 +11,6 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-#define MESH 1e-1
 #define NORMALIZE_FACTOR 10
 
 using std::cin;
@@ -37,9 +37,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
 
     for (int n = 1; n <= N; ++n) {
         /* normalization */
-        T1.normalization(NORMALIZE_FACTOR);
-        // TODO 応急処置
-        orders[n - 1] = T1.order;
+        orders[n - 1] = T1.normalization(NORMALIZE_FACTOR);
 
         /* SVD */
         T2 = T1;
@@ -49,20 +47,18 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
         /* contraction */
         TRG::contraction(D_cut, D_cut, T1, T1.S.first, T2.S.first, T1.S.second, T2.S.second);
 
-        double Tr = 0;
-        int D = T1.GetDx(); // same as T.GetDy()
-        REP(i, D)REP(j, D) Tr += T1(i, j, i, j);
-        Tr = std::log(Tr) + std::log(NORMALIZE_FACTOR) * T1.order;
+        double Tr = T1.trace();
+        Tr = std::log(Tr);
         REP(i, n) Tr /= 2; // 体積で割る
         REP(i, n) {
             double tmp = orders[i] * std::log(NORMALIZE_FACTOR);
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
-        Tr += std::log(M_PI / (2 * K));
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }
+    delete[] orders;
     file << '\n';
     time.end();
     cout << "  in " << time.duration_cast_to_string() << '\n';
@@ -71,15 +67,21 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
 int main(int argc, char *argv[]) {
     /* inputs */
     int N = 20;     // volume : 2^N
-    int l_max; // max l
+    int l_max = 3; // max l
     int D_cut; // bond dimension
 
     double K_start = 0.1;
-    double K_end = 4.01;
+    double K_end = 4.0;
+    double K_interval = 0.1;
     double K; // inverse temperature
 
     N = std::stoi(argv[1]);
     l_max = std::stoi(argv[2]);
+    K_start = std::stod(argv[3]);
+    K_end = std::stod(argv[4]);
+    K_interval = std::stod(argv[5]);
+
+    assert(K_start > 0 && K_start <= K_end);
 
     const string dir = "../data/spherical_harmonics/TRG/N" + std::to_string(N) + "/";
     time_counter time;
@@ -88,7 +90,8 @@ int main(int argc, char *argv[]) {
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", l_max = " << l_max <<  '\n';
+    cout << "N = " << N << ", l_max = " << l_max << ", beta = " << K_start << "-" << K_end << " (" << K_interval << " step)" <<  '\n';
+    K_end += K_interval / 2; // 誤差対策
     fileName = dir + "l" + std::to_string(l_max) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     D_cut = (l_max + 1) * (l_max + 1);
@@ -97,13 +100,14 @@ int main(int argc, char *argv[]) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
         dataFile << std::fixed << std::setprecision(1) << K;
         Trace(K, D_cut, l_max, N, dataFile);
-        K += MESH;
+        K += K_interval;
     }
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     /* vs l_max */
+//    K_end += K_interval / 2; // 誤差対策
 //    for (l_max = 1; l_max <= 3; ++l_max) {
 //        time.start();
 //        cout << "---------- " << l_max << " ----------\n";
@@ -115,7 +119,7 @@ int main(int argc, char *argv[]) {
 //            cout << "K = " << std::fixed << std::setprecision(1) << K << std::flush;
 //            dataFile << std::fixed << std::setprecision(1) << K;
 //            Trace(K, D_cut, l_max, N, dataFile);
-//            K += MESH;
+//            K += K_interval;
 //        }
 //        dataFile.close();
 //        time.end();

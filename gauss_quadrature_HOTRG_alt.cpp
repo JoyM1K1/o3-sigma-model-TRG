@@ -10,14 +10,12 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-#define MESH 1e-1
 #define NORMALIZE_FACTOR 10
 
 using std::cin;
 using std::cout;
 using std::cerr;
 using std::string;
-
 
 void Trace(double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
     time_counter time;
@@ -62,7 +60,6 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
-        Tr += std::log(M_PI / 8);
         file << '\t' << std::fixed << std::setprecision(16) << Tr;
         cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
     }
@@ -77,12 +74,16 @@ int main(int argc, char *argv[]) {
     int n_node = 32;  // n_node
     int D_cut = 16; // bond dimension
     double K_start = 0.1;
-    double K_end = 4.01;
-    double K = K_start; // inverse temperature
+    double K_end = 4.0;
+    double K_interval = 0.1;
+    double K; // inverse temperature
 
-    N = std::stoi(argv[1]);
-    n_node = std::stoi(argv[2]);
-    D_cut = std::stoi(argv[3]);
+//    N = std::stoi(argv[1]);
+//    n_node = std::stoi(argv[2]);
+//    D_cut = std::stoi(argv[3]);
+//    K_start = std::stod(argv[4]);
+//    K_end = std::stod(argv[5]);
+//    K_interval = std::stod(argv[6]);
 
     const string dir = "../data/gauss_quadrature/HOTRG_alt/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/";
     time_counter time;
@@ -91,19 +92,23 @@ int main(int argc, char *argv[]) {
 
     /* calculation */
     time.start();
+    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", K = " << K_start << "-" << K_end << " (" << K_interval << " step)" <<  '\n';
     fileName = dir + "D" + std::to_string(D_cut) + ".txt";
+    K_end += K_interval / 2; // 誤差対策
     dataFile.open(fileName, std::ios::trunc);
+    K = K_start;
     while (K <= K_end) {
         cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
         dataFile << std::fixed << std::setprecision(1) << K;
         Trace(K, D_cut, n_node, N, dataFile);
-        K += MESH;
+        K += K_interval;
     }
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     /* vs D_cut */
+//    K_end += K_interval / 2; // 誤差対策
 //    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
 //        K = K_start;
 //        time.start();
@@ -113,7 +118,7 @@ int main(int argc, char *argv[]) {
 //            cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
 //            dataFile << std::fixed << std::setprecision(1) << K;
 //            Trace(K, D_cut, n_node, N, dataFile);
-//            K += MESH;
+//            K += K_interval;
 //        }
 //        dataFile.close();
 //        time.end();
