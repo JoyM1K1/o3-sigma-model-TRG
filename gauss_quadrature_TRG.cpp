@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     /* calculation */
     time.start();
     cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K_start << "-" << K_end << " (" << K_interval << " step)" <<  '\n';
+    K_end += K_interval / 2; // 誤差対策
     fileName = dir + "D" + std::to_string(D_cut) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     K = K_start;
