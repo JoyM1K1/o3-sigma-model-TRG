@@ -11,7 +11,6 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-#define MESH 1e-1
 #define MAX_IMT_NUM 6
 #define NORMALIZE_FACTOR 10
 
@@ -73,7 +72,7 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
     for (int n = 1; n <= N; ++n) {
         const int count = (n + 1) / 2;
         time.start();
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         const int D_new = std::min(D * D, D_cut);
 

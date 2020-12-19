@@ -73,3 +73,4 @@ fabric.properties
 # Custum
 pdf/
 data/
+.idea/deployment.xml

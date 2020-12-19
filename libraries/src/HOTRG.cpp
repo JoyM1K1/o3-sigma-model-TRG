@@ -7,13 +7,12 @@
 #include <cmath>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 #define REP4tensor(i, j, k, l, Dx, Dy) REP(i, Dx) REP(j, Dy) REP(k, Dx) REP(l, Dy)
 
 using std::cout;
 using std::cerr;
 
-void HOTRG::Tensor::normalization(int c) {
+long long int HOTRG::Tensor::normalization(int c) {
     double _max = 0;
     this->forEach([&](int i, int j, int k, int l, const double *t) {
         const double absT = std::abs(*t);
@@ -35,50 +34,47 @@ void HOTRG::Tensor::normalization(int c) {
         });
     }
     orders.push_back(o);
-    order = o;
+    return order = o;
 }
 
-void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *U) {
-    const int Dx = T.GetDx(), Dy = T.GetDy();
-    BaseTensor MM(Dx);
+void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
+    const int Dx = T.GetDx(), Dy = T.GetDy(), D_max = T.GetD_max();
+    BaseTensor MM(Dx, D_max);
+    BaseTensor MM_(Dx, D_max);
     BaseTensor A(Dx, Dy, Dx, Dy);
     BaseTensor B(Dx, Dy, Dx, Dy);
-    auto tmp1 = new double[Dx * Dx * Dy * Dy];
-    auto tmp2 = new double[Dx * Dx * Dy * Dy];
+    BaseTensor tmp_1(Dx, Dy, Dx, Dy, D_max);
+    BaseTensor tmp_2(Dx, Dy, Dx, Dy, D_max);
     /* compute Right Unitary matrix */
-    REP4tensor(i, j, k, l, Dx, Dy) {
-                    tmp1[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
-                    tmp2[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
-                }
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, x, p) * T(i_, y, x, q)
-    REP4tensor(i, j, k, l, Dx, Dy) {
-                    tmp1[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
-                    tmp2[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
-                }
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, x, y) * T(i_, q, x, y)
-    REP4tensor(i, j, k, l, Dx, Dy) {
-                    tmp1[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = A(i, j, k, l);
-                    tmp2[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = B(i, j, k, l);
-                }
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp1,
-                Dy * Dy, tmp2, Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
-    REP(i, Dx)REP(l, Dx) { // MM(i1, i2, i1_, i2_) = A(i1, p, i1_, q) * B(i2, p, i2_, q)
-            auto t = new double[Dx * Dx];
-            REP(j, Dx)REP(k, Dx) {
-                    t[Dx * j + k] = MM(i, j, k, l);
-                }
-            REP(j, Dx)REP(k, Dx) {
-                    MM(i, j, k, l) = t[Dx * k + j];
-                }
-            delete[] t;
-        }
+    T.forEach([&](int i, int j, int k, int l, const double *t) {
+        tmp_1(i, l, k, j) = *t;
+        tmp_2(k, j, i, l) = *t;
+    });
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
+                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, x, p) * T(i_, y, x, q)
+    T.forEach([&](int i, int j, int k, int l, const double *t) {
+        tmp_1(i, j, k, l) = *t;
+        tmp_2(k, l, i, j) = *t;
+    });
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
+                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, x, y) * T(i_, q, x, y)
+    tmp_1.SetDj(Dx); tmp_1.SetDk(Dy);
+    tmp_2.SetDi(Dy); tmp_2.SetDl(Dx);
+    A.forEach([&](int i, int j, int k, int l, const double *t) {
+        tmp_1(i, k, j, l) = *t;
+    });
+    B.forEach([&](int i, int j, int k, int l, const double *t) {
+        tmp_2(j, l, i, k) = *t;
+    });
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.GetMatrix(),
+                Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+    MM.forEach([&](int i, int j, int k, int l, const double *t) {
+        MM_(i, k, j, l) = *t;
+    }); // MM(i1, i2, i1_, i2_) = A(i1, p, i1_, q) * B(i2, p, i2_, q)
     const int m = Dx * Dx;
-    auto temp = new double[m * m];
     auto sigma = new double[m];
     auto superb = new double[m - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, U, m, nullptr, 1, superb);
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.GetMatrix(), m, sigma, U, m, nullptr, 1, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
@@ -89,35 +85,33 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *U) {
     }
     if (epsilon_1 != 0) {
         /* compute Left Unitary matrix */
-        REP4tensor(i, j, k, l, Dx, Dy) {
-                        tmp1[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
-                        tmp2[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
-                    }
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                    Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(k, p, k_, q) = T(x, y, k, p) * T(x, y, k_, q)
-        REP4tensor(i, j, k, l, Dx, Dy) {
-                        tmp1[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
-                        tmp2[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
-                    }
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                    Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(k, p, k_, q) = T(x, p, k, y) * T(x, q, k_, y)
-        REP4tensor(i, j, k, l, Dx, Dy) {
-                        tmp1[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = A(i, j, k, l);
-                        tmp2[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = B(i, j, k, l);
-                    }
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp1,
-                    Dy * Dy, tmp2, Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
-        REP(i, Dx)REP(l, Dx) { // MM(k1, k2, k1_, k2_) = A(k1, p, k1_, q) * B(k2, p, k2_, q)
-                auto t = new double[Dx * Dx];
-                REP(j, Dx)REP(k, Dx) {
-                        t[Dx * j + k] = MM(i, j, k, l);
-                    }
-                REP(j, Dx)REP(k, Dx) {
-                        MM(i, j, k, l) = t[Dx * k + j];
-                    }
-                delete[] t;
-            }
-        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM.GetMatrix(), m, sigma, temp, m, nullptr, 1, superb);
+        T.forEach([&](int i, int j, int k, int l, const double *t) {
+            tmp_1(k, l, i, j) = *t;
+            tmp_2(i, j, k, l) = *t;
+        });
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
+                    Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(k, p, k_, q) = T(x, y, k, p) * T(x, y, k_, q)
+        T.forEach([&](int i, int j, int k, int l, const double *t) {
+            tmp_1(k, j, i, l) = *t;
+            tmp_2(i, l, k, j) = *t;
+        });
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
+                    Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(k, p, k_, q) = T(x, p, k, y) * T(x, q, k_, y)
+        tmp_1.SetDj(Dx); tmp_1.SetDk(Dy);
+        tmp_2.SetDi(Dy); tmp_2.SetDl(Dx);
+        A.forEach([&](int i, int j, int k, int l, const double *t) {
+            tmp_1(i, k, j, l) = *t;
+        });
+        B.forEach([&](int i, int j, int k, int l, const double *t) {
+            tmp_2(j, l, i, k) = *t;
+        });
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.GetMatrix(),
+                    Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+        MM.forEach([&](int i, int j, int k, int l, const double *t) {
+            MM_(i, k, j, l) = *t;
+        }); // MM(k1, k2, k1_, k2_) = A(k1, p, k1_, q) * B(k2, p, k2_, q)
+        auto tmpU = new double[m * m];
+        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.GetMatrix(), m, sigma, tmpU, m, nullptr, 1, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
             exit(1);
@@ -126,17 +120,18 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *U) {
             epsilon_2 += sigma[i];
         }
         if (epsilon_1 > epsilon_2) {
-            REP(i, m * m) U[i] = temp[i];
+            delete[] U;
+            U = tmpU;
+        } else {
+            delete[] tmpU;
         }
     }
-    delete[] temp;
     delete[] sigma;
     delete[] superb;
-    delete[] tmp1;
-    delete[] tmp2;
 }
 
-void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *U) {
+// TODO SVD_Xと同じ仕様にする
+void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
     const int Dx = T.GetDx(), Dy = T.GetDy();
     BaseTensor MM(Dy);
     BaseTensor A(Dx, Dy, Dx, Dy);

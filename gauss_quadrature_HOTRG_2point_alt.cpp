@@ -10,7 +10,6 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-#define MESH 1e-1
 #define NORMALIZE_FACTOR 10
 
 using std::cin;
@@ -41,7 +40,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
 
     for (int n = 1; n <= N; ++n) {
         time.start();
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         T.normalization(NORMALIZE_FACTOR);
         for (auto & IMT : IMTs) {
@@ -68,7 +67,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
                 IMTs[times - n_data_point_start] = HOTRG::ImpureTensor(d, originIMT);
                 IMTs[times - n_data_point_start].isMerged = true;
                 IMTs[times - n_data_point_start].mergeIndex = n;
-                for (int i = 0; i < 3; ++i) {
+                for (int i = 0; i < DIMENSION; ++i) {
                     HOTRG::contractionX(D_cut, IMTs[times - n_data_point_start].tensors[i], originIMT.tensors[i], U, "left");
                 }
                 for (int i = 0; i < times - n_data_point_start; ++i) {
@@ -109,17 +108,13 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
             continue;
         }
 
-        double Tr = 0;
-        REP(i, Dx)REP(j, Dy) Tr += T(i, j, i, j);
+        double Tr = T.trace();
 
         for (auto &IMT : IMTs) {
-            double impure_Tr[3];
-            REP(k, 3) {
-                impure_Tr[k] = 0;
+            double impure_Tr[DIMENSION];
+            REP(k, DIMENSION) {
+                impure_Tr[k] =  IMT.tensors[k].trace();
                 int order = 0;
-                REP(i, Dx)REP(j, Dy) {
-                    impure_Tr[k] += IMT.tensors[k](i, j, i, j);
-                }
                 REP(i, n) {
                     int m = IMT.tensors[k].orders[i] - T.orders[i];
                     if (i < IMT.mergeIndex) m *= 2;

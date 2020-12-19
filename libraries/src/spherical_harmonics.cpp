@@ -4,7 +4,6 @@
 #include <iostream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
 void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTensor &T) {
     auto A = new double[l_max + 1];
@@ -22,7 +21,7 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
     double sum, a;
     double c;
 
-#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, M, two_L, two_M, c, sum, a) shared(l_max, A, T, std::cerr) schedule(static, 1)
+#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, M, two_L, two_M, c, sum, a) shared(K, l_max, A, T, std::cerr) schedule(static, 1)
     for (n = 0; n < (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1); ++n) {
         i = n % (l_max + 1);
         j = n / (l_max + 1) % (l_max + 1);
@@ -61,14 +60,7 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
                                       << '(' << l << ',' << l - lm << ')'
                                       << " : sum is nan\n";
                         }
-//                        if (std::isnan(a * sum)) {
-//                            std::cerr << '(' << i << ',' << i - im << ')'
-//                                      << '(' << j << ',' << j - jm << ')'
-//                                      << '(' << k << ',' << k - km << ')'
-//                                      << '(' << l << ',' << l - lm << ')'
-//                                      << " : a * sum is nan\n";
-//                        }
-                        T(i * i + im, j * j + jm, k * k + km, l * l + lm) = a * sum;
+                        T(i * i + im, j * j + jm, k * k + km, l * l + lm) = a * sum * M_PI / (2 * K);
                     }
     }
     delete[] A;
@@ -92,7 +84,7 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
     double c, a;
     int m, two_m;
 
-#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, M, L_, M_, two_L, two_M, two_L_, two_M_, m, two_m, c, sum, s, a) shared(l_max, A, T, IMT, std::cerr) schedule(static, 1)
+#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, M, L_, M_, two_L, two_M, two_L_, two_M_, m, two_m, c, sum, s, a) shared(K, l_max, A, T, IMT, std::cerr) schedule(static, 1)
     for (n = 0; n < (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1); ++n) {
         i = n % (l_max + 1);
         j = n / (l_max + 1) % (l_max + 1);
@@ -148,10 +140,10 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
                                       << '(' << l << ',' << l - lm << ')'
                                       << " : s is nan\n";
                         }
-                        T(i * i + im, j * j + jm, k * k + km, l * l + lm) = a * s;
-                        IMT.tensors[0](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * (sum[0] - sum[2]) / std::sqrt(2);
-                        IMT.tensors[1](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * (sum[0] + sum[2]) / std::sqrt(2);
-                        IMT.tensors[2](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * sum[1];
+                        T(i * i + im, j * j + jm, k * k + km, l * l + lm) = a * s * M_PI / (2 * K);
+                        IMT.tensors[0](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * (sum[0] - sum[2]) / std::sqrt(2) / (8 * K);
+                        IMT.tensors[1](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * (sum[0] + sum[2]) / std::sqrt(2) / (8 * K);
+                        IMT.tensors[2](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * sum[1] / (8 * K);
                     }
     }
 

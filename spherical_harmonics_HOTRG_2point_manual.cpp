@@ -120,7 +120,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::v
     bool isMerged = false;
 
     for (int n = 1; n <= N; ++n) {
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         order[n - 1] = normalization(T, originIMT, IMTs);
 

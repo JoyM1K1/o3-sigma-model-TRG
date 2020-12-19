@@ -45,7 +45,7 @@ void Trace(const int n_data_point_start, const int n_data_point_end, double cons
 
     for (int n = 1; n <= N; ++n) {
         time.start();
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         T.normalization(NORMALIZE_FACTOR);
         for (auto &IMT : IMTs) {

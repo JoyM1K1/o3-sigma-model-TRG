@@ -115,7 +115,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
 
     for (int n = 1; n <= N; ++n) {
         std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         order[n - 1] = normalization(T, originIMT, IMTs);
 

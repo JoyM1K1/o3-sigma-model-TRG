@@ -10,7 +10,6 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-#define MESH 1e-1
 #define NORMALIZE_FACTOR 10
 
 using std::cin;
@@ -37,7 +36,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
 
     for (int n = 1; n <= N; ++n) {
         time.start();
-        cout << "N = " << (n < 10 ? " " : "") << n << " :" << std::flush;
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
         T.normalization(NORMALIZE_FACTOR);
         for (auto &tensor : originIMT.tensors) {

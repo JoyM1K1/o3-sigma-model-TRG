@@ -2,7 +2,6 @@
 #define O3_SIGMA_MODEL_TRG_HPP
 
 #include <vector>
-#include <queue>
 #include "tensor.hpp"
 #include "impure_tensor.hpp"
 
@@ -39,7 +38,7 @@ namespace TRG {
 
         Tensor &operator=(const Tensor &rhs);
 
-        void normalization(int c) override;
+        long long int normalization(int c) override;
     };
 
     class ImpureTensor : public BaseImpureTensor<Tensor> {

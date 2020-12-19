@@ -103,6 +103,10 @@ int BaseTensor::GetDl() const {
     return Dl;
 }
 
+int BaseTensor::GetD_max() const {
+    return D_max;
+}
+
 double *BaseTensor::GetMatrix() const {
     return M;
 }
@@ -117,6 +121,26 @@ void BaseTensor::UpdateDy(int Dy) {
     assert(Dy <= D_max);
     this->Dj = Dy;
     this->Dl = Dy;
+}
+
+void BaseTensor::SetDi(int Di) {
+    assert(Di <= D_max);
+    this->Di = Di;
+}
+
+void BaseTensor::SetDj(int Dj) {
+    assert(Dj <= D_max);
+    this->Dj = Dj;
+}
+
+void BaseTensor::SetDk(int Dk) {
+    assert(Dk <= D_max);
+    this->Dk = Dk;
+}
+
+void BaseTensor::SetDl(int Dl) {
+    assert(Dl <= D_max);
+    this->Dl = Dl;
 }
 
 BaseTensor &BaseTensor::operator=(const BaseTensor &rhs) {
