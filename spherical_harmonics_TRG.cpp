@@ -75,11 +75,13 @@ int main(int argc, char *argv[]) {
     double K_interval = 0.1;
     double K; // inverse temperature
 
-    N = std::stoi(argv[1]);
-    l_max = std::stoi(argv[2]);
-    K_start = std::stod(argv[3]);
-    K_end = std::stod(argv[4]);
-    K_interval = std::stod(argv[5]);
+    if (argc == 6) {
+        N = std::stoi(argv[1]);
+        l_max = std::stoi(argv[2]);
+        K_start = std::stod(argv[3]);
+        K_end = std::stod(argv[4]);
+        K_interval = std::stod(argv[5]);
+    }
 
     assert(K_start > 0 && K_start <= K_end);
 
