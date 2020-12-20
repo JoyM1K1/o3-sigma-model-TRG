@@ -11,7 +11,6 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-#define MESH 1e-1
 #define NORMALIZE_FACTOR 10
 
 using std::cin;
