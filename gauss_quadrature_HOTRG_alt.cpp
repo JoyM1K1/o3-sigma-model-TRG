@@ -78,12 +78,14 @@ int main(int argc, char *argv[]) {
     double K_interval = 0.1;
     double K; // inverse temperature
 
-//    N = std::stoi(argv[1]);
-//    n_node = std::stoi(argv[2]);
-//    D_cut = std::stoi(argv[3]);
-//    K_start = std::stod(argv[4]);
-//    K_end = std::stod(argv[5]);
-//    K_interval = std::stod(argv[6]);
+    if (argc == 7) {
+        N = std::stoi(argv[1]);
+        n_node = std::stoi(argv[2]);
+        D_cut = std::stoi(argv[3]);
+        K_start = std::stod(argv[4]);
+        K_end = std::stod(argv[5]);
+        K_interval = std::stod(argv[6]);
+    }
 
     const string dir = "../data/gauss_quadrature/HOTRG_alt/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/";
     time_counter time;
