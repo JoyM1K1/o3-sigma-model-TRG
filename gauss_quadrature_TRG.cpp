@@ -64,8 +64,8 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
-        file << '\t' << std::fixed << std::setprecision(16) << Tr;
-        cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
+        file << '\t' << std::scientific << std::setprecision(16) << Tr;
+        cout << '\t' << std::scientific << std::setprecision(16) << Tr << std::flush;
     }
     delete T1.S.first;
     delete T1.S.second;
@@ -81,42 +81,33 @@ int main(int argc, char *argv[]) {
     /* inputs */
     int N = 20;     // volume : 2^N
     int n_node = 32;  // n_node
-    int D_cut = 16; // bond dimension
-    double K_start = 0.1;
-    double K_end = 4.0;
-    double K_interval = 0.1;
-    double K; // inverse temperature
+    int D_cut = 8; // bond dimension
+    double K = 0.01; // inverse temperature
 
-    if (argc == 7) {
+    if (argc == 5) {
         N = std::stoi(argv[1]);
         n_node = std::stoi(argv[2]);
         D_cut = std::stoi(argv[3]);
-        K_start = std::stod(argv[4]);
-        K_end = std::stod(argv[5]);
-        K_interval = std::stod(argv[6]);
+        K = std::stod(argv[4]);
     }
 
-    const string dir = "../data/gauss_quadrature/TRG/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/";
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << K;
+    const string dir = "../data/gauss_quadrature/TRG/N" + std::to_string(N) + "/node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K_start << "-" << K_end << " (" << K_interval << " step)" <<  '\n';
-    K_end += K_interval / 2; // 誤差対策
-    fileName = dir + "D" + std::to_string(D_cut) + ".txt";
+    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << '\n';
+    fileName = dir + "beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
-    K = K_start;
-    while (K <= K_end) {
-        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
-        dataFile << std::setprecision(1) << K;
-        Trace(K, D_cut, n_node, N, dataFile);
-        K += K_interval;
-    }
+    dataFile << std::fixed << std::setprecision(2) << K;
+    Trace(K, D_cut, n_node, N, dataFile);
     dataFile.close();
     time.end();
-    cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
+    cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
     return 0;
 }
