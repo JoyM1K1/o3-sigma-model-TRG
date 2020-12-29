@@ -20,24 +20,25 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
     int two_L, two_M;
     double sum, a;
     double c;
+    const int components_num = (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1);
 
-#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, two_L, two_M, c, sum, a) shared(K, l_max, A, T, std::cerr) schedule(static, 1)
-    for (n = 0; n < (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1); ++n) {
+#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, two_L, two_M, c, sum, a) shared(K, l_max, A, T, components_num, std::cerr) schedule(static, 1)
+    for (n = 0; n < components_num; ++n) {
         i = n % (l_max + 1);
         j = n / (l_max + 1) % (l_max + 1);
         k = n / (l_max + 1) / (l_max + 1) % (l_max + 1);
         l = n / (l_max + 1) / (l_max + 1) / (l_max + 1) % (l_max + 1);
-        for (im = 0; im <= 2 * i; ++im)
-            for (jm = 0; jm <= 2 * j; ++jm)
-                for (km = 0; km <= 2 * k; ++km)
-                    for (lm = 0; lm <= 2 * l; ++lm) {
+        for (im = -i; im <= i; ++im)
+            for (jm = -j; jm <= j; ++jm)
+                for (km = -k; km <= k; ++km)
+                    for (lm = -l; lm <= l; ++lm) {
                         sum = 0;
-                        if (im - i + jm - j == km - k + lm - l) {
+                        if (im + jm == km + lm) {
                             for (L = std::abs(i - j); L <= i + j; ++L) {
                                 if (L < std::abs(k - l) || k + l < L) continue;
                                 c = 1;
                                 two_i = 2 * i, two_j = 2 * j, two_k = 2 * k, two_l = 2 * l;
-                                two_im = 2 * (im - i), two_jm = 2 * (jm - j), two_km = 2 * (km - k), two_lm = 2 * (lm - l);
+                                two_im = 2 * im, two_jm = 2 * jm, two_km = 2 * km, two_lm = 2 * lm;
                                 two_L = 2 * L, two_M = two_im + two_jm;
                                 c *= gsl_sf_coupling_3j(two_i, two_j, two_L, two_im, two_jm, -two_M);
                                 c *= gsl_sf_coupling_3j(two_i, two_j, two_L, 0, 0, 0);
@@ -48,20 +49,20 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
                         }
                         a = std::sqrt(A[i] * A[j] * A[k] * A[l]);
                         if (std::isnan(a)) {
-                            std::cerr << '(' << i << ',' << i - im << ')'
-                                      << '(' << j << ',' << j - jm << ')'
-                                      << '(' << k << ',' << k - km << ')'
-                                      << '(' << l << ',' << l - lm << ')'
+                            std::cerr << '(' << i << ',' << im << ')'
+                                      << '(' << j << ',' << jm << ')'
+                                      << '(' << k << ',' << km << ')'
+                                      << '(' << l << ',' << lm << ')'
                                       << " : a is nan\n";
                         }
                         if (std::isnan(sum)) {
-                            std::cerr << '(' << i << ',' << i - im << ')'
-                                      << '(' << j << ',' << j - jm << ')'
-                                      << '(' << k << ',' << k - km << ')'
-                                      << '(' << l << ',' << l - lm << ')'
+                            std::cerr << '(' << i << ',' << im << ')'
+                                      << '(' << j << ',' << jm << ')'
+                                      << '(' << k << ',' << km << ')'
+                                      << '(' << l << ',' << lm << ')'
                                       << " : sum is nan\n";
                         }
-                        T(i * i + im, j * j + jm, k * k + km, l * l + lm) = a * sum * M_PI / (2 * K);
+                        T(i * i + (i + im), j * j + (j + jm), k * k + (k + km), l * l + (l + lm)) = a * sum * M_PI / (2 * K);
                     }
     }
     delete[] A;
@@ -76,80 +77,94 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
 
     int n;
     int i, j, k, l;
+    int index_i, index_j, index_k, index_l;
     int two_i, two_j, two_k, two_l;
     int im, jm, km, lm;
     int two_im, two_jm, two_km, two_lm;
-    int L, M, L_, M_;
+    int L, L_, M, M_;
     int two_L, two_M, two_L_, two_M_;
     double sum[DIMENSION], s;
     double c, a;
     int m, two_m;
+    const int components_num = (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1);
 
-#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, M, L_, M_, two_L, two_M, two_L_, two_M_, m, two_m, c, sum, s, a) shared(K, l_max, A, T, IMT, std::cerr) schedule(static, 1)
-    for (n = 0; n < (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1); ++n) {
+#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, L_, M, M_, two_L, two_M, two_L_, two_M_, m, two_m, c, sum, s, a, index_i, index_j, index_k, index_l) shared(K, l_max, A, T, IMT, components_num, std::cerr) schedule(static, 1)
+    for (n = 0; n < components_num; ++n) {
         i = n % (l_max + 1);
         j = n / (l_max + 1) % (l_max + 1);
         k = n / (l_max + 1) / (l_max + 1) % (l_max + 1);
         l = n / (l_max + 1) / (l_max + 1) / (l_max + 1) % (l_max + 1);
-        for (im = 0; im <= 2 * i; ++im)
-            for (jm = 0; jm <= 2 * j; ++jm)
-                for (km = 0; km <= 2 * k; ++km)
-                    for (lm = 0; lm <= 2 * l; ++lm) {
+        two_i = 2 * i, two_j = 2 * j, two_k = 2 * k, two_l = 2 * l;
+        for (im = -i; im <= i; ++im)
+            for (jm = -j; jm <= j; ++jm)
+                for (km = -k; km <= k; ++km)
+                    for (lm = -l; lm <= l; ++lm) {
+                        M = im + jm, M_ = km + lm;
+                        two_im = 2 * im, two_jm = 2 * jm, two_km = 2 * km, two_lm = 2 * lm;
+                        two_M = 2 * M, two_M_ = 2 * M_;
                         sum[0] = 0, sum[1] = 0, sum[2] = 0, s = 0;
-                        for (L = std::abs(i - j); L <= i + j; ++L)
-                            for (L_ = std::abs(k - l); L_ <= k + l; ++L_)
-                                for (M = -L; M <= L; ++M)
-                                    for (M_ = -L_; M_ <= L_; ++M_)
-                                        for (m = 0; m < 3; ++m) {
-                                            c = 1;
-                                            two_i = 2 * i, two_j = 2 * j, two_k = 2 * k, two_l = 2 * l;
-                                            two_im = 2 * (im - i), two_jm = 2 * (jm - j), two_km = 2 * (km - k), two_lm = 2 * (lm - l);
-                                            two_L = 2 * L, two_M = 2 * M, two_L_ = 2 * L_, two_M_ = 2 * M_, two_m = 2 * (m - 1);
-                                            c *= gsl_sf_coupling_3j(two_i, two_j, two_L, two_im, two_jm, -two_M);
-                                            c *= gsl_sf_coupling_3j(two_i, two_j, two_L, 0, 0, 0);
-                                            c *= gsl_sf_coupling_3j(two_k, two_l, two_L_, two_km, two_lm, -two_M_);
-                                            c *= gsl_sf_coupling_3j(two_k, two_l, two_L_, 0, 0, 0);
-                                            if (L == L_ && M == M_) {
-                                                s += (2 * L + 1) * c;
-                                            }
-                                            c *= gsl_sf_coupling_3j(two_L_, 2, two_L, two_M_, two_m, -two_M);
-                                            c *= gsl_sf_coupling_3j(two_L_, 2, two_L, 0, 0, 0);
-                                            if ((int) std::abs(M_) % 2) c *= -1;
-                                            sum[m] += c * (2 * L + 1) * (2 * L_ + 1);
-                                        }
+                        /* pure tensor */
+                        for (L = std::abs(i - j); L <= i + j; ++L) {
+                            two_L = 2 * L;
+                            c = 1;
+                            c *= gsl_sf_coupling_3j(two_i, two_j, two_L, two_im, two_jm, -two_M);
+                            c *= gsl_sf_coupling_3j(two_i, two_j, two_L, 0, 0, 0);
+                            c *= gsl_sf_coupling_3j(two_k, two_l, two_L, two_km, two_lm, -two_M);
+                            c *= gsl_sf_coupling_3j(two_k, two_l, two_L, 0, 0, 0);
+                            s += (2 * L + 1) * c;
+                        }
+                        /* impure tensor */
+                        for (m = -1; m <= 1; ++m) {
+                            if (M == M_ + m) {
+                                for (L = std::abs(i - j); L <= i + j; ++L)
+                                    for (L_ = std::abs(k - l); L_ <= k + l; ++L_) {
+                                        c = 1;
+                                        two_L = 2 * L, two_L_ = 2 * L_, two_m = 2 * m;
+                                        c *= gsl_sf_coupling_3j(two_i, two_j, two_L, two_im, two_jm, -two_M);
+                                        c *= gsl_sf_coupling_3j(two_i, two_j, two_L, 0, 0, 0);
+                                        c *= gsl_sf_coupling_3j(two_k, two_l, two_L_, two_km, two_lm, -two_M_);
+                                        c *= gsl_sf_coupling_3j(two_k, two_l, two_L_, 0, 0, 0);
+                                        c *= gsl_sf_coupling_3j(two_L_, 2, two_L, two_M_, two_m, -two_M);
+                                        c *= gsl_sf_coupling_3j(two_L_, 2, two_L, 0, 0, 0);
+                                        if ((int) std::abs(M_) % 2) c *= -1;
+                                        sum[1 + m] += c * (2 * L + 1) * (2 * L_ + 1);
+                                    }
+                            }
+                        }
                         a = std::sqrt(A[i] * A[j] * A[k] * A[l]);
                         if (std::isnan(a)) {
-                            std::cerr << '(' << i << ',' << i - im << ')'
-                                      << '(' << j << ',' << j - jm << ')'
-                                      << '(' << k << ',' << k - km << ')'
-                                      << '(' << l << ',' << l - lm << ')'
+                            std::cerr << '(' << i << ',' << im << ')'
+                                      << '(' << j << ',' << jm << ')'
+                                      << '(' << k << ',' << km << ')'
+                                      << '(' << l << ',' << lm << ')'
                                       << " : a is nan\n";
                         }
                         for (m = 0; m < 3; ++m) {
                             if (std::isnan(sum[m])) {
-                                std::cerr << '(' << i << ',' << i - im << ')'
-                                          << '(' << j << ',' << j - jm << ')'
-                                          << '(' << k << ',' << k - km << ')'
-                                          << '(' << l << ',' << l - lm << ')'
+                                std::cerr << '(' << i << ',' << im << ')'
+                                          << '(' << j << ',' << jm << ')'
+                                          << '(' << k << ',' << km << ')'
+                                          << '(' << l << ',' << lm << ')'
                                           << " : sum[" << m << "] is nan\n";
                             }
                         }
                         if (std::isnan(s)) {
-                            std::cerr << '(' << i << ',' << i - im << ')'
-                                      << '(' << j << ',' << j - jm << ')'
-                                      << '(' << k << ',' << k - km << ')'
-                                      << '(' << l << ',' << l - lm << ')'
+                            std::cerr << '(' << i << ',' << im << ')'
+                                      << '(' << j << ',' << jm << ')'
+                                      << '(' << k << ',' << km << ')'
+                                      << '(' << l << ',' << lm << ')'
                                       << " : s is nan\n";
                         }
-                        T(i * i + im, j * j + jm, k * k + km, l * l + lm) = a * s * M_PI / (2 * K);
-                        IMT.tensors[0](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * (sum[0] - sum[2]) / std::sqrt(2) / (8 * K);
-                        IMT.tensors[1](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * (sum[0] + sum[2]) / std::sqrt(2) / (8 * K);
-                        IMT.tensors[2](i * i + im, j * j + jm, k * k + km, l * l + lm) = a * sum[1] / (8 * K);
+                        index_i = i * i + (i + im), index_j = j * j + (j + jm), index_k = k * k + (k + km), index_l = l * l + (l + lm);
+                        T(index_i, index_j, index_k, index_l) = a * s * M_PI / (2 * K);
+                        IMT.tensors[0](index_i, index_j, index_k, index_l) = a * (sum[0] - sum[2]) / std::sqrt(2) / (8 * K);
+                        IMT.tensors[1](index_i, index_j, index_k, index_l) = a * (sum[0] + sum[2]) / std::sqrt(2) / (8 * K);
+                        IMT.tensors[2](index_i, index_j, index_k, index_l) = a * sum[1] / (8 * K);
                     }
     }
-
     delete[] A;
 }
 
 template void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
+
 template void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);
