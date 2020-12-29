@@ -16,12 +16,12 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
     int two_i, two_j, two_k, two_l;
     int im, jm, km, lm;
     int two_im, two_jm, two_km, two_lm;
-    int L, M;
+    int L;
     int two_L, two_M;
     double sum, a;
     double c;
 
-#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, M, two_L, two_M, c, sum, a) shared(K, l_max, A, T, std::cerr) schedule(static, 1)
+#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, two_L, two_M, c, sum, a) shared(K, l_max, A, T, std::cerr) schedule(static, 1)
     for (n = 0; n < (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1); ++n) {
         i = n % (l_max + 1);
         j = n / (l_max + 1) % (l_max + 1);
@@ -32,19 +32,20 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
                 for (km = 0; km <= 2 * k; ++km)
                     for (lm = 0; lm <= 2 * l; ++lm) {
                         sum = 0;
-                        for (L = std::abs(i - j); L <= i + j; ++L)
-                            for (M = -L; M <= L; ++M) {
-                                if (L < std::abs(k - l) || k + l < L || im - i + jm - j != M || km - k + lm - l != M) continue;
+                        if (im - i + jm - j == km - k + lm - l) {
+                            for (L = std::abs(i - j); L <= i + j; ++L) {
+                                if (L < std::abs(k - l) || k + l < L) continue;
                                 c = 1;
                                 two_i = 2 * i, two_j = 2 * j, two_k = 2 * k, two_l = 2 * l;
                                 two_im = 2 * (im - i), two_jm = 2 * (jm - j), two_km = 2 * (km - k), two_lm = 2 * (lm - l);
-                                two_L = 2 * L, two_M = 2 * M;
+                                two_L = 2 * L, two_M = two_im + two_jm;
                                 c *= gsl_sf_coupling_3j(two_i, two_j, two_L, two_im, two_jm, -two_M);
                                 c *= gsl_sf_coupling_3j(two_i, two_j, two_L, 0, 0, 0);
                                 c *= gsl_sf_coupling_3j(two_k, two_l, two_L, two_km, two_lm, -two_M);
                                 c *= gsl_sf_coupling_3j(two_k, two_l, two_L, 0, 0, 0);
                                 sum += (2 * L + 1) * c;
                             }
+                        }
                         a = std::sqrt(A[i] * A[j] * A[k] * A[l]);
                         if (std::isnan(a)) {
                             std::cerr << '(' << i << ',' << i - im << ')'
@@ -80,7 +81,7 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
     int two_im, two_jm, two_km, two_lm;
     int L, M, L_, M_;
     int two_L, two_M, two_L_, two_M_;
-    double sum[3], s;
+    double sum[DIMENSION], s;
     double c, a;
     int m, two_m;
 
