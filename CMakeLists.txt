@@ -62,6 +62,12 @@ if (APPLE)
     add_executable(spherical_harmonics_HOTRG_alt spherical_harmonics_HOTRG_alt.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_alt mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor time_counter)
 
+    add_executable(spherical_harmonics_HOTRG_mass_alt spherical_harmonics_HOTRG_mass_alt.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG_mass_alt mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor time_counter)
+
+    add_executable(spherical_harmonics_HOTRG_mass_v1 spherical_harmonics_HOTRG_mass_v1.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG_mass_v1 mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor time_counter)
+
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics TRG tensor time_counter)
 
@@ -121,6 +127,12 @@ else ()
 
     add_executable(spherical_harmonics_HOTRG_alt spherical_harmonics_HOTRG_alt.cpp)
     target_link_libraries(spherical_harmonics_HOTRG_alt spherical_harmonics HOTRG tensor time_counter)
+
+    add_executable(spherical_harmonics_HOTRG_mass_alt spherical_harmonics_HOTRG_mass_alt.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG_mass_alt spherical_harmonics HOTRG tensor time_counter)
+
+    add_executable(spherical_harmonics_HOTRG_mass_v1 spherical_harmonics_HOTRG_mass_v1.cpp)
+    target_link_libraries(spherical_harmonics_HOTRG_mass_v1 spherical_harmonics HOTRG tensor time_counter)
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG spherical_harmonics TRG tensor time_counter)
