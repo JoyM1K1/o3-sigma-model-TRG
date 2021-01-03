@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <spherical_harmonics.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
@@ -22,33 +23,31 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
     time_counter time;
 
     // initialize tensor network : max index size is D_cut
-    cout << "initialize tensor " << std::flush;
     time.start();
+    cout << "initialize tensor " << std::flush;
     HOTRG::Tensor T(D_cut);
     SphericalHarmonics::initTensor(K, l_max, T);
     time.end();
-    cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
-
-    int Dx = D_cut, Dy = D_cut;
-    time.start();
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 
     for (int n = 1; n <= N; ++n) {
+        time.start();
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
         T.normalization(NORMALIZE_FACTOR);
 
         if (n % 2) { // compression along x-axis
+            const int Dy = T.GetDy();
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compression along y-axis
+            const int Dx = T.GetDx();
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             HOTRG::contractionY(D_cut, T, T, U, "bottom");
             delete[] U;
         }
-
-        Dx = T.GetDx();
-        Dy = T.GetDy();
 
         double Tr = T.trace();
         Tr = std::log(Tr);
@@ -58,12 +57,10 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
-        file << '\t' << std::fixed << std::setprecision(16) << Tr;
-        cout << '\t' << std::fixed << std::setprecision(16) << Tr << std::flush;
+        time.end();
+        file << '\t' << std::scientific << std::setprecision(16) << Tr;
+        cout << '\t' << std::scientific << std::setprecision(16) << Tr << "  in " << time.duration_cast_to_string() << '\n' << std::flush;
     }
-    file << '\n';
-    time.end();
-    cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
 int main(int argc, char *argv[]) {
@@ -71,41 +68,29 @@ int main(int argc, char *argv[]) {
     int N = 40; // volume : 2^N
     int l_max = 3;  // l_max
     int D_cut; // bond dimension
+    double K = 0.01; // inverse temperature
 
-    double K_start = 0.1;
-    double K_end = 4.0;
-    double K_interval = 0.1;
-    double K; // inverse temperature
-
-    if (argc == 6) {
+    if (argc == 4) {
         N = std::stoi(argv[1]);
         l_max = std::stoi(argv[2]);
-        K_start = std::stod(argv[3]);
-        K_end = std::stod(argv[4]);
-        K_interval = std::stod(argv[5]);
+        K = std::stod(argv[3]);
     }
 
-    assert(K_start > 0 && K_start <= K_end);
-
-    const string dir = "../data/spherical_harmonics/HOTRG_alt/N" + std::to_string(N) + "/";
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << K;
+    const string dir = "../data/spherical_harmonics/HOTRG_alt/N" + std::to_string(N) + "/l" + std::to_string(l_max) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", l_max = " << l_max << ", beta = " << K_start << "-" << K_end << " (" << K_interval << " step)" <<  '\n';
-    K_end += K_interval / 2; // 誤差対策
-    fileName = dir + "l" + std::to_string(l_max) + ".txt";
+    cout << "N = " << N << ", l_max = " << l_max << ", beta = " << ss.str() << '\n' << std::flush;
+    fileName = dir + "beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     D_cut = (l_max + 1) * (l_max + 1);
-    K = K_start;
-    while (K <= K_end) {
-        cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
-        dataFile << std::fixed << std::setprecision(1) << K;
-        Trace(K, D_cut, l_max, N, dataFile);
-        K += K_interval;
-    }
+    dataFile << std::fixed << std::setprecision(2) << K;
+    Trace(K, D_cut, l_max, N, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n";
