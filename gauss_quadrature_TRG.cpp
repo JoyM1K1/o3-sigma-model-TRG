@@ -20,7 +20,6 @@ using std::string;
 
 void Trace(double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
     time_counter time;
-    std::stringstream ss;
     // index dimension
     int D = std::min(D_cut, n_node * n_node);
 
@@ -33,12 +32,13 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
     T2.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
     GaussQuadrature::initTensor(K, n_node, D_cut, T1);
     time.end();
-    cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 
-    time.start();
     auto orders = new long long int[N];
 
     for (int n = 1; n <= N; ++n) {
+        time.start();
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
         const int D_new = std::min(D * D, D_cut);
 
         /* normalization */
@@ -64,17 +64,15 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
+        time.end();
         file << '\t' << std::scientific << std::setprecision(16) << Tr;
-        cout << '\t' << std::scientific << std::setprecision(16) << Tr << std::flush;
+        cout << '\t' << std::scientific << std::setprecision(16) << Tr << "  in " << time.duration_cast_to_string() << '\n' << std::flush;
     }
     delete T1.S.first;
     delete T1.S.second;
     delete T2.S.first;
     delete T2.S.second;
     delete[] orders;
-    file << '\n';
-    time.end();
-    cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
 int main(int argc, char *argv[]) {

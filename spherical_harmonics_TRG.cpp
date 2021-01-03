@@ -1,4 +1,3 @@
-#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -24,19 +23,21 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
 
     // initialize tensor network : max index size is D_cut
     time.start();
-    cout << " initialize tensor " << std::flush;
+    cout << "initialize tensor " << std::flush;
     TRG::Tensor T1(D_cut); /* (ij)(kl) -> S1 S3 */
     TRG::Tensor T2(D_cut); /* (jk)(li) -> S2 S4 */
     T1.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
     T2.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
     SphericalHarmonics::initTensor(K, l_max, T1);
     time.end();
-    cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 
-    time.start();
     auto orders = new long long int[N];
 
     for (int n = 1; n <= N; ++n) {
+        time.start();
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
+
         /* normalization */
         orders[n - 1] = T1.normalization(NORMALIZE_FACTOR);
 
@@ -56,13 +57,15 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
+        time.end();
         file << '\t' << std::scientific << std::setprecision(16) << Tr;
-        cout << '\t' << std::scientific << std::setprecision(16) << Tr << std::flush;
+        cout << '\t' << std::scientific << std::setprecision(16) << Tr << "  in " << time.duration_cast_to_string() << '\n' << std::flush;
     }
+    delete T1.S.first;
+    delete T1.S.second;
+    delete T2.S.first;
+    delete T2.S.second;
     delete[] orders;
-    file << '\n';
-    time.end();
-    cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
 int main(int argc, char *argv[]) {
