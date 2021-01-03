@@ -22,7 +22,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
     time_counter time;
 
     // index dimension
-    int D = std::min(D_cut, n_node * n_node);
+    const int D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
     time.start();
@@ -30,28 +30,26 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
     HOTRG::Tensor T(D, D_cut);
     GaussQuadrature::initTensor(K, n_node, D_cut, T);
     time.end();
-    cout << "in " << time.duration_cast_to_string() << " : " << std::flush;
-
-    int Dx = D, Dy = D;
-    time.start();
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 
     for (int n = 1; n <= N; ++n) {
+        time.start();
+        cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
         T.normalization(NORMALIZE_FACTOR);
 
         if (n % 2) { // compression along x-axis
+            const int Dy = T.GetDy();
             auto U = new double[Dy * Dy * Dy * Dy];
             HOTRG::SVD_Y(D_cut, T, U);
             HOTRG::contractionX(D_cut, T, T, U, "left");
             delete[] U;
         } else { // compression along y-axis
+            const int Dx = T.GetDx();
             auto U = new double[Dx * Dx * Dx * Dx];
             HOTRG::SVD_X(D_cut, T, U);
             HOTRG::contractionY(D_cut, T, T, U, "bottom");
             delete[] U;
         }
-
-        Dx = T.GetDx();
-        Dy = T.GetDy();
 
         double Tr = T.trace();
         Tr = std::log(Tr);
@@ -61,12 +59,10 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
             REP(j, i) tmp /= 2;
             Tr += tmp;
         }
+        time.end();
         file << '\t' << std::scientific << std::setprecision(16) << Tr;
-        cout << '\t' << std::scientific << std::setprecision(16) << Tr << std::flush;
+        cout << '\t' << std::scientific << std::setprecision(16) << Tr << "  in " << time.duration_cast_to_string() << '\n' << std::flush;
     }
-    file << '\n';
-    time.end();
-    cout << "  in " << time.duration_cast_to_string() << '\n';
 }
 
 int main(int argc, char *argv[]) {
@@ -92,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << '\n';
+    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << '\n' << std::flush;
     fileName = dir + "beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     dataFile << std::fixed << std::setprecision(2) << K;
