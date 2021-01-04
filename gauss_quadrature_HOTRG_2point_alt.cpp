@@ -96,7 +96,7 @@ void Trace(const int merge_point, double const K, int const D_cut, int const n_n
             }
             impureTrs[i] = impureTr;
         }
-        double res = (impureTrs[0] - impureTrs[1] + impureTrs[2]) / Tr;
+        double res = (impureTrs[0] + impureTrs[1] + impureTrs[2]) / Tr;
         time.end();
         file << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
         cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
