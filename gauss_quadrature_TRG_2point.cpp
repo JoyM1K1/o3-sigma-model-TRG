@@ -66,8 +66,8 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
     }
 
     /* orders */
-    auto orders = new long long int[DIMENSION];
-    REP(i, DIMENSION) orders[i] = 0;
+    long long int orders[DIMENSION];
+    for (auto &order : orders) order = 0;
 
     for (int n = 1; n <= N; ++n) {
         const int count = (n + 1) / 2;
@@ -94,30 +94,30 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
         /* SVD impure tensor IMTs */
         REP(i, MAX_IMT_NUM) {
             if (IMTs[i].isImpure) {
-                string allocate;
-                string tmp;
+//                string allocate;
+//                string tmp;
                 for (auto & tensor : IMTs[i].tensors) {
                     if (tensor.S.first == T1.S.first || tensor.S.first == T2.S.first/* same as tensor.S.second == T1.S.second || tensor.S.second == T2.S.second */) {
-                        allocate = " allocate";
+//                        allocate = " allocate";
                         tensor.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
                     }
                     if (merge_point == 1 || count <= merge_point - 1) {
-                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
+//                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
                         TRG::SVD(D, D_new, tensor, i % 2 == 1);
                     } else if (n <= N - 2) {
                         if (n % 2) {
-                            tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
+//                            tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
                             TRG::SVD(D, D_new, tensor, i % 2 == 1);
                         } else {
-                            tmp = " " + std::to_string(i) + (i % 4 == 0 ? "rightUp " : "leftUp ");
+//                            tmp = " " + std::to_string(i) + (i % 4 == 0 ? "rightUp " : "leftUp ");
                             TRG::SVD(D, D_new, tensor, i % 4 == 0);
                         }
                     } else {
-                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
+//                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
                         TRG::SVD(D, D_new, tensor, i % 2 == 1);
                     }
                 }
-                cout << allocate << tmp;
+//                cout << allocate << tmp;
             } else {
                 for (auto & tensor : IMTs[i].tensors) {
                     if (merge_point == 1 || count < merge_point - 1) {
@@ -262,6 +262,52 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
                     IMTs[2].isImpure = true;
                     IMTs[4].isImpure = true;
                     IMTs[5].isImpure = true;
+                }
+            } else if (merge_point == N/2) {
+                if (n == N - 3) {
+                    /* 0 */
+                    REP(i, DIMENSION) {
+                        TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, T2.S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                    }
+                    /* 1 */
+                    REP(i, DIMENSION) {
+                        TRG::contraction(D, D_new, IMTs[1].tensors[i], IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, IMTs[2].tensors[i].S.second);
+                    }
+                    /* 2 */
+                    REP(i, DIMENSION) {
+                        TRG::contraction(D, D_new, IMTs[2].tensors[i], IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, T2.S.second);
+                    }
+                } else { // n == N - 2
+                    /* 0 */
+                    REP(i, DIMENSION) {
+                        TRG::Tensor tmp(D);
+                        TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                        index_rotation(IMTs[0].tensors[i], tmp);
+                    }
+                    /* 1 */
+                    REP(a, DIMENSION) {
+                        IMTs[1].tensors[a].UpdateDx(IMTs[0].tensors[a].GetDx());
+                        IMTs[1].tensors[a].UpdateDy(IMTs[0].tensors[a].GetDy());
+                        IMTs[0].tensors[a].forEach([&](int i, int j, int k, int l, const double *t) {
+                            IMTs[1].tensors[a](i, j, k, l) = *t;
+                        });
+                        IMTs[1].tensors[a].order = IMTs[0].tensors[a].order;
+                    }
+                    /* 2 */
+                    REP(i, DIMENSION) {
+                        TRG::Tensor tmp(D);
+                        TRG::contraction(D, D_new, tmp, IMTs[1].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                        index_rotation(IMTs[2].tensors[i], tmp);
+                    }
+                    /* 3 */
+                    REP(a, DIMENSION) {
+                        IMTs[3].tensors[a].UpdateDx(IMTs[0].tensors[a].GetDx());
+                        IMTs[3].tensors[a].UpdateDy(IMTs[0].tensors[a].GetDy());
+                        IMTs[2].tensors[a].forEach([&](int i, int j, int k, int l, const double *t) {
+                            IMTs[3].tensors[a](i, j, k, l) = *t;
+                        });
+                        IMTs[3].tensors[a].order = IMTs[2].tensors[a].order;
+                    }
                 }
             } else { // merge_point > 2
                 if (n % 2) {
@@ -545,29 +591,31 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
 
 int main(int argc, char *argv[]) {
     /* inputs */
-    int N = 40;     // volume : 2^N
-    int n_node = 32;  // n_node
+    int N = 14;     // volume : 2^N
+    int n_node = 16;  // n_node
     int D_cut = 16; // bond dimension
-    double K = 1.8; // inverse temperature
-    int merge_point = 14; // d = 2^(merge_point - 1)
+    double K = 1.90; // inverse temperature
+    int merge_point = 7; // d = 2^(merge_point - 1)
 
-    N = std::stoi(argv[1]);
-    n_node = std::stoi(argv[2]);
-    D_cut = std::stoi(argv[3]);
-    K = std::stod(argv[4]);
-    merge_point = std::stoi(argv[5]);
+    if (argc == 6) {
+        N = std::stoi(argv[1]);
+        n_node = std::stoi(argv[2]);
+        D_cut = std::stoi(argv[3]);
+        K = std::stod(argv[4]);
+        merge_point = std::stoi(argv[5]);
+    }
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(1) << K;
-    const string dir = "../data/gauss_quadrature/TRG_2point/beta" + ss.str() + "/N" + std::to_string(N) + "_node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/";
+    ss << std::fixed << std::setprecision(2) << K;
+    const string dir = "../data/gauss_quadrature/TRG_2point/beta" + ss.str() + "/N" + std::to_string(N) + "/node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << K << ", merge_point = " << merge_point << '\n';
-    fileName = dir + "D" + std::to_string(D_cut) + "_" + std::to_string(merge_point) + ".txt";
+    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << ", merge_point = " << merge_point << '\n' << std::flush;
+    fileName = dir + std::to_string(merge_point) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(merge_point, K, D_cut, n_node, N, dataFile);
     dataFile.close();
