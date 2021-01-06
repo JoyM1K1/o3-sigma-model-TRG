@@ -277,6 +277,13 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
                     REP(i, DIMENSION) {
                         TRG::contraction(D, D_new, IMTs[2].tensors[i], IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, T2.S.second);
                     }
+                    for (auto & tensor : IMTs[3].tensors) {
+                        delete tensor.S.first;
+                        delete tensor.S.second;
+                        tensor.S.first = T1.S.first;
+                        tensor.S.second = T1.S.second;
+                    }
+                    IMTs[3].isImpure = false;
                 } else { // n == N - 2
                     /* 0 */
                     REP(i, DIMENSION) {
@@ -308,6 +315,7 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
                         });
                         IMTs[3].tensors[a].order = IMTs[2].tensors[a].order;
                     }
+                    IMTs[3].isImpure = true;
                 }
             } else { // merge_point > 2
                 if (n % 2) {
@@ -545,6 +553,10 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
                             if (i == 0 || i == 2) {
                                 diff *= 2;
                             }
+                        }
+                    } else if (merge_point == N/2) {
+                        if (n <= N - 3) {
+                            diff *= 2;
                         }
                     } else {
                         if (count < merge_point - 1) {
