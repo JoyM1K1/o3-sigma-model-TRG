@@ -35,8 +35,8 @@ void Trace(const int merge_point, double const K, int const D_cut, int const l_m
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
     /* orders */
-    auto orders = new long long int[DIMENSION];
-    REP(i, DIMENSION) orders[i] = 0;
+    long long int orders[DIMENSION];
+    for (auto &order : orders) order = 0;
 
     for (int n = 1; n <= N; ++n) {
         time.start();
@@ -80,12 +80,6 @@ void Trace(const int merge_point, double const K, int const D_cut, int const l_m
             orders[i] += order;
         }
 
-//        if (n <= N / 2) {
-//            time.end();
-//            cout << "in " << time.duration_cast_to_string() << '\n';
-//            continue;
-//        }
-
         double Tr = T.trace();
 
         double impureTrs[DIMENSION];
@@ -106,15 +100,14 @@ void Trace(const int merge_point, double const K, int const D_cut, int const l_m
         cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
         cout << "  in " << time.duration_cast_to_string() << '\n';
     }
-    delete[] orders;
 }
 
 int main(int argc, char *argv[]) {
     /* inputs */
     int N = 40;     // volume : 2^N
-    int l_max = 2;  // l_max
+    int l_max = 1;  // l_max
     int D_cut; // bond dimension
-    double K = 1.80; // inverse temperature
+    double K = 1.90; // inverse temperature
     int merge_point = 4; // d = 2^(merge_point - 1)
 
     if (argc == 5) {
