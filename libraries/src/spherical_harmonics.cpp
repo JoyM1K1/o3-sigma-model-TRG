@@ -157,9 +157,9 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
                         }
                         index_i = i * i + (i + im), index_j = j * j + (j + jm), index_k = k * k + (k + km), index_l = l * l + (l + lm);
                         T(index_i, index_j, index_k, index_l) = a * s * M_PI / (2 * K);
-                        IMT.tensors[0](index_i, index_j, index_k, index_l) = a * (sum[0] - sum[2]) / std::sqrt(2) / (8 * K);
-                        IMT.tensors[1](index_i, index_j, index_k, index_l) = a * (sum[0] + sum[2]) / std::sqrt(2) / (8 * K);
-                        IMT.tensors[2](index_i, index_j, index_k, index_l) = a * sum[1] / (8 * K);
+                        IMT.tensors[0](index_i, index_j, index_k, index_l) = a * (sum[0] - sum[2]) / std::sqrt(2) * M_PI / (2 * K);
+                        IMT.tensors[1](index_i, index_j, index_k, index_l) = a * (sum[0] + sum[2]) / std::sqrt(2) * M_PI / (2 * K);
+                        IMT.tensors[2](index_i, index_j, index_k, index_l) = a * sum[1] * M_PI / (2 * K);
                     }
     }
     delete[] A;
