@@ -100,6 +100,29 @@ int main(int argc, char *argv[]) {
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
 
+    /* vs beta */
+//    double K_interval = 0.10;
+//    double K_start = 0.10;
+//    double K_end = 4.00;
+//    K_end += K_interval / 2;
+//    K = K_start;
+//    while (K <= K_end) {
+//        std::stringstream stringstream;
+//        stringstream << std::fixed << std::setprecision(2) << K;
+//        time.start();
+//        cout << "N = " << N << ", l_max = " << l_max << ", beta = " << stringstream.str() << '\n';
+//        fileName = dir + "beta" + stringstream.str() + ".txt";
+//        dataFile.open(fileName, std::ios::trunc);
+//        D_cut = (l_max + 1) * (l_max + 1);
+//        dataFile << std::fixed << std::setprecision(2) << K;
+//        Trace(K, D_cut, l_max, N, dataFile);
+//        dataFile.close();
+//        time.end();
+//        cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
+//        K += K_interval;
+//        cout << '\n';
+//    }
+
     /* vs l_max */
 //    K_end += K_interval / 2; // 誤差対策
 //    for (l_max = 1; l_max <= 3; ++l_max) {
