@@ -76,3 +76,4 @@ data/
 .idea/deployment.xml
 gauss_legendre_test.cpp
 test.cpp
+.vscode
