@@ -1,35 +1,84 @@
-//
-// Created by Joy on 2020/06/28.
-//
-
 #ifndef O3_SIGMA_MODEL_IMPURE_TENSOR_HPP
 #define O3_SIGMA_MODEL_IMPURE_TENSOR_HPP
 
 #include "tensor.hpp"
+//#include "TRG.hpp"
 #include <vector>
 
-class ImpureTensor {
+#define DIMENSION 3
+
+template<class Tensor>
+class BaseImpureTensor {
 public:
     int distance{0};
+    int mergeIndex{0};
     bool isMerged{false};
+    bool isImpure{false};
     std::vector<double> corrs;
-    Tensor tensors[3];
+    Tensor tensors[DIMENSION];
 
-    ImpureTensor();
+    BaseImpureTensor() {
+        tensors[0] = Tensor();
+        tensors[1] = Tensor();
+        tensors[2] = Tensor();
+    }
 
-    ImpureTensor(int D);
+    BaseImpureTensor(int D) {
+        tensors[0] = Tensor(D);
+        tensors[1] = Tensor(D);
+        tensors[2] = Tensor(D);
+    }
 
-    ImpureTensor(int Dx, int Dy, int Dx_max, int Dy_max);
+    BaseImpureTensor(int D, int D_max) {
+        tensors[0] = Tensor(D, D_max);
+        tensors[1] = Tensor(D, D_max);
+        tensors[2] = Tensor(D, D_max);
+    }
 
-    ImpureTensor(int d, ImpureTensor &T);
+    BaseImpureTensor(int Di, int Dj, int Dk, int Dl) {
+        tensors[0] = Tensor(Di, Dj, Dk, Dl);
+        tensors[1] = Tensor(Di, Dj, Dk, Dl);
+        tensors[2] = Tensor(Di, Dj, Dk, Dl);
+    }
 
-    ImpureTensor(ImpureTensor &rhs);
+    BaseImpureTensor(int Di, int Dj, int Dk, int Dl, int D_max) {
+        tensors[0] = Tensor(Di, Dj, Dk, Dl, D_max);
+        tensors[1] = Tensor(Di, Dj, Dk, Dl, D_max);
+        tensors[2] = Tensor(Di, Dj, Dk, Dl, D_max);
+    }
 
-    ~ImpureTensor();
+    BaseImpureTensor(int d, BaseImpureTensor<Tensor> &T) {
+        this->distance = d;
+        tensors[0] = Tensor(T.tensors[0]);
+        tensors[1] = Tensor(T.tensors[1]);
+        tensors[2] = Tensor(T.tensors[2]);
+    }
 
-    ImpureTensor &operator=(const ImpureTensor &rhs);
+    BaseImpureTensor(BaseImpureTensor<Tensor> &rhs) {
+        distance = rhs.distance;
+        corrs.clear();
+        tensors[0] = rhs.tensors[0];
+        tensors[1] = rhs.tensors[1];
+        tensors[2] = rhs.tensors[2];
+    }
 
-    static int normalization(Tensor &T, ImpureTensor &originIMT, std::vector<ImpureTensor> &IMTs);
+    ~BaseImpureTensor() {
+        corrs.clear();
+    }
+
+    BaseImpureTensor<Tensor> &operator=(const BaseImpureTensor<Tensor> &rhs) {
+        distance = rhs.distance;
+        tensors[0] = rhs.tensors[0];
+        tensors[1] = rhs.tensors[1];
+        tensors[2] = rhs.tensors[2];
+        return *this;
+    }
+
+    static int normalization(Tensor &T, BaseImpureTensor<Tensor> &originIMT);
+
+    static int normalization(Tensor &T, BaseImpureTensor<Tensor> &originIMT, std::vector<BaseImpureTensor<Tensor>> &IMTs);
 };
+
+//extern template class BaseImpureTensor<TRG::Tensor>;
 
 #endif //O3_SIGMA_MODEL_IMPURE_TENSOR_HPP

@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <gsl/gsl_specfunc.h>
 
-#define ERROR 10e-6
+#define ERROR 10e-14
 
 double math::solver::d_legendre(int n, double x) {
     if (n == 0) return 0;

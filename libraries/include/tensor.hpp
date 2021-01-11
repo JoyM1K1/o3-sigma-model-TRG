@@ -1,34 +1,72 @@
-//
-// Created by Joy on 2020/06/16.
-//
-
 #ifndef O3_SIGMA_MODEL_TENSOR_HPP
 #define O3_SIGMA_MODEL_TENSOR_HPP
 
-class Tensor {
+#include <functional>
+#include <vector>
+
+class BaseTensor {
 private:
-    int Dx, Dy, Dx_max, Dy_max;
+    int Di, Dj, Dk, Dl, D_max;
     double *M;
 public:
-    Tensor();
-    Tensor(int D);
-    Tensor(int Dx, int Dy);
-    Tensor(int Dx, int Dy, int Dx_max, int Dy_max);
-    Tensor(Tensor &rhs);
-    ~Tensor();
+    long long int order{0};
+    std::vector<int> orders;
+
+    BaseTensor();
+
+    BaseTensor(int D);
+
+    BaseTensor(int D, int D_max);
+
+    BaseTensor(int Di, int Dj, int Dk, int Dl);
+
+    BaseTensor(int Di, int Dj, int Dk, int Dl, int D_max);
+
+    BaseTensor(BaseTensor &rhs);
+
+    ~BaseTensor();
 
     int GetDx() const;
+
     int GetDy() const;
-    double * GetMatrix() const;
+
+    int GetDi() const;
+
+    int GetDj() const;
+
+    int GetDk() const;
+
+    int GetDl() const;
+
+    int GetD_max() const;
+
+    double *GetMatrix() const;
 
     void UpdateDx(int Dx);
+
     void UpdateDy(int Dy);
 
-    Tensor & operator=(const Tensor & rhs);
-    const double & operator()(int i, int j, int k, int l) const;
-    double & operator()(int i, int j, int k, int l);
+    void SetDi(int Di);
 
-    static int normalization(Tensor &T);
+    void SetDj(int Dj);
+
+    void SetDk(int Dk);
+
+    void SetDl(int Dl);
+
+    BaseTensor &operator=(const BaseTensor &rhs);
+
+    const double &operator()(int i, int j, int k, int l) const;
+
+    double &operator()(int i, int j, int k, int l);
+
+    void forEach(const std::function<void(double *)> &f);
+
+    void forEach(const std::function<void(int, int, int, int, double *)> &f);
+
+    virtual long long int normalization(int c) {return 0;};
+
+    double trace();
 };
 
 #endif //O3_SIGMA_MODEL_TENSOR_HPP

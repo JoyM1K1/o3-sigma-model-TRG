@@ -5,138 +5,191 @@
 #include <iostream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
-#define REP4(i, j, k, l, N) REP(i, N) REP(j, N) REP(k, N) REP(l, N)
 
-//#define LINF 1e300
-
-Tensor::Tensor() {
-    this->Dx = 0;
-    this->Dy = 0;
-    this->Dx_max = 0;
-    this->Dy_max = 0;
+BaseTensor::BaseTensor() {
+    Di = 0;
+    Dj = 0;
+    Dk = 0;
+    Dl = 0;
+    D_max = 0;
     M = new double[1];
 }
 
-Tensor::Tensor(int D) {
-    this->Dx = D;
-    this->Dy = D;
-    this->Dx_max = D;
-    this->Dy_max = D;
-    M = new double[D * D * D * D];
-    for (int i = 0; i < D * D * D * D; ++i) M[i] = 0;
+BaseTensor::BaseTensor(int D) {
+    this->Di = D;
+    this->Dj = D;
+    this->Dk = D;
+    this->Dl = D;
+    this->D_max = D;
+    M = new double[D_max * D_max * D_max * D_max];
+    for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
 }
 
-Tensor::Tensor(int Dx, int Dy) {
-    this->Dx = Dx;
-    this->Dy = Dy;
-    this->Dx_max = Dx;
-    this->Dy_max = Dy;
-    M = new double[Dx * Dx * Dy * Dy];
-    for (int i = 0; i < Dx_max * Dx_max * Dy_max * Dy_max; ++i) M[i] = 0;
+BaseTensor::BaseTensor(int D, int D_max) {
+    this->Di = D;
+    this->Dj = D;
+    this->Dk = D;
+    this->Dl = D;
+    this->D_max = D_max;
+    M = new double[D_max * D_max * D_max * D_max];
+    for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
 }
 
-Tensor::Tensor(int Dx, int Dy, int Dx_max, int Dy_max) {
-    this->Dx = Dx;
-    this->Dy = Dy;
-    this->Dx_max = Dx_max;
-    this->Dy_max = Dy_max;
-    M = new double[Dx_max * Dx_max * Dy_max * Dy_max];
-    for (int i = 0; i < Dx_max * Dx_max * Dy_max * Dy_max; ++i) M[i] = 0;
+BaseTensor::BaseTensor(int Di, int Dj, int Dk, int Dl) {
+    this->Di = Di;
+    this->Dj = Dj;
+    this->Dk = Dk;
+    this->Dl = Dl;
+    this->D_max = std::max(Di, std::max(Dj, std::max(Dk, Dl)));
+    M = new double[D_max * D_max * D_max * D_max];
+    for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
 }
 
-Tensor::Tensor(Tensor &rhs) {
-    this->Dx = rhs.Dx;
-    this->Dy = rhs.Dy;
-    this->Dx_max = rhs.Dx_max;
-    this->Dy_max = rhs.Dy_max;
-    M = new double[Dx_max * Dx_max * Dy_max * Dy_max];
-    double *M_ = rhs.GetMatrix();
-    for (int i = 0; i < Dx * Dx * Dy * Dy; ++i) M[i] = M_[i];
+BaseTensor::BaseTensor(int Di, int Dj, int Dk, int Dl, int D_max) {
+    this->Di = Di;
+    this->Dj = Dj;
+    this->Dk = Dk;
+    this->Dl = Dl;
+    this->D_max = D_max;
+    M = new double[D_max * D_max * D_max * D_max];
+    for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = 0;
 }
 
-Tensor::~Tensor() {
-    Dx = 0;
-    Dy = 0;
-    Dx_max = 0;
-    Dy_max = 0;
-    delete [] M;
+BaseTensor::BaseTensor(BaseTensor &rhs) {
+    this->Di = rhs.Di;
+    this->Dj = rhs.Dj;
+    this->Dk = rhs.Dk;
+    this->Dl = rhs.Dl;
+    this->D_max = rhs.D_max;
+    M = new double[D_max * D_max * D_max * D_max];
+    for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
+    orders.clear();
+    for (auto o : rhs.orders) {
+        orders.push_back(o);
+    }
+}
+
+BaseTensor::~BaseTensor() {
+    Di = 0;
+    Dj = 0;
+    Dk = 0;
+    Dl = 0;
+    D_max = 0;
+    delete[] M;
     M = nullptr;
 }
 
-int Tensor::GetDx() const {
-    return Dx;
+int BaseTensor::GetDx() const {
+    return Di; // same as Dk
 }
 
-int Tensor::GetDy() const {
-    return Dy;
+int BaseTensor::GetDy() const {
+    return Dj; // same as Dl
 }
 
-double * Tensor::GetMatrix() const {
+int BaseTensor::GetDi() const {
+    return Di;
+}
+
+int BaseTensor::GetDj() const {
+    return Dj;
+}
+
+int BaseTensor::GetDk() const {
+    return Dk;
+}
+
+int BaseTensor::GetDl() const {
+    return Dl;
+}
+
+int BaseTensor::GetD_max() const {
+    return D_max;
+}
+
+double *BaseTensor::GetMatrix() const {
     return M;
 }
 
-void Tensor::UpdateDx(int Dx_) {
-    assert(Dx_ <= Dx_max);
-    this->Dx = Dx_;
+void BaseTensor::UpdateDx(int Dx) {
+    assert(Dx <= D_max);
+    this->Di = Dx;
+    this->Dk = Dx;
 }
 
-void Tensor::UpdateDy(int Dy_) {
-    assert(Dy_ <= Dy_max);
-    this->Dy = Dy_;
+void BaseTensor::UpdateDy(int Dy) {
+    assert(Dy <= D_max);
+    this->Dj = Dy;
+    this->Dl = Dy;
 }
 
-Tensor & Tensor::operator=(const Tensor &rhs) {
-    Dx = rhs.Dx;
-    Dy = rhs.Dy;
-    Dx_max = rhs.Dx_max;
-    Dy_max = rhs.Dy_max;
-    delete [] M;
-    M = new double[Dx_max * Dx_max * Dy_max * Dy_max];
-    double *M_ = rhs.GetMatrix();
-    for (int i = 0; i < Dx * Dx * Dy * Dy; ++i) M[i] = M_[i];
+void BaseTensor::SetDi(int Di) {
+    assert(Di <= D_max);
+    this->Di = Di;
+}
+
+void BaseTensor::SetDj(int Dj) {
+    assert(Dj <= D_max);
+    this->Dj = Dj;
+}
+
+void BaseTensor::SetDk(int Dk) {
+    assert(Dk <= D_max);
+    this->Dk = Dk;
+}
+
+void BaseTensor::SetDl(int Dl) {
+    assert(Dl <= D_max);
+    this->Dl = Dl;
+}
+
+BaseTensor &BaseTensor::operator=(const BaseTensor &rhs) {
+    this->Di = rhs.Di;
+    this->Dj = rhs.Dj;
+    this->Dk = rhs.Dk;
+    this->Dl = rhs.Dl;
+    this->D_max = rhs.D_max;
+    delete[] M;
+    M = new double[D_max * D_max * D_max * D_max];
+    for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
+    orders.clear();
+    for (auto o : rhs.orders) {
+        orders.push_back(o);
+    }
+    order = rhs.order;
     return *this;
 }
 
-const double & Tensor::operator()(int i, int j, int k, int l) const {
-    assert(0 <= i && i <= Dx);
-    assert(0 <= j && j <= Dy);
-    assert(0 <= k && k <= Dx);
-    assert(0 <= l && l <= Dy);
-    return M[Dy * Dx * Dy * i + Dx * Dy * j + Dy * k + l];
+const double &BaseTensor::operator()(int i, int j, int k, int l) const {
+    assert(0 <= i && i <= Di);
+    assert(0 <= j && j <= Dj);
+    assert(0 <= k && k <= Dk);
+    assert(0 <= l && l <= Dl);
+    return M[Dj * Dk * Dl * i + Dk * Dl * j + Dl * k + l];
 }
 
-double & Tensor::operator()(int i, int j, int k, int l) {
-    assert(0 <= i && i <= Dx);
-    assert(0 <= j && j <= Dy);
-    assert(0 <= k && k <= Dx);
-    assert(0 <= l && l <= Dy);
-    return M[Dy * Dx * Dy * i + Dx * Dy * j + Dy * k + l];
+double &BaseTensor::operator()(int i, int j, int k, int l) {
+    assert(0 <= i && i <= Di);
+    assert(0 <= j && j <= Dj);
+    assert(0 <= k && k <= Dk);
+    assert(0 <= l && l <= Dl);
+    return M[Dj * Dk * Dl * i + Dk * Dl * j + Dl * k + l];
 }
 
-int Tensor::normalization(Tensor &T) {
-    const int Dx = T.GetDx();
-    const int Dy = T.GetDy();
-//    double _min = LINF;
-    double _max = 0;
-    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    const double t = std::abs(T(i, j, k, l));
-                    if (std::isnan(t)) {
-                        std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
-                        exit(1);
-                    }
-                    if (t > 0) {
-//                        _min = std::min(_min, t);
-                        _max = std::max(_max, t);
-                    }
+void BaseTensor::forEach(const std::function<void(double *)> &f) {
+    REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
+                    f(&(*this)(i, j, k, l));
                 }
-//    auto o = static_cast<int>(std::floor((std::log10(_min) + std::log10(_max)) / 2));
-    auto o = static_cast<int>(std::floor(std::log10(_max)));
-    REP(i, Dx)REP(j, Dy)REP(k, Dx)REP(l, Dy) {
-                    if (o > 0) {
-                        REP(t, std::abs(o)) T(i, j, k, l) /= 10;
-                    } else {
-                        REP(t, std::abs(o)) T(i, j, k, l) *= 10;
-                    }
+}
+
+void BaseTensor::forEach(const std::function<void(int, int, int, int, double *)> &f) {
+    REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
+                    f(i, j, k, l, &(*this)(i, j, k, l));
                 }
-    return o;
+}
+
+double BaseTensor::trace() {
+    double res = 0;
+    REP(i, Di)REP(j, Dj) res += (*this)(i, j, i, j);
+    return res;
 }
