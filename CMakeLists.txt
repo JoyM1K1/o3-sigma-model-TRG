@@ -70,12 +70,6 @@ if (APPLE)
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics TRG tensor time_counter)
-
-    add_executable(test test.cpp)
-    target_link_libraries(test mkl_intel_ilp64 mkl_sequential mkl_core spherical_harmonics HOTRG tensor impure_tensor time_counter)
-
-    add_executable(gauss_legendre_test gauss_legendre_test.cpp)
-    target_link_libraries(gauss_legendre_test legendre_zero_point)
 else ()
     set(CMAKE_CXX_COMPILER icpc)
     set(CMAKE_CXX_FLAGS "-std=c++11 -mkl -axMIC-AVX512 -qopenmp -lgsl -lgslcblas")
