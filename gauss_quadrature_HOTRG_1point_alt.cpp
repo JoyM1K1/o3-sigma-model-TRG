@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <gauss_quadrature.hpp>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
 #include <sstream>
@@ -19,17 +18,11 @@ using std::string;
 
 void Trace(double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
     time_counter time;
-    // index dimension
-    int D = std::min(D_cut, n_node * n_node);
 
     // initialize tensor network : max index size is D_cut
-    time.start();
-    cout << "initialize tensor " << std::flush;
-    HOTRG::Tensor T(D, D_cut);
-    HOTRG::ImpureTensor originIMT(D, D_cut);
-    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T, originIMT);
-    time.end();
-    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
+    HOTRG::Tensor T;
+    HOTRG::ImpureTensor IMT;
+    HOTRG::initialize_gauss_quadrature_with_impure_1(T, IMT, K, D_cut, n_node);
 
     /* orders */
     long long int orders[DIMENSION];
@@ -42,46 +35,12 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
         time.start();
         cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
-        if (n % 2) { // compress along x-axis
-            cout << " compress along x-axis : " << std::flush;
-            const int Dy = T.GetDy();
-            auto U = new double[Dy * Dy * Dy * Dy];
-            HOTRG::SVD_Y(D_cut, T, U);
-            for (auto &tensor : originIMT.tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
-            HOTRG::contractionX(D_cut, T, T, U, "left");
-            delete[] U;
-        } else { // compress along y-axis
-            cout << " compress along y-axis : " << std::flush;
-            const int Dx = T.GetDx();
-            auto U = new double[Dx * Dx * Dx * Dx];
-            HOTRG::SVD_X(D_cut, T, U);
-            for (auto &tensor : originIMT.tensors) HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
-            HOTRG::contractionY(D_cut, T, T, U, "bottom");
-            delete[] U;
-        }
+        double res[DIMENSION];
+        HOTRG::renormalization::one_point_alt(T, IMT, orders, n, NORMALIZE_FACTOR, res);
+        REP(i, DIMENSION) correlations_list[i].push_back(res[i]);
 
-        /* normalization */
-        T.normalization(NORMALIZE_FACTOR);
-        for (auto &tensor : originIMT.tensors) tensor.normalization(NORMALIZE_FACTOR);
-        REP(i, DIMENSION) orders[i] += originIMT.tensors[i].order - T.order;
-
-        double Tr = T.trace();
-
-        double impureTrs[DIMENSION];
-        REP(i, DIMENSION) {
-            double impureTr = originIMT.tensors[i].trace();
-            const long long int order = orders[i];
-            const long long int absOrder = std::abs(order);
-            if (order > 0) {
-                REP(k, absOrder) impureTr *= NORMALIZE_FACTOR;
-            } else {
-                REP(k, absOrder) impureTr /= NORMALIZE_FACTOR;
-            }
-            impureTrs[i] = impureTr;
-            correlations_list[i].push_back(impureTr/Tr);
-        }
         time.end();
-        cout << std::scientific << std::setprecision(16) << impureTrs[0] / Tr << '\t' << impureTrs[1] / Tr << '\t' << impureTrs[2] / Tr
+        cout << std::scientific << std::setprecision(16) << res[0] << '\t' << res[1] << '\t' << res[2]
              << "  in " << time.duration_cast_to_string() << '\n' << std::flush;
     }
     for (const auto& correlations : correlations_list) {

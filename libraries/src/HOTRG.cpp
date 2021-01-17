@@ -36,6 +36,29 @@ void HOTRG::initialize_gauss_quadrature(Tensor &T, const double &K, const int &D
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
+void HOTRG::initialize_spherical_harmonics_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    T = Tensor(D_cut);
+    IMT = ImpureTensor(D_cut);
+    SphericalHarmonics::init_tensor_with_impure(K, l_max, T, IMT);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
+}
+
+void HOTRG::initialize_gauss_quadrature_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    const int D = std::min(D_cut, n_node * n_node);
+    T = Tensor(D, D_cut);
+    IMT = ImpureTensor(D, D_cut);
+    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T, IMT);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
+}
+
 long long int HOTRG::Tensor::normalization(int c) {
     double _max = 0;
     this->forEach([&](int i, int j, int k, int l, const double *t) {
@@ -384,4 +407,43 @@ double HOTRG::renormalization::partition_alt(Tensor &T, long long int *orders, c
         Tr += tmp;
     }
     return Tr;
+}
+
+void HOTRG::renormalization::one_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &normalize_factor, double *res) {
+    const int D_cut = T.GetD_max();
+    if (n % 2) { // compress along x-axis
+        cout << " compress along x-axis : " << std::flush;
+        const int Dy = T.GetDy();
+        auto U = new double[Dy * Dy * Dy * Dy];
+        HOTRG::SVD_Y(D_cut, T, U);
+        for (auto &tensor : IMT.tensors) HOTRG::contractionX(D_cut, tensor, T, U, "left");
+        HOTRG::contractionX(D_cut, T, T, U, "left");
+        delete[] U;
+    } else { // compress along y-axis
+        cout << " compress along y-axis : " << std::flush;
+        const int Dx = T.GetDx();
+        auto U = new double[Dx * Dx * Dx * Dx];
+        HOTRG::SVD_X(D_cut, T, U);
+        for (auto &tensor : IMT.tensors) HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
+        HOTRG::contractionY(D_cut, T, T, U, "bottom");
+        delete[] U;
+    }
+
+    /* normalization */
+    T.normalization(normalize_factor);
+    for (auto &tensor : IMT.tensors) tensor.normalization(normalize_factor);
+    REP(i, DIMENSION) orders[i] += IMT.tensors[i].order - T.order;
+
+    double Tr = T.trace();
+    REP(i, DIMENSION) {
+        double impureTr = IMT.tensors[i].trace();
+        const long long int order = orders[i];
+        const long long int absOrder = std::abs(order);
+        if (order > 0) {
+            REP(k, absOrder) impureTr *= normalize_factor;
+        } else {
+            REP(k, absOrder) impureTr /= normalize_factor;
+        }
+        res[i] = impureTr/Tr;
+    }
 }
