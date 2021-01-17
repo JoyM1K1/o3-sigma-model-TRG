@@ -42,6 +42,10 @@ namespace HOTRG {
 
     void initialize_gauss_quadrature(Tensor &T, const double &K, const int &D_cut, const int &n_node);
 
+    void initialize_spherical_harmonics_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max);
+
+    void initialize_gauss_quadrature_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node);
+
     void contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT);
 
     void contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string mergeT);
@@ -52,6 +56,8 @@ namespace HOTRG {
 
     namespace renormalization {
         double partition_alt(Tensor &T, long long int *orders, const int &n, const int &normalize_factor);
+
+        void one_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &normalize_factor, double *res);
     }
 }
 
