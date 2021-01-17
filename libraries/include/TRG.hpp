@@ -61,6 +61,12 @@ namespace TRG {
     void SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp);
 
     void contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, Unitary_S *S2, Unitary_S *S3, Unitary_S *S4);
+
+    void initialize_spherical_harmonics(Tensor & T1, Tensor & T2, const int &D, const int &D_cut, const double &K, const int &l_max);
+
+    void initialize_gauss_quadrature(Tensor & T1, Tensor & T2, const int &D, const int &D_cut, const double &K, const int &n_node);
+
+    void allocate_tensor(Tensor &T, const int &D, const int &D_cut);
 }
 
 #endif //O3_SIGMA_MODEL_TRG_HPP

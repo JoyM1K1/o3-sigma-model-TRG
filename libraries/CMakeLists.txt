@@ -36,3 +36,4 @@ target_include_directories(impure_tensor INTERFACE ./include)
 target_include_directories(time_counter INTERFACE ./include)
 
 target_link_libraries(gauss_quadrature legendre_zero_point)
+target_link_libraries(TRG spherical_harmonics gauss_quadrature time_counter)

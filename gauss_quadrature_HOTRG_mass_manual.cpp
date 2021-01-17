@@ -101,7 +101,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
     HOTRG::Tensor T(D, D_cut);
     HOTRG::ImpureTensor originIMT(D, D_cut);
 
-    GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
+    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T, originIMT);
 
     std::vector<HOTRG::ImpureTensor> IMTs(DATA_POINTS);
     REP(i, DATA_POINTS) {

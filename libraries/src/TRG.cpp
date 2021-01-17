@@ -1,4 +1,7 @@
 #include "../include/TRG.hpp"
+#include "../include/time_counter.hpp"
+#include "../include/spherical_harmonics.hpp"
+#include "../include/gauss_quadrature.hpp"
 #include <mkl.h>
 #include <iostream>
 #include <cmath>
@@ -157,4 +160,31 @@ long long int TRG::Tensor::normalization(int c) {
         });
     }
     return order = o;
+}
+
+void TRG::allocate_tensor(Tensor &T, const int &D, const int &D_cut) {
+    T = TRG::Tensor(D, D_cut);
+    T.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
+}
+
+void TRG::initialize_spherical_harmonics(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &K, const int &l_max) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
+    allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
+    SphericalHarmonics::init_tensor(K, l_max, T1);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
+}
+
+void TRG::initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &K, const int &n_node) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
+    allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
+    GaussQuadrature::init_tensor(K, n_node, D_cut, T1);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }

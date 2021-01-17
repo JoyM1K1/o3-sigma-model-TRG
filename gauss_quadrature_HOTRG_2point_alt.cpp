@@ -32,7 +32,7 @@ void Trace(const int merge_point, double const K, int const D_cut, int const n_n
     cout << "initialize tensor " << std::flush;
     HOTRG::Tensor T(D, D_cut);
     HOTRG::ImpureTensor originIMT(D, D_cut);
-    GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T, originIMT);
+    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T, originIMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
