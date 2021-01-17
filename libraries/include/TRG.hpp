@@ -67,6 +67,10 @@ namespace TRG {
     void initialize_gauss_quadrature(Tensor & T1, Tensor & T2, const int &D, const int &D_cut, const double &K, const int &n_node);
 
     void allocate_tensor(Tensor &T, const int &D, const int &D_cut);
+
+    namespace renormalization {
+        double partition(Tensor &T1, Tensor &T2, long long int *orders, const int &n, const int &normalize_factor);
+    }
 }
 
 #endif //O3_SIGMA_MODEL_TRG_HPP

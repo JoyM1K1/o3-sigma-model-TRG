@@ -32,31 +32,9 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
     for (int n = 1; n <= N; ++n) {
         time.start();
         cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
-        const int D_new = std::min(D * D, D_cut);
 
-        /* normalization */
-        orders[n - 1] = T1.normalization(NORMALIZE_FACTOR);
+        double Tr = TRG::renormalization::partition(T1, T2, orders, n, NORMALIZE_FACTOR);
 
-        /* SVD */
-        T2 = T1;
-        TRG::SVD(D, D_new, T1, true);
-        TRG::SVD(D, D_new, T2, false);
-
-        /* contraction */
-        TRG::contraction(D, D_new, T1, T1.S.first, T2.S.first, T1.S.second, T2.S.second);
-
-        double Tr = T1.trace();
-        if (std::isnan(std::log(Tr))) {
-            cout << "\nTrace is " << Tr;
-            exit(1);
-        }
-        Tr = std::log(Tr);
-        REP(i, n) Tr /= 2; // 体積で割る
-        REP(i, n) {
-            double tmp = orders[i] * std::log(NORMALIZE_FACTOR);
-            REP(j, i) tmp /= 2;
-            Tr += tmp;
-        }
         time.end();
         file << '\t' << std::scientific << std::setprecision(16) << Tr;
         cout << '\t' << std::scientific << std::setprecision(16) << Tr << "  in " << time.duration_cast_to_string() << '\n' << std::flush;

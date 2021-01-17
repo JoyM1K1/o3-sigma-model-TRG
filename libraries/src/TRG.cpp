@@ -188,3 +188,30 @@ void TRG::initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, cons
     time.end();
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
+
+double TRG::renormalization::partition(Tensor &T1, Tensor &T2, long long int *orders, const int &n, const int &normalize_factor) {
+    /* normalization */
+    orders[n - 1] = T1.normalization(normalize_factor);
+
+    /* SVD */
+    T2 = T1;
+    const int D = T1.GetDx();
+    const int D_cut = T1.GetD_max();
+    const int D_new = std::min(D * D, D_cut);
+    TRG::SVD(D, D_new, T1, true);
+    TRG::SVD(D, D_new, T2, false);
+
+    /* contraction */
+    TRG::contraction(D_cut, D_cut, T1, T1.S.first, T2.S.first, T1.S.second, T2.S.second);
+
+    /* trace */
+    double Tr = T1.trace();
+    Tr = std::log(Tr);
+    REP(i, n) Tr /= 2; // 体積で割る
+    REP(i, n) {
+        double tmp = orders[i] * std::log(normalize_factor);
+        REP(j, i) tmp /= 2;
+        Tr += tmp;
+    }
+    return Tr;
+}
