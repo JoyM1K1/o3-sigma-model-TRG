@@ -1,4 +1,7 @@
 #include "../include/HOTRG.hpp"
+#include "../include/spherical_harmonics.hpp"
+#include "../include/gauss_quadrature.hpp"
+#include "../include/time_counter.hpp"
 #include <mkl.h>
 #include <iostream>
 #include <iomanip>
@@ -11,6 +14,27 @@
 
 using std::cout;
 using std::cerr;
+
+void HOTRG::initialize_spherical_harmonics(Tensor &T, const double &K, const int &D_cut, const int &l_max) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    T = Tensor(D_cut);
+    SphericalHarmonics::init_tensor(K, l_max, T);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
+}
+
+void HOTRG::initialize_gauss_quadrature(Tensor &T, const double &K, const int &D_cut, const int &n_node) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    const int D = std::min(D_cut, n_node * n_node);
+    T = Tensor(D, D_cut);
+    GaussQuadrature::init_tensor(K, n_node, D_cut, T);
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
+}
 
 long long int HOTRG::Tensor::normalization(int c) {
     double _max = 0;
@@ -329,4 +353,35 @@ void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT
     }
     delete[] tmp1_;
     delete[] tmp2_;
+}
+
+double HOTRG::renormalization::partition_alt(Tensor &T, long long int *orders, const int &n, const int &normalize_factor) {
+    const int D_cut = T.GetD_max();
+
+    /* normalization */
+    orders[n - 1] = T.normalization(normalize_factor);
+
+    if (n % 2) { // compression along x-axis
+        const int Dy = T.GetDy();
+        auto U = new double[Dy * Dy * Dy * Dy];
+        HOTRG::SVD_Y(D_cut, T, U);
+        HOTRG::contractionX(D_cut, T, T, U, "left");
+        delete[] U;
+    } else { // compression along y-axis
+        const int Dx = T.GetDx();
+        auto U = new double[Dx * Dx * Dx * Dx];
+        HOTRG::SVD_X(D_cut, T, U);
+        HOTRG::contractionY(D_cut, T, T, U, "bottom");
+        delete[] U;
+    }
+
+    double Tr = T.trace();
+    Tr = std::log(Tr);
+    REP(i, n) Tr /= 2; // 体積で割る
+    REP(i, n) {
+        double tmp = orders[i] * std::log(normalize_factor);
+        REP(j, i) tmp /= 2;
+        Tr += tmp;
+    }
+    return Tr;
 }

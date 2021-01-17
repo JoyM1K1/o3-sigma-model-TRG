@@ -38,6 +38,10 @@ namespace HOTRG {
         ImpureTensor(BaseImpureTensor<Tensor> &rhs) : BaseImpureTensor<Tensor>(rhs) {};
     };
 
+    void initialize_spherical_harmonics(Tensor &T, const double &K, const int &D_cut, const int &l_max);
+
+    void initialize_gauss_quadrature(Tensor &T, const double &K, const int &D_cut, const int &n_node);
+
     void contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT);
 
     void contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string mergeT);
@@ -45,6 +49,10 @@ namespace HOTRG {
     void SVD_X(const int &D_cut, BaseTensor &T, double *&U);
 
     void SVD_Y(const int &D_cut, BaseTensor &T, double *&U);
+
+    namespace renormalization {
+        double partition_alt(Tensor &T, long long int *orders, const int &n, const int &normalize_factor);
+    }
 }
 
 #endif //O3_SIGMA_MODEL_HOTRG_HPP
