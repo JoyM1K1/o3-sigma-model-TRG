@@ -5,6 +5,8 @@
 #include "tensor.hpp"
 #include "impure_tensor.hpp"
 
+#define MAX_IMT_NUM 6
+
 namespace TRG {
     class Unitary_S {
     public:
@@ -62,14 +64,28 @@ namespace TRG {
 
     void contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, Unitary_S *S2, Unitary_S *S3, Unitary_S *S4);
 
-    void initialize_spherical_harmonics(Tensor & T1, Tensor & T2, const int &D, const int &D_cut, const double &K, const int &l_max);
+    void initialize_spherical_harmonics(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &K, const int &l_max);
 
-    void initialize_gauss_quadrature(Tensor & T1, Tensor & T2, const int &D, const int &D_cut, const double &K, const int &n_node);
+    void initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &K, const int &n_node);
+
+    void initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &K, const int &l_max, const int &merge_point);
+
+    void initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &K, const int &n_node, const int &merge_point);
 
     void allocate_tensor(Tensor &T, const int &D, const int &D_cut);
 
+    void index_rotation(Tensor &T, Tensor &tmp);
+
     namespace renormalization {
         double partition(Tensor &T1, Tensor &T2, long long int *orders, const int &n, const int &normalize_factor);
+
+        void two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor);
+    }
+
+    namespace trace {
+        double gauss_quadrature(Tensor &T, ImpureTensor &IMT, const long long int *orders, const int &normalize_factor);
+
+        double spherical_harmonics();
     }
 }
 

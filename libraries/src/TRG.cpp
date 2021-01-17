@@ -189,6 +189,49 @@ void TRG::initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, cons
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
+void TRG::initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &K, const int &l_max, const int &merge_point) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
+    allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
+    REP(i, MAX_IMT_NUM) IMTs[i] = ImpureTensor(D, D_cut);
+    SphericalHarmonics::init_tensor_with_impure(K, l_max, T1, IMTs[0]);
+    IMTs[0].isImpure = true;
+    if (merge_point == 1) {
+        IMTs[1] = IMTs[0];
+        IMTs[1].isImpure = true;
+    }
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
+}
+
+void TRG::initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &K, const int &n_node, const int &merge_point) {
+    time_counter time;
+    time.start();
+    cout << "initialize tensor " << std::flush;
+    allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
+    allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
+    REP(i, MAX_IMT_NUM) IMTs[i] = ImpureTensor(D, D_cut);
+    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T1, IMTs[0]);
+    IMTs[0].isImpure = true;
+    if (merge_point == 1) {
+        IMTs[1] = IMTs[0];
+        IMTs[1].isImpure = true;
+    }
+    REP(i, MAX_IMT_NUM) {
+        for (auto & tensor : IMTs[i].tensors) {
+            if (i % 2) {
+                tensor.S = T1.S;
+            } else {
+                tensor.S = T2.S;
+            }
+        }
+    }
+    time.end();
+    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
+}
+
 double TRG::renormalization::partition(Tensor &T1, Tensor &T2, long long int *orders, const int &n, const int &normalize_factor) {
     /* normalization */
     orders[n - 1] = T1.normalization(normalize_factor);
@@ -214,4 +257,522 @@ double TRG::renormalization::partition(Tensor &T1, Tensor &T2, long long int *or
         Tr += tmp;
     }
     return Tr;
+}
+
+void TRG::index_rotation(Tensor &T, Tensor &tmp) {
+    T.UpdateDx(tmp.GetDx());
+    T.UpdateDy(tmp.GetDy());
+    tmp.forEach([&](int i, int j, int k, int l, const double *t) {
+        T(l, i, j, k) = *t;
+    });
+    T.order = tmp.order;
+}
+
+void TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor) {
+    const int D = T1.GetDx();
+    const int D_cut = T1.GetD_max();
+    const int D_new = std::min(D * D, D_cut);
+    const int count = (n + 1) / 2;
+
+    /* SVD pure tensor T */
+    T2 = T1;
+    TRG::SVD(D, D_new, T1, true);
+    TRG::SVD(D, D_new, T2, false);
+
+    /* SVD impure tensor IMTs */
+    REP(i, MAX_IMT_NUM) {
+        if (IMTs[i].isImpure) {
+//                string allocate;
+//                string tmp;
+            for (auto & tensor : IMTs[i].tensors) {
+                if (tensor.S.first == T1.S.first || tensor.S.first == T2.S.first/* same as tensor.S.second == T1.S.second || tensor.S.second == T2.S.second */) {
+//                        allocate = " allocate";
+                    tensor.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
+                }
+                if (merge_point == 1 || count <= merge_point - 1) {
+//                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
+                    TRG::SVD(D, D_new, tensor, i % 2 == 1);
+                } else if (n <= N - 2) {
+                    if (n % 2) {
+//                            tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
+                        TRG::SVD(D, D_new, tensor, i % 2 == 1);
+                    } else {
+//                            tmp = " " + std::to_string(i) + (i % 4 == 0 ? "rightUp " : "leftUp ");
+                        TRG::SVD(D, D_new, tensor, i % 4 == 0);
+                    }
+                } else {
+//                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
+                    TRG::SVD(D, D_new, tensor, i % 2 == 1);
+                }
+            }
+//                cout << allocate << tmp;
+        } else {
+            for (auto & tensor : IMTs[i].tensors) {
+                if (merge_point == 1 || count < merge_point - 1) {
+                    if (i % 2 == 1) {
+                        tensor.S = T1.S;
+                    } else {
+                        tensor.S = T2.S;
+                    }
+                } else if (n <= N - 2) {
+                    if (n % 2) {
+                        if (i % 2 == 1) {
+                            tensor.S = T1.S;
+                        } else {
+                            tensor.S = T2.S;
+                        }
+                    } else {
+                        if (i % 4 == 0) {
+                            tensor.S = T1.S;
+                        } else {
+                            tensor.S = T2.S;
+                        }
+                    }
+                } else {
+                    if (i % 2 == 1) {
+                        tensor.S = T1.S;
+                    } else {
+                        tensor.S = T2.S;
+                    }
+                }
+            }
+        }
+    }
+
+    /* contraction */
+    if (n % 2) {
+        TRG::contraction(D, D_new, T1, T1.S.first, T2.S.first, T1.S.second, T2.S.second);
+    } else {
+        TRG::Tensor tmp(D);
+        TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, T1.S.second, T2.S.second);
+        index_rotation(T1, tmp);
+    }
+    if ((merge_point == 1 && n <= N - 2) || count < merge_point - 1) {
+        if (n % 2) {
+            /* 0 */
+            REP(i, DIMENSION) {
+                TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, T2.S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+            }
+            if (IMTs[1].isImpure) {
+                /* 1 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[1].tensors[i], IMTs[1].tensors[i].S.first, T2.S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                }
+                if (IMTs[3].isImpure) {
+                    /* 2 */
+                    REP(i, DIMENSION) {
+                        TRG::contraction(D, D_new, IMTs[2].tensors[i], IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, T2.S.second);
+                    }
+                    IMTs[2].isImpure = true;
+                }
+            }
+            /* 3 */
+            REP(i, DIMENSION) {
+                TRG::contraction(D, D_new, IMTs[3].tensors[i], T1.S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, T2.S.second);
+            }
+            IMTs[3].isImpure = true;
+        } else {
+            /* 0 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, T2.S.second);
+                index_rotation(IMTs[0].tensors[i], tmp);
+            }
+            /* 1 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                index_rotation(IMTs[1].tensors[i], tmp);
+            }
+            if (IMTs[1].isImpure) {
+                /* 2 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, IMTs[1].tensors[i].S.first, T2.S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                    index_rotation(IMTs[2].tensors[i], tmp);
+                }
+                IMTs[2].isImpure = true;
+            }
+            /* 3 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, T2.S.second);
+                index_rotation(IMTs[3].tensors[i], tmp);
+            }
+            IMTs[1].isImpure = true;
+        }
+    } else if (count == merge_point - 1) {
+        if (merge_point == 2) {
+            if (n % 2) {
+                /* 0 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, T2.S.first, T1.S.second, IMTs[0].tensors[i].S.second);
+                }
+                /* 1 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[1].tensors[i], T1.S.first, IMTs[0].tensors[i].S.first, T1.S.second, T2.S.second);
+                }
+                IMTs[1].isImpure = true;
+            } else {
+                /* 0 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[1].tensors[i].S.second, T2.S.second);
+                    index_rotation(IMTs[0].tensors[i], tmp);
+                }
+                /* 1 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                    index_rotation(IMTs[1].tensors[i], tmp);
+                }
+                /* 2 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, T1.S.second, IMTs[0].tensors[i].S.second);
+                    index_rotation(IMTs[2].tensors[i], tmp);
+                }
+                /* 4 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, IMTs[1].tensors[i].S.first, T2.S.first, T1.S.second, T2.S.second);
+                    index_rotation(IMTs[4].tensors[i], tmp);
+                }
+                /* 5 */
+                REP(a, DIMENSION) {
+                    IMTs[5].tensors[a].UpdateDx(IMTs[4].tensors[a].GetDx());
+                    IMTs[5].tensors[a].UpdateDy(IMTs[4].tensors[a].GetDy());
+                    IMTs[4].tensors[a].forEach([&](int i, int j, int k, int l, const double *t) {
+                        IMTs[5].tensors[a](i, j, k, l) = *t;
+                    });
+                    IMTs[5].tensors[a].order = IMTs[4].tensors[a].order;
+                }
+                IMTs[2].isImpure = true;
+                IMTs[4].isImpure = true;
+                IMTs[5].isImpure = true;
+            }
+        } else if (merge_point == N/2) {
+            if (n == N - 3) {
+                /* 0 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, T2.S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                }
+                /* 1 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[1].tensors[i], IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, IMTs[2].tensors[i].S.second);
+                }
+                /* 2 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[2].tensors[i], IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, T2.S.second);
+                }
+                for (auto & tensor : IMTs[3].tensors) {
+                    delete tensor.S.first;
+                    delete tensor.S.second;
+                    tensor.S.first = T1.S.first;
+                    tensor.S.second = T1.S.second;
+                }
+                IMTs[3].isImpure = false;
+            } else { // n == N - 2
+                /* 0 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                    index_rotation(IMTs[0].tensors[i], tmp);
+                }
+                /* 1 */
+                REP(a, DIMENSION) {
+                    IMTs[1].tensors[a].UpdateDx(IMTs[0].tensors[a].GetDx());
+                    IMTs[1].tensors[a].UpdateDy(IMTs[0].tensors[a].GetDy());
+                    IMTs[0].tensors[a].forEach([&](int i, int j, int k, int l, const double *t) {
+                        IMTs[1].tensors[a](i, j, k, l) = *t;
+                    });
+                    IMTs[1].tensors[a].order = IMTs[0].tensors[a].order;
+                }
+                /* 2 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, IMTs[1].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                    index_rotation(IMTs[2].tensors[i], tmp);
+                }
+                /* 3 */
+                REP(a, DIMENSION) {
+                    IMTs[3].tensors[a].UpdateDx(IMTs[0].tensors[a].GetDx());
+                    IMTs[3].tensors[a].UpdateDy(IMTs[0].tensors[a].GetDy());
+                    IMTs[2].tensors[a].forEach([&](int i, int j, int k, int l, const double *t) {
+                        IMTs[3].tensors[a](i, j, k, l) = *t;
+                    });
+                    IMTs[3].tensors[a].order = IMTs[2].tensors[a].order;
+                }
+                IMTs[3].isImpure = true;
+            }
+        } else { // merge_point > 2
+            if (n % 2) {
+                /* 0 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, T2.S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                }
+                /* 1 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[1].tensors[i], IMTs[1].tensors[i].S.first, T2.S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                }
+                /* 2 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[2].tensors[i], IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, T2.S.second);
+                }
+                /* 3 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[3].tensors[i], IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, IMTs[2].tensors[i].S.second);
+                }
+                /* 5 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[5].tensors[i], T1.S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, T2.S.second);
+                }
+                IMTs[2].isImpure = true;
+                IMTs[5].isImpure = true;
+            } else {
+                /* 0 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[5].tensors[i].S.second, T2.S.second);
+                    index_rotation(IMTs[0].tensors[i], tmp);
+                }
+                /* 1 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                    index_rotation(IMTs[1].tensors[i], tmp);
+                }
+                /* 2 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+                    index_rotation(IMTs[2].tensors[i], tmp);
+                }
+                /* 3 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, IMTs[1].tensors[i].S.first, T2.S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                    index_rotation(IMTs[3].tensors[i], tmp);
+                }
+                /* 4 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                    index_rotation(IMTs[4].tensors[i], tmp);
+                }
+                /* 5 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, IMTs[5].tensors[i].S.first, IMTs[2].tensors[i].S.first, T1.S.second, T2.S.second);
+                    index_rotation(IMTs[5].tensors[i], tmp);
+                }
+                IMTs[4].isImpure = true;
+            }
+        }
+    } else if (n <= N - 3) {
+        if (n % 2) {
+            /* 0 */
+            REP(i, DIMENSION) {
+                TRG::contraction(D, D_new, IMTs[0].tensors[i], T1.S.first, IMTs[0].tensors[i].S.first, IMTs[5].tensors[i].S.second, T2.S.second);
+            }
+            /* 1 */
+            REP(i, DIMENSION) {
+                TRG::contraction(D, D_new, IMTs[1].tensors[i], T1.S.first, T2.S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+            }
+            /* 2 */
+            REP(i, DIMENSION) {
+                TRG::contraction(D, D_new, IMTs[2].tensors[i], T1.S.first, T2.S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+            }
+            if (IMTs[3].isImpure) {
+                /* 3 */
+                REP(i, DIMENSION) {
+                    TRG::contraction(D, D_new, IMTs[3].tensors[i], IMTs[3].tensors[i].S.first, T2.S.first, T1.S.second, T2.S.second);
+                }
+            }
+            /* 4 */
+            REP(i, DIMENSION) {
+                TRG::contraction(D, D_new, IMTs[4].tensors[i], IMTs[1].tensors[i].S.first, IMTs[2].tensors[i].S.first, IMTs[3].tensors[i].S.second, IMTs[4].tensors[i].S.second);
+            }
+            /* 5 */
+            REP(i, DIMENSION) {
+                TRG::contraction(D, D_new, IMTs[5].tensors[i], IMTs[5].tensors[i].S.first, IMTs[4].tensors[i].S.first, T1.S.second, T2.S.second);
+            }
+        } else {
+            /* 0 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.second, T2.S.second);
+                index_rotation(IMTs[0].tensors[i], tmp);
+            }
+            /* 1 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[2].tensors[i].S.first, IMTs[4].tensors[i].S.second, IMTs[1].tensors[i].S.second);
+                index_rotation(IMTs[1].tensors[i], tmp);
+            }
+            /* 2 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, T1.S.second, IMTs[2].tensors[i].S.second);
+                index_rotation(IMTs[2].tensors[i], tmp);
+            }
+            if (IMTs[3].isImpure) {
+                /* 3 */
+                REP(i, DIMENSION) {
+                    TRG::Tensor tmp(D);
+                    TRG::contraction(D, D_new, tmp, T1.S.first, T2.S.first, T1.S.second, IMTs[3].tensors[i].S.second);
+                    index_rotation(IMTs[3].tensors[i], tmp);
+                }
+            }
+            /* 4 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, IMTs[4].tensors[i].S.first, IMTs[3].tensors[i].S.first, T1.S.second, IMTs[5].tensors[i].S.second);
+                index_rotation(IMTs[4].tensors[i], tmp);
+            }
+            /* 5 */
+            REP(i, DIMENSION) {
+                TRG::Tensor tmp(D);
+                TRG::contraction(D, D_new, tmp, IMTs[0].tensors[i].S.first, IMTs[5].tensors[i].S.first, T1.S.second, T2.S.second);
+                index_rotation(IMTs[5].tensors[i], tmp);
+            }
+        }
+    } else if (n == N - 2) {
+        /* 0 */
+        REP(i, DIMENSION) {
+            TRG::Tensor tmp(D);
+            TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.second, IMTs[2].tensors[i].S.second);
+            index_rotation(IMTs[0].tensors[i], tmp);
+        }
+        /* 1 */
+        REP(i, DIMENSION) {
+            TRG::Tensor tmp(D);
+            TRG::contraction(D, D_new, tmp, T1.S.first, IMTs[2].tensors[i].S.first, IMTs[4].tensors[i].S.second, IMTs[1].tensors[i].S.second);
+            index_rotation(IMTs[1].tensors[i], tmp);
+        }
+        /* 2 */
+        REP(i, DIMENSION) {
+            TRG::Tensor tmp(D);
+            TRG::contraction(D, D_new, tmp, IMTs[4].tensors[i].S.first, IMTs[3].tensors[i].S.first, T1.S.second, IMTs[5].tensors[i].S.second);
+            index_rotation(IMTs[2].tensors[i], tmp);
+        }
+        /* 3 */
+        REP(i, DIMENSION) {
+            TRG::Tensor tmp(D);
+            TRG::contraction(D, D_new, tmp, IMTs[0].tensors[i].S.first, IMTs[5].tensors[i].S.first, T1.S.second, IMTs[3].tensors[i].S.second);
+            index_rotation(IMTs[3].tensors[i], tmp);
+        }
+        for (auto & tensor : IMTs[4].tensors) {
+            if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
+                delete tensor.S.first;
+                delete tensor.S.second;
+            }
+        }
+        for (auto & tensor : IMTs[5].tensors) {
+            if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
+                delete tensor.S.first;
+                delete tensor.S.second;
+            }
+        }
+        IMTs[3].isImpure = true;
+        IMTs[4].isImpure = false;
+        IMTs[5].isImpure = false;
+    } else if (n == N - 1) {
+        /* 0 */
+        REP(i, DIMENSION) {
+            TRG::contraction(D, D_new, IMTs[0].tensors[i], IMTs[3].tensors[i].S.first, IMTs[2].tensors[i].S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+        }
+        /* 1 */
+        REP(i, DIMENSION) {
+            TRG::contraction(D, D_new, IMTs[1].tensors[i], IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.first, IMTs[3].tensors[i].S.second, IMTs[2].tensors[i].S.second);
+        }
+        for (auto & tensor : IMTs[2].tensors) {
+            if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
+                delete tensor.S.first;
+                delete tensor.S.second;
+            }
+        }
+        for (auto & tensor : IMTs[3].tensors) {
+            if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
+                delete tensor.S.first;
+                delete tensor.S.second;
+            }
+        }
+        IMTs[2].isImpure = false;
+        IMTs[3].isImpure = false;
+    } else {
+        REP(i, DIMENSION) {
+            TRG::contraction(D, D_new, IMTs[0].tensors[i], IMTs[1].tensors[i].S.first, IMTs[0].tensors[i].S.first, IMTs[1].tensors[i].S.second, IMTs[0].tensors[i].S.second);
+        }
+        for (auto & tensor : IMTs[1].tensors) {
+            if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
+                delete tensor.S.first;
+                delete tensor.S.second;
+            }
+        }
+        for (auto & tensor : IMTs[0].tensors) {
+            if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
+                delete tensor.S.first;
+                delete tensor.S.second;
+            }
+        }
+        IMTs[1].isImpure = false;
+    }
+
+    /* normalization */
+    T1.normalization(normalize_factor);
+    REP(i, MAX_IMT_NUM) {
+        auto IMT = &IMTs[i];
+        if ((*IMT).isImpure) {
+            REP(a, DIMENSION) {
+                auto tensor = &(*IMT).tensors[a];
+                (*tensor).normalization(normalize_factor);
+                long long int diff = (*tensor).order - T1.order;
+                if (merge_point == 2) {
+                    if (n == 1) {
+                        diff *= 2;
+                    }
+                } else if (merge_point == 3) {
+                    if (n <= 2) {
+                        diff *= 2;
+                    } else if (n == 3) {
+                        if (i == 0 || i == 2) {
+                            diff *= 2;
+                        }
+                    }
+                } else if (merge_point == N/2) {
+                    if (n <= N - 3) {
+                        diff *= 2;
+                    }
+                } else {
+                    if (count < merge_point - 1) {
+                        diff *= 2;
+                    } else if (n % 2 == 1 && count == merge_point - 1) {
+                        if (i == 0 || i == 2) {
+                            diff *= 2;
+                        }
+                    }
+                }
+                orders[a] += diff;
+            }
+        }
+    }
+}
+
+double TRG::trace::gauss_quadrature(Tensor &T, ImpureTensor &IMT, const long long int *orders, const int &normalize_factor) {
+    double Tr = T.trace();
+    double impure_Tr[DIMENSION];
+    REP(k, DIMENSION) {
+        long long int order = orders[k];
+        double tmp_Tr = IMT.tensors[k].trace();
+        long long int times = std::abs(order);
+        if (order > 0) {
+            REP(i, times) tmp_Tr *= normalize_factor;
+        } else {
+            REP(i, times) tmp_Tr /= normalize_factor;
+        }
+        impure_Tr[k] = tmp_Tr;
+    }
+    double res = (impure_Tr[0] + impure_Tr[1] + impure_Tr[2]) / Tr;
+    return res;
 }

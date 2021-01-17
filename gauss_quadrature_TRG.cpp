@@ -5,7 +5,6 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <gauss_quadrature.hpp>
 #include <TRG.hpp>
 #include <time_counter.hpp>
 
