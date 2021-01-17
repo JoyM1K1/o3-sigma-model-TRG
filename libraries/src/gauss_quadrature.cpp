@@ -10,7 +10,7 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-void GaussQuadrature::initTensor(const double &K, const int &n_node, const int &D_cut, BaseTensor &T) {
+void GaussQuadrature::init_tensor(const double &K, const int &n_node, const int &D_cut, BaseTensor &T) {
     const int D = std::min(n_node * n_node, D_cut);
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
 //    std::vector<double> x(n_node);
@@ -65,7 +65,7 @@ void GaussQuadrature::initTensor(const double &K, const int &n_node, const int &
 }
 
 template<class Tensor>
-void GaussQuadrature::initTensorWithImpure(const double &K, const int &n_node, const int &D_cut, const int &D, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
+void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node, const int &D_cut, const int &D, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
 //    std::vector<double> x(n_node);
     std::vector<double> p(n_node);
@@ -139,5 +139,5 @@ void GaussQuadrature::initTensorWithImpure(const double &K, const int &n_node, c
     delete[] buffer;
 }
 
-template void GaussQuadrature::initTensorWithImpure(const double &K, const int &n_node, const int &D_cut, const int &D, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
-template void GaussQuadrature::initTensorWithImpure(const double &K, const int &n_node, const int &D_cut, const int &D, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);
+template void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node, const int &D_cut, const int &D, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
+template void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node, const int &D_cut, const int &D, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);

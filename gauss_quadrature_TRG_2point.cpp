@@ -46,7 +46,7 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
     T2.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
     TRG::ImpureTensor IMTs[MAX_IMT_NUM];
     for (auto &IMT : IMTs) IMT = TRG::ImpureTensor(D, D_cut);
-    GaussQuadrature::initTensorWithImpure(K, n_node, D_cut, D, T1, IMTs[0]);
+    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T1, IMTs[0]);
     IMTs[0].isImpure = true;
     if (merge_point == 1) {
         IMTs[1] = IMTs[0];

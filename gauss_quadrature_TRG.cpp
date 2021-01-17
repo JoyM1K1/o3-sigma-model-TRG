@@ -23,16 +23,9 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
     // index dimension
     int D = std::min(D_cut, n_node * n_node);
 
-    // initialize tensor network : max index size is D_cut
-    time.start();
-    cout << "initialize tensor " << std::flush;
-    TRG::Tensor T1(D, D_cut); /* (ij)(kl) -> S1 S3 */
-    TRG::Tensor T2(D, D_cut); /* (jk)(li) -> S2 S4 */
-    T1.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
-    T2.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
-    GaussQuadrature::initTensor(K, n_node, D_cut, T1);
-    time.end();
-    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
+    /* initialize tensor network : max index size is D_cut */
+    TRG::Tensor T1, T2;
+    TRG::initialize_gauss_quadrature(T1, T2, D, D_cut, K, n_node);
 
     auto orders = new long long int[N];
 

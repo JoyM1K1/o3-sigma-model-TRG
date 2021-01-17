@@ -25,7 +25,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
     time.start();
     cout << "initialize tensor " << std::flush;
     HOTRG::Tensor T(D_cut);
-    SphericalHarmonics::initTensor(K, l_max, T);
+    SphericalHarmonics::init_tensor(K, l_max, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 

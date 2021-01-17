@@ -5,7 +5,6 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <spherical_harmonics.hpp>
 #include <TRG.hpp>
 #include <time_counter.hpp>
 
@@ -22,15 +21,8 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
     time_counter time;
 
     // initialize tensor network : max index size is D_cut
-    time.start();
-    cout << "initialize tensor " << std::flush;
-    TRG::Tensor T1(D_cut); /* (ij)(kl) -> S1 S3 */
-    TRG::Tensor T2(D_cut); /* (jk)(li) -> S2 S4 */
-    T1.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
-    T2.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
-    SphericalHarmonics::initTensor(K, l_max, T1);
-    time.end();
-    cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
+    TRG::Tensor T1, T2;
+    TRG::initialize_spherical_harmonics(T1, T2, D_cut, D_cut, K, l_max);
 
     auto orders = new long long int[N];
 

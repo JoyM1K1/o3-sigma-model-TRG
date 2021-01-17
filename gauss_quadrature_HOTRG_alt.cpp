@@ -28,7 +28,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
     time.start();
     cout << "initialize tensor " << std::flush;
     HOTRG::Tensor T(D, D_cut);
-    GaussQuadrature::initTensor(K, n_node, D_cut, T);
+    GaussQuadrature::init_tensor(K, n_node, D_cut, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 
