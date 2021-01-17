@@ -85,7 +85,7 @@ namespace TRG {
     namespace trace {
         double gauss_quadrature(Tensor &T, ImpureTensor &IMT, const long long int *orders, const int &normalize_factor);
 
-        double spherical_harmonics();
+        double spherical_harmonics(Tensor &T, ImpureTensor &IMT, const long long int *orders, const int &normalize_factor);
     }
 }
 

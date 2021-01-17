@@ -776,3 +776,21 @@ double TRG::trace::gauss_quadrature(Tensor &T, ImpureTensor &IMT, const long lon
     double res = (impure_Tr[0] + impure_Tr[1] + impure_Tr[2]) / Tr;
     return res;
 }
+
+double TRG::trace::spherical_harmonics(Tensor &T, ImpureTensor &IMT, const long long *orders, const int &normalize_factor) {
+    double Tr = T.trace();
+    double impure_Tr[DIMENSION];
+    REP(k, DIMENSION) {
+        long long int order = orders[k];
+        double tmp_Tr = IMT.tensors[k].trace();
+        long long int times = std::abs(order);
+        if (order > 0) {
+            REP(i, times) tmp_Tr *= normalize_factor;
+        } else {
+            REP(i, times) tmp_Tr /= normalize_factor;
+        }
+        impure_Tr[k] = tmp_Tr;
+    }
+    double res = (impure_Tr[0] - impure_Tr[1] + impure_Tr[2]) / Tr;
+    return res;
+}
