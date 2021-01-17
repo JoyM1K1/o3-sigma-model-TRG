@@ -447,3 +447,58 @@ void HOTRG::renormalization::one_point_alt(Tensor &T, ImpureTensor &IMT, long lo
         res[i] = impureTr/Tr;
     }
 }
+
+void HOTRG::renormalization::two_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
+    const int D_cut = T.GetD_max();
+    const int times = (n + 1) / 2;
+    if (n % 2) { // compress along x-axis
+        cout << " compress along x-axis " << std::flush;
+        const int Dy = T.GetDy();
+        auto U = new double[Dy * Dy * Dy * Dy];
+        HOTRG::SVD_Y(D_cut, T, U);
+        if (times == merge_point) {
+            for (auto &tensor : IMT.tensors) {
+                HOTRG::contractionX(D_cut, tensor, tensor, U, "left");
+            }
+        } else {
+            for (auto &tensor : IMT.tensors) {
+                HOTRG::contractionX(D_cut, tensor, T, U, "left");
+            }
+        }
+        HOTRG::contractionX(D_cut, T, T, U, "left");
+        delete[] U;
+    } else { // compress along y-axis
+        cout << " compress along y-axis " << std::flush;
+        const int Dx = T.GetDx();
+        auto U = new double[Dx * Dx * Dx * Dx];
+        HOTRG::SVD_X(D_cut, T, U);
+        for (auto &tensor : IMT.tensors) HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
+        HOTRG::contractionY(D_cut, T, T, U, "bottom");
+        delete[] U;
+    }
+
+    /* normalization */
+    T.normalization(normalize_factor);
+    for (auto &tensor : IMT.tensors) tensor.normalization(normalize_factor);
+    REP(i, DIMENSION) {
+        long long int order = IMT.tensors[i].order - T.order;
+        if (times < merge_point) {
+            order *= 2;
+        }
+        orders[i] += order;
+    }
+
+    double Tr = T.trace();
+
+    REP(i, DIMENSION) {
+        double impureTr = IMT.tensors[i].trace();
+        const long long int order = orders[i];
+        const long long int absOrder = std::abs(order);
+        if (order > 0) {
+            REP(k, absOrder) impureTr *= normalize_factor;
+        } else {
+            REP(k, absOrder) impureTr /= normalize_factor;
+        }
+        res[i] = impureTr/Tr;
+    }
+}

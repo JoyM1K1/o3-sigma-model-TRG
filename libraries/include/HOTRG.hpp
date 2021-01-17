@@ -58,6 +58,8 @@ namespace HOTRG {
         double partition_alt(Tensor &T, long long int *orders, const int &n, const int &normalize_factor);
 
         void one_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &normalize_factor, double *res);
+
+        void two_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res);
     }
 }
 
