@@ -42,9 +42,9 @@ namespace HOTRG {
 
     void initialize_gauss_quadrature(Tensor &T, const double &K, const int &D_cut, const int &n_node);
 
-    void initialize_spherical_harmonics_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max);
+    void initialize_spherical_harmonics_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max);
 
-    void initialize_gauss_quadrature_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node);
+    void initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node);
 
     void contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT);
 

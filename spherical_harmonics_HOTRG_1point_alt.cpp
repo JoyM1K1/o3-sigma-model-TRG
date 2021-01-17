@@ -22,7 +22,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::o
     // initialize tensor network : max index size is D_cut
     HOTRG::Tensor T;
     HOTRG::ImpureTensor IMT;
-    HOTRG::initialize_spherical_harmonics_with_impure_1(T, IMT, K, D_cut, l_max);
+    HOTRG::initialize_spherical_harmonics_with_impure(T, IMT, K, D_cut, l_max);
 
     /* orders */
     long long int orders[DIMENSION];
