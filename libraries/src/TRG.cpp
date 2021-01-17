@@ -759,38 +759,17 @@ void TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs,
     }
 }
 
-double TRG::trace::gauss_quadrature(Tensor &T, ImpureTensor &IMT, const long long int *orders, const int &normalize_factor) {
+void TRG::renormalization::trace(Tensor &T, ImpureTensor &IMT, const long long *orders, const int &normalize_factor, double *res) {
     double Tr = T.trace();
-    double impure_Tr[DIMENSION];
     REP(k, DIMENSION) {
         long long int order = orders[k];
-        double tmp_Tr = IMT.tensors[k].trace();
+        double impureTr = IMT.tensors[k].trace();
         long long int times = std::abs(order);
         if (order > 0) {
-            REP(i, times) tmp_Tr *= normalize_factor;
+            REP(i, times) impureTr *= normalize_factor;
         } else {
-            REP(i, times) tmp_Tr /= normalize_factor;
+            REP(i, times) impureTr /= normalize_factor;
         }
-        impure_Tr[k] = tmp_Tr;
+        res[k] = impureTr/Tr;
     }
-    double res = (impure_Tr[0] + impure_Tr[1] + impure_Tr[2]) / Tr;
-    return res;
-}
-
-double TRG::trace::spherical_harmonics(Tensor &T, ImpureTensor &IMT, const long long *orders, const int &normalize_factor) {
-    double Tr = T.trace();
-    double impure_Tr[DIMENSION];
-    REP(k, DIMENSION) {
-        long long int order = orders[k];
-        double tmp_Tr = IMT.tensors[k].trace();
-        long long int times = std::abs(order);
-        if (order > 0) {
-            REP(i, times) tmp_Tr *= normalize_factor;
-        } else {
-            REP(i, times) tmp_Tr /= normalize_factor;
-        }
-        impure_Tr[k] = tmp_Tr;
-    }
-    double res = (impure_Tr[0] - impure_Tr[1] + impure_Tr[2]) / Tr;
-    return res;
 }

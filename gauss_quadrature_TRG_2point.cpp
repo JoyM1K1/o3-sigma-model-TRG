@@ -47,9 +47,12 @@ void Trace(const int merge_point, double const K, const int D_cut, const int n_n
             continue;
         }
 
-        double res = TRG::trace::gauss_quadrature(T1, IMTs[0], orders, NORMALIZE_FACTOR);
-        cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
-        file << distance << '\t' << std::scientific << std::setprecision(16) << res << '\n' << std::flush;
+        double res[DIMENSION];
+        TRG::renormalization::trace(T1, IMTs[0], orders, NORMALIZE_FACTOR, res);
+        double sum = res[0] + res[1] + res[2];
+
+        cout << '\t' << std::scientific << std::setprecision(16) << sum << std::flush;
+        file << distance << '\t' << std::scientific << std::setprecision(16) << sum << '\n' << std::flush;
 
         time.end();
         cout << "  in " << time.duration_cast_to_string() << '\n';
