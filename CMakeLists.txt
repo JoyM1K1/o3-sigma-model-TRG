@@ -17,9 +17,6 @@ if (APPLE)
     add_executable(gauss_quadrature_HOTRG_1point_alt gauss_quadrature_HOTRG_1point_alt.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_1point_alt mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
-    add_executable(gauss_quadrature_HOTRG_2point gauss_quadrature_HOTRG_2point.cpp)
-    target_link_libraries(gauss_quadrature_HOTRG_2point mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
-
     add_executable(gauss_quadrature_HOTRG_2point_alt gauss_quadrature_HOTRG_2point_alt.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_2point_alt mkl_intel_ilp64 mkl_sequential mkl_core gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
@@ -76,9 +73,6 @@ else ()
 
     add_executable(gauss_quadrature_HOTRG_1point_alt gauss_quadrature_HOTRG_1point_alt.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_1point_alt gauss_quadrature HOTRG tensor impure_tensor time_counter)
-
-    add_executable(gauss_quadrature_HOTRG_2point gauss_quadrature_HOTRG_2point.cpp)
-    target_link_libraries(gauss_quadrature_HOTRG_2point gauss_quadrature HOTRG tensor impure_tensor time_counter)
 
     add_executable(gauss_quadrature_HOTRG_2point_alt gauss_quadrature_HOTRG_2point_alt.cpp)
     target_link_libraries(gauss_quadrature_HOTRG_2point_alt gauss_quadrature HOTRG tensor impure_tensor time_counter)
