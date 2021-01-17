@@ -20,21 +20,15 @@ using std::string;
 
 void Trace(double const K, int const D_cut, int const n_node, int const N, std::pair<int, int> p, std::ofstream &file) {
     time_counter time;
-    // index dimension
-    int D = std::min(D_cut, n_node * n_node);
 
     const int x = p.first;
     const int y = p.second;
 
     // initialize tensor network : max index size is D_cut
-    time.start();
-    cout << "initialize tensor " << std::flush;
-    HOTRG::Tensor T(D, D_cut);
-    HOTRG::ImpureTensor originIMT(D, D_cut);
-    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T, originIMT);
+    HOTRG::Tensor T;
+    HOTRG::ImpureTensor originIMT;
+    HOTRG::initialize_gauss_quadrature_with_impure(T, originIMT, K, D_cut, n_node);
     auto IMT = originIMT;
-    time.end();
-    cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 
     long long int orders[DIMENSION];
     for (auto &order : orders) order = 0;
@@ -43,128 +37,12 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, std::
         time.start();
         cout << "N = " << std::setw(std::to_string(N).length()) << n << " :" << std::flush;
 
-        if (n % 2) { // compression along x-axis
-            cout << " compress along x-axis " << std::flush;
-            cout << std::setw(7);
-            const int Dy = T.GetDy();
-            auto U = new double[Dy * Dy * Dy * Dy];
-            HOTRG::SVD_Y(D_cut, T, U);
-            if (p.first) {
-                if (p.first == 1) {
-                    if (p.second) {
-                        cout << "right" << std::flush;
-                        for (auto &tensor : IMT.tensors) {
-                            HOTRG::contractionX(D_cut, T, tensor, U, "right");
-                        }
-                    } else {
-                        cout << "merged" << std::flush;
-                        REP(i, DIMENSION) {
-                            HOTRG::contractionX(D_cut, originIMT.tensors[i], IMT.tensors[i], U, "right");
-                        }
-                        IMT.isMerged = true;
-                    }
-                } else if (p.first & 1) {
-                    cout << "right" << std::flush;
-                    for (auto &tensor : IMT.tensors) {
-                        HOTRG::contractionX(D_cut, T, tensor, U, "right");
-                    }
-                } else {
-                    cout << "left" << std::flush;
-                    for (auto &tensor : IMT.tensors) {
-                        HOTRG::contractionX(D_cut, tensor, T, U, "left");
-                    }
-                }
-                p.first >>= 1;
-            } else {
-                cout << "left" << std::flush;
-                for (auto &tensor : IMT.tensors) {
-                    HOTRG::contractionX(D_cut, tensor, T, U, "left");
-                }
-            }
-            if (!IMT.isMerged) {
-                for (auto &tensor : originIMT.tensors) {
-                    HOTRG::contractionX(D_cut, tensor, T, U, "left");
-                }
-            }
-            HOTRG::contractionX(D_cut, T, T, U, "left");
-            delete[] U;
-        } else { // compression along y-axis
-            cout << " compress along y-axis " << std::flush;
-            cout << std::setw(7);
-            const int Dx = T.GetDx();
-            auto U = new double[Dx * Dx * Dx * Dx];
-            HOTRG::SVD_X(D_cut, T, U);
-            if (p.second) {
-                if (p.second == 1) {
-                    if (p.first) {
-                        cout << "top" << std::flush;
-                        for (auto &tensor : IMT.tensors) {
-                            HOTRG::contractionY(D_cut, T, tensor, U, "top");
-                        }
-                    } else {
-                        cout << "merged" << std::flush;
-                        REP(i, DIMENSION) {
-                            HOTRG::contractionY(D_cut, originIMT.tensors[i], IMT.tensors[i], U, "top");
-                        }
-                        IMT.isMerged = true;
-                    }
-                } else if (p.second & 1) {
-                    cout << "top" << std::flush;
-                    for (auto &tensor : IMT.tensors) {
-                        HOTRG::contractionY(D_cut, T, tensor, U, "top");
-                    }
-                } else {
-                    cout << "bottom" << std::flush;
-                    for (auto &tensor : IMT.tensors) {
-                        HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
-                    }
-                }
-                p.second >>= 1;
-            } else {
-                cout << "bottom" << std::flush;
-                for (auto &tensor : IMT.tensors) {
-                    HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
-                }
-            }
-            if (!IMT.isMerged) {
-                for (auto &tensor : originIMT.tensors) {
-                    HOTRG::contractionY(D_cut, tensor, T, U, "bottom");
-                }
-            }
-            HOTRG::contractionY(D_cut, T, T, U, "bottom");
-            delete[] U;
-        }
+        double res[DIMENSION];
+        HOTRG::renormalization::two_point_manual(T, originIMT, IMT, orders, n, p, NORMALIZE_FACTOR, res);
+        double sum = res[0] + res[1] + res[2];
 
-        /* normalization */
-        T.normalization(NORMALIZE_FACTOR);
-        if (p.first || p.second) {
-            REP(i, DIMENSION) {
-                originIMT.tensors[i].normalization(NORMALIZE_FACTOR);
-                orders[i] += originIMT.tensors[i].order - T.order;
-            }
-        }
-        REP(i, DIMENSION) {
-            IMT.tensors[i].normalization(NORMALIZE_FACTOR);
-            orders[i] += IMT.tensors[i].order - T.order;
-        }
-
-        double Tr = T.trace();
-
-        double impure_Tr[DIMENSION];
-        REP(k, DIMENSION) {
-            long long int order = orders[k];
-            double tmp_Tr = IMT.tensors[k].trace();
-            unsigned long long int absOrder = std::abs(order);
-            if (order > 0) {
-                REP(i, absOrder) tmp_Tr *= NORMALIZE_FACTOR;
-            } else {
-                REP(i, absOrder) tmp_Tr /= NORMALIZE_FACTOR;
-            }
-            impure_Tr[k] = tmp_Tr;
-        }
-        double res = (impure_Tr[0] + impure_Tr[1] + impure_Tr[2]) / Tr;
-        IMT.corrs.push_back(res);
-        cout << '\t' << std::scientific << std::setprecision(16) << res << std::flush;
+        IMT.corrs.push_back(sum);
+        cout << '\t' << std::scientific << std::setprecision(16) << sum << std::flush;
         time.end();
         cout << "  in " << time.duration_cast_to_string() << '\n';
     }
