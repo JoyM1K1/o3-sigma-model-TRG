@@ -36,7 +36,7 @@ void HOTRG::initialize_gauss_quadrature(Tensor &T, const double &K, const int &D
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
-void HOTRG::initialize_spherical_harmonics_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max) {
+void HOTRG::initialize_spherical_harmonics_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
@@ -47,7 +47,7 @@ void HOTRG::initialize_spherical_harmonics_with_impure_1(Tensor &T, ImpureTensor
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 }
 
-void HOTRG::initialize_gauss_quadrature_with_impure_1(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node) {
+void HOTRG::initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;

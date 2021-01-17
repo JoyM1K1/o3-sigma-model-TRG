@@ -26,7 +26,7 @@ void Trace(const int merge_point, double const K, int const D_cut, int const n_n
     // initialize tensor network : max index size is D_cut
     HOTRG::Tensor T;
     HOTRG::ImpureTensor IMT;
-    HOTRG::initialize_gauss_quadrature_with_impure_1(T, IMT, K, D_cut, n_node);
+    HOTRG::initialize_gauss_quadrature_with_impure(T, IMT, K, D_cut, n_node);
 
     /* orders */
     long long int orders[DIMENSION];
