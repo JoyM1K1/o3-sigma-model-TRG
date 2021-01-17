@@ -80,12 +80,8 @@ namespace TRG {
         double partition(Tensor &T1, Tensor &T2, long long int *orders, const int &n, const int &normalize_factor);
 
         void two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor);
-    }
 
-    namespace trace {
-        double gauss_quadrature(Tensor &T, ImpureTensor &IMT, const long long int *orders, const int &normalize_factor);
-
-        double spherical_harmonics(Tensor &T, ImpureTensor &IMT, const long long int *orders, const int &normalize_factor);
+        void trace(Tensor &T, ImpureTensor &IMT, const long long *orders, const int &normalize_factor, double *res);
     }
 }
 
