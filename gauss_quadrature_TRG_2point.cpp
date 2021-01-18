@@ -27,7 +27,7 @@ void Trace(const int N, const int n_node, const int D_cut, const double beta, co
     // initialize tensor network : max index size is D_cut
     TRG::Tensor T1, T2;
     TRG::ImpureTensor IMTs[MAX_IMT_NUM];
-    TRG::initialize_gauss_quadrature_with_impure(T1, T2, IMTs, D, D_cut, K, n_node, merge_point);
+    TRG::initialize_gauss_quadrature_with_impure(T1, T2, IMTs, D, D_cut, beta, n_node, merge_point);
 
     /* orders */
     long long int orders[DIMENSION];
