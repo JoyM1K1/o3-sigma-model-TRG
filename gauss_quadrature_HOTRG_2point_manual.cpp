@@ -3,9 +3,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <gauss_quadrature.hpp>
 #include <HOTRG.hpp>
-#include <cmath>
 #include <time_counter.hpp>
 #include <sstream>
 
