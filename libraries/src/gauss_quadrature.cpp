@@ -29,7 +29,7 @@ void GaussQuadrature::init_tensor(const double &beta, const int &n_node, const i
     auto sigma = new double[n_node * n_node];
     auto buffer = new double[n_node * n_node - 1];
     MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.GetMatrix(), n_node * n_node,
-                                  sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
+            sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         std::cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
@@ -37,14 +37,15 @@ void GaussQuadrature::init_tensor(const double &beta, const int &n_node, const i
     REP(k, D) {
         double s = std::sqrt(sigma[k]);
         REP(i, n_node)REP(j, n_node) {
-            U[n_node * n_node * n_node * i + n_node * n_node * j + k] *= s;
-            VT[n_node * n_node * k + n_node * i + j] *= s;
-        }
+                U[n_node * n_node * n_node * i + n_node * n_node * j + k] *= s;
+                VT[n_node * n_node * k + n_node * i + j] *= s;
+            }
     }
     BaseTensor X(D, D, n_node, n_node);
     BaseTensor Y(n_node, n_node, D, D);
     X.forEach([&](int i, int j, int a, int b, double *t) {
-        *t = U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) * M_PI / 8;
+        *t = U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
+             M_PI / 8;
     });
     Y.forEach([&](int a, int b, int k, int l, double *t) {
         *t = VT[n_node * n_node * k + n_node * a + b] * VT[n_node * n_node * l + n_node * a + b];
@@ -79,7 +80,7 @@ void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_n
     auto sigma = new double[n_node * n_node];
     auto buffer = new double[n_node * n_node - 1];
     MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.GetMatrix(), n_node * n_node,
-                                  sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
+            sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         std::cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
@@ -96,7 +97,8 @@ void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_n
     BaseTensor Y(n_node, n_node, D, D);
     /* pure tensor */
     X.forEach([&](int i, int j, int a, int b, double *t) {
-        *t = U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) * M_PI / 8;
+        *t = U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
+             M_PI / 8;
     });
     Y.forEach([&](int a, int b, int k, int l, double *t) {
         *t = VT[n_node * n_node * k + n_node * a + b] * VT[n_node * n_node * l + n_node * a + b];
@@ -105,19 +107,22 @@ void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_n
             n_node * n_node, Y.GetMatrix(), D * D, 0, T.GetMatrix(), D * D);
     /* impure tensor x */
     X.forEach([&](int i, int j, int a, int b, double *t) {
-        *t = U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) * co(a) * std::cos(M_PI * x[b]) * M_PI / 8;
+        *t = U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
+             co(a) * std::cos(M_PI * x[b]) * M_PI / 8;
     });
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
             n_node * n_node, Y.GetMatrix(), D * D, 0, IMT.tensors[0].GetMatrix(), D * D);
     /* impure tensor y */
     X.forEach([&](int i, int j, int a, int b, double *t) {
-        *t = - U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) * co(a) * std::sin(M_PI * x[b]) * M_PI / 8;
+        *t = -U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
+             co(a) * std::sin(M_PI * x[b]) * M_PI / 8;
     });
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
             n_node * n_node, Y.GetMatrix(), D * D, 0, IMT.tensors[1].GetMatrix(), D * D);
     /* impure tensor z */
     X.forEach([&](int i, int j, int a, int b, double *t) {
-        *t = - U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) * si(a) * M_PI / 8;
+        *t = -U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
+             si(a) * M_PI / 8;
     });
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
             n_node * n_node, Y.GetMatrix(), D * D, 0, IMT.tensors[2].GetMatrix(), D * D);
@@ -127,5 +132,8 @@ void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_n
     delete[] buffer;
 }
 
-template void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
-template void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);
+template void
+GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
+
+template void
+GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);

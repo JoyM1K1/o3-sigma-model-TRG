@@ -17,8 +17,6 @@ namespace HOTRG {
         Tensor(int Di, int Dj, int Dk, int Dl) : BaseTensor(Di, Dj, Dk, Dl) {};
 
         Tensor(int Di, int Dj, int Dk, int Dl, int D_max) : BaseTensor(Di, Dj, Dk, Dl, D_max) {};
-
-        long long int normalization(int c) override;
     };
 
     class ImpureTensor : public BaseImpureTensor<Tensor> {
