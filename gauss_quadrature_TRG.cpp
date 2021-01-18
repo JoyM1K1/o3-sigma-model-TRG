@@ -1,8 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <cmath>
-#include <vector>
 #include <fstream>
 #include <sstream>
 #include <TRG.hpp>
@@ -61,14 +59,20 @@ int main(int argc, char *argv[]) {
 
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2) << K;
-    const string dir = "../data/gauss_quadrature/TRG/N" + std::to_string(N) + "/node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/";
+    const string dir = "../data/gauss_quadrature/TRG/N" + std::to_string(N)
+                       + "/node" + std::to_string(n_node)
+                       + "/D" + std::to_string(D_cut) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << '\n';
+    cout << "N = " << N
+         << ", node = " << n_node
+         << ", D_cut = " << D_cut
+         << ", beta = " << ss.str()
+         << '\n' << std::flush;
     fileName = dir + "beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     dataFile << std::fixed << std::setprecision(2) << K;

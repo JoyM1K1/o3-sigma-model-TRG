@@ -64,14 +64,20 @@ int main(int argc, char *argv[]) {
 
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2) << K;
-    const string dir = "../data/spherical_harmonics/HOTRG_2point_alt/beta" + ss.str() + "/N" + std::to_string(N) + "/l" + std::to_string(l_max) + "/";
+    const string dir = "../data/spherical_harmonics/HOTRG_2point_alt/beta" + ss.str()
+                       + "/N" + std::to_string(N)
+                       + "/l" + std::to_string(l_max) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", l_max = " << l_max << ", beta = " << ss.str() << ", merge_point = " << merge_point << '\n' << std::flush;
+    cout << "N = " << N
+         << ", l_max = " << l_max
+         << ", beta = " << ss.str()
+         << ", merge_point = " << merge_point
+         << '\n' << std::flush;
     fileName = dir + std::to_string(merge_point) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     D_cut = (l_max + 1) * (l_max + 1);
@@ -79,32 +85,6 @@ int main(int argc, char *argv[]) {
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
-
-    /* vs l_max */
-//    for (l_max = 4; l_max <= 6; ++l_max) {
-//        time.start();
-//        cout << "---------- " << l_max << " ----------\n" << std::flush;
-//        fileName = dir + std::to_string(merge_point) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        D_cut = (l_max + 1) * (l_max + 1);
-//        Trace(merge_point, K, D_cut, l_max, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
-
-    /* vs merge_point */
-//    for (merge_point = 1; merge_point <= 20; ++merge_point) {
-//        time.start();
-//        cout << "---------- " << merge_point << " ----------\n" << std::flush;
-//        fileName = dir + std::to_string(merge_point) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        D_cut = (l_max + 1) * (l_max + 1);
-//        Trace(merge_point, K, D_cut, l_max, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
 
     return 0;
 }

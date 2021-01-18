@@ -1,9 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <vector>
 #include <fstream>
-#include <impure_tensor.hpp>
 #include <TRG.hpp>
 #include <time_counter.hpp>
 #include <sstream>
@@ -77,56 +75,28 @@ int main(int argc, char *argv[]) {
 
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2) << K;
-    const string dir = "../data/gauss_quadrature/TRG_2point/beta" + ss.str() + "/N" + std::to_string(N) + "/node" + std::to_string(n_node) + "/D" + std::to_string(D_cut) + "/";
+    const string dir = "../data/gauss_quadrature/TRG_2point/beta" + ss.str()
+                       + "/N" + std::to_string(N)
+                       + "/node" + std::to_string(n_node)
+                       + "/D" + std::to_string(D_cut) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << ", merge_point = " << merge_point << '\n' << std::flush;
+    cout << "N = " << N
+         << ", node = " << n_node
+         << ", D_cut = " << D_cut
+         << ", beta = " << ss.str()
+         << ", merge_point = " << merge_point
+         << '\n' << std::flush;
     fileName = dir + std::to_string(merge_point) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(merge_point, K, D_cut, n_node, N, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
-
-    /* vs merge_point */
-//    for (int mp = 1; mp <= 14; ++mp) {
-//        time.start();
-//        cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << ", merge_point = " << mp << '\n';
-//        fileName = dir + "_N" + std::to_string(N) + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_beta" + ss.str() + "_" + std::to_string(mp) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(mp, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
-//    }
-
-    /* vs D_cut */
-//    for (D_cut = 56; D_cut <= 64; D_cut += 8) {
-//        time.start();
-//        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(merge_point, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
-
-    /* vs n_node */
-//    for (n_node = 48; n_node <= 64; n_node += 16) {
-//        time.start();
-//        cout << "---------- " << n_node << " ----------\n";
-//        fileName = dir + "_node" + std::to_string(n_node) + "_D" + std::to_string(D_cut) + "_N" + std::to_string(N) + "_beta" + ss.str() + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(merge_point, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
 
     return 0;
 }
