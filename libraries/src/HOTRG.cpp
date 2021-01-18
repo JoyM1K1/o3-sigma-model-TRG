@@ -15,46 +15,46 @@
 using std::cout;
 using std::cerr;
 
-void HOTRG::initialize_spherical_harmonics(Tensor &T, const double &K, const int &D_cut, const int &l_max) {
+void HOTRG::initialize_spherical_harmonics(Tensor &T, const double &beta, const int &D_cut, const int &l_max) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     T = Tensor(D_cut);
-    SphericalHarmonics::init_tensor(K, l_max, T);
+    SphericalHarmonics::init_tensor(beta, l_max, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
-void HOTRG::initialize_gauss_quadrature(Tensor &T, const double &K, const int &D_cut, const int &n_node) {
+void HOTRG::initialize_gauss_quadrature(Tensor &T, const double &beta, const int &D_cut, const int &n_node) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     const int D = std::min(D_cut, n_node * n_node);
     T = Tensor(D, D_cut);
-    GaussQuadrature::init_tensor(K, n_node, D_cut, T);
+    GaussQuadrature::init_tensor(beta, n_node, D_cut, T);
     time.end();
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
-void HOTRG::initialize_spherical_harmonics_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max) {
+void HOTRG::initialize_spherical_harmonics_with_impure(Tensor &T, ImpureTensor &IMT, const double &beta, const int &D_cut, const int &l_max) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     T = Tensor(D_cut);
     IMT = ImpureTensor(D_cut);
-    SphericalHarmonics::init_tensor_with_impure(K, l_max, T, IMT);
+    SphericalHarmonics::init_tensor_with_impure(beta, l_max, T, IMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 }
 
-void HOTRG::initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node) {
+void HOTRG::initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT, const double &beta, const int &D_cut, const int &n_node) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     const int D = std::min(D_cut, n_node * n_node);
     T = Tensor(D, D_cut);
     IMT = ImpureTensor(D, D_cut);
-    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T, IMT);
+    GaussQuadrature::init_tensor_with_impure(beta, n_node, D_cut, D, T, IMT);
     time.end();
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 }

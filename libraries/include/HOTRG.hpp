@@ -38,13 +38,13 @@ namespace HOTRG {
         ImpureTensor(BaseImpureTensor<Tensor> &rhs) : BaseImpureTensor<Tensor>(rhs) {};
     };
 
-    void initialize_spherical_harmonics(Tensor &T, const double &K, const int &D_cut, const int &l_max);
+    void initialize_spherical_harmonics(Tensor &T, const double &beta, const int &D_cut, const int &l_max);
 
-    void initialize_gauss_quadrature(Tensor &T, const double &K, const int &D_cut, const int &n_node);
+    void initialize_gauss_quadrature(Tensor &T, const double &beta, const int &D_cut, const int &n_node);
 
-    void initialize_spherical_harmonics_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &l_max);
+    void initialize_spherical_harmonics_with_impure(Tensor &T, ImpureTensor &IMT, const double &beta, const int &D_cut, const int &l_max);
 
-    void initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT, const double &K, const int &D_cut, const int &n_node);
+    void initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT, const double &beta, const int &D_cut, const int &n_node);
 
     void contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT);
 
@@ -61,19 +61,23 @@ namespace HOTRG {
 
         void two_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res);
 
-        void two_point_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &n, std::pair<int, int> &p, const int &normalize_factor, double *res);
+        void
+        two_point_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &n, std::pair<int, int> &p, const int &normalize_factor, double *res);
 
-        void mass(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor, double *res);
+        void
+        mass(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor, double *res);
 
         /// deprecated
         void mass_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res);
 
-        void mass_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &N, const int &n, int &distance, const int &normalize_factor, double *res);
+        void
+        mass_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &N, const int &n, int &distance, const int &normalize_factor, double *res);
 
         /**
          * compress alternatively until just before the impure tensors merge with each other
         **/
-        void mass_v1(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, int &x_count, int &y_count, const int &normalize_factor, double *res);
+        void
+        mass_v1(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, int &x_count, int &y_count, const int &normalize_factor, double *res);
     }
 }
 

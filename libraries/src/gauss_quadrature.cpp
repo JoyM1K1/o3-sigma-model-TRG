@@ -9,7 +9,7 @@
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-void GaussQuadrature::init_tensor(const double &K, const int &n_node, const int &D_cut, BaseTensor &T) {
+void GaussQuadrature::init_tensor(const double &beta, const int &n_node, const int &D_cut, BaseTensor &T) {
     const int D = std::min(n_node * n_node, D_cut);
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
     std::vector<double> p(n_node);
@@ -22,7 +22,7 @@ void GaussQuadrature::init_tensor(const double &K, const int &n_node, const int 
     std::function<double(int)> si = [&](int theta) { return std::sin(M_PI * x[theta] / 2); };
     std::function<double(int)> co = [&](int theta) { return std::cos(M_PI * x[theta] / 2); };
     M.forEach([&](int theta1, int phi1, int theta2, int phi2, double *m) {
-        *m = std::exp(K * (si(theta1) * si(theta2) + co(theta1) * co(theta2) * std::cos(M_PI * (x[phi1] - x[phi2]))));
+        *m = std::exp(beta * (si(theta1) * si(theta2) + co(theta1) * co(theta2) * std::cos(M_PI * (x[phi1] - x[phi2]))));
     });
     auto U = new double[n_node * n_node * n_node * n_node];
     auto VT = new double[n_node * n_node * n_node * n_node];
@@ -58,7 +58,7 @@ void GaussQuadrature::init_tensor(const double &K, const int &n_node, const int 
 }
 
 template<class Tensor>
-void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node, const int &D_cut, const int &D, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
+void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
     std::vector<double> p(n_node);
     std::vector<double> w(n_node);
@@ -72,7 +72,7 @@ void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node
 
     BaseTensor M(n_node);
     M.forEach([&](int theta1, int phi1, int theta2, int phi2, double *m) {
-        *m = std::exp(K * (si(theta1) * si(theta2) + co(theta1) * co(theta2) * std::cos(M_PI * (x[phi1] - x[phi2]))));
+        *m = std::exp(beta * (si(theta1) * si(theta2) + co(theta1) * co(theta2) * std::cos(M_PI * (x[phi1] - x[phi2]))));
     });
     auto U = new double[n_node * n_node * n_node * n_node];
     auto VT = new double[n_node * n_node * n_node * n_node];
@@ -127,5 +127,5 @@ void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node
     delete[] buffer;
 }
 
-template void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node, const int &D_cut, const int &D, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
-template void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node, const int &D_cut, const int &D, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);
+template void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
+template void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);

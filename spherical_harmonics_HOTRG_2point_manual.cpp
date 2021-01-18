@@ -15,7 +15,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(double const K, int const D_cut, int const l_max, int const N, std::pair<int, int> p, std::ofstream &file) {
+void Trace(const int N, const int l_max, const int D_cut, const double beta, std::pair<int, int> p, std::ofstream &file) {
     time_counter time;
 
     const int x = p.first;
@@ -24,7 +24,7 @@ void Trace(double const K, int const D_cut, int const l_max, int const N, std::p
     // initialize tensor network : max index size is D_cut
     HOTRG::Tensor T;
     HOTRG::ImpureTensor originIMT;
-    HOTRG::initialize_spherical_harmonics_with_impure(T, originIMT, K, D_cut, l_max);
+    HOTRG::initialize_spherical_harmonics_with_impure(T, originIMT, beta, D_cut, l_max);
     auto IMT = originIMT;
 
     long long int orders[DIMENSION];
@@ -55,19 +55,19 @@ int main(int argc, char *argv[]) {
     int N = 14;     // volume : 2^N
     int l_max = 1;  // l_max
     int D_cut; // bond dimension
-    double K = 1.90; // inverse temperature
+    double beta = 1.90; // inverse temperature
     std::pair<int, int> p(2, 0); // impure tensorの座標
 
     if (argc == 6) {
         N = std::stoi(argv[1]);
         l_max = std::stoi(argv[2]);
-        K = std::stod(argv[3]);
+        beta = std::stod(argv[3]);
         p.first = std::stoi(argv[4]);
         p.second = std::stoi(argv[5]);
     }
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(2) << K;
+    ss << std::fixed << std::setprecision(2) << beta;
     const string dir = "../data/spherical_harmonics/HOTRG_2point_manual/beta" + ss.str()
                        + "/N" + std::to_string(N)
                        + "/l" + std::to_string(l_max) + "/data/";
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     fileName = dir + std::to_string(p.first) + "-" + std::to_string(p.second) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     D_cut = (l_max + 1) * (l_max + 1);
-    Trace(K, D_cut, l_max, N, p, dataFile);
+    Trace(N, l_max, D_cut, beta, p, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';

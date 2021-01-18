@@ -15,12 +15,12 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(double const K, int const D_cut, int const n_node, int const N, std::ofstream &file) {
+void Trace(const int N, const int n_node, const int D_cut, const double beta, std::ofstream &file) {
     time_counter time;
 
     // initialize tensor network : max index size is D_cut
     HOTRG::Tensor T;
-    HOTRG::initialize_gauss_quadrature(T, K, D_cut, n_node);
+    HOTRG::initialize_gauss_quadrature(T, beta, D_cut, n_node);
 
     auto orders = new long long int[N];
 
@@ -41,17 +41,17 @@ int main(int argc, char *argv[]) {
     int N = 20;     // volume : 2^N
     int n_node = 32;  // n_node
     int D_cut = 8; // bond dimension
-    double K = 0.10; // inverse temperature
+    double beta = 0.10; // inverse temperature
 
     if (argc == 5) {
         N = std::stoi(argv[1]);
         n_node = std::stoi(argv[2]);
         D_cut = std::stoi(argv[3]);
-        K = std::stod(argv[4]);
+        beta = std::stod(argv[4]);
     }
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(2) << K;
+    ss << std::fixed << std::setprecision(2) << beta;
     const string dir = "../data/gauss_quadrature/HOTRG_alt/N" + std::to_string(N)
                        + "/node" + std::to_string(n_node)
                        + "/D" + std::to_string(D_cut) + "/";
@@ -68,29 +68,11 @@ int main(int argc, char *argv[]) {
          << '\n' << std::flush;
     fileName = dir + "beta" + ss.str() + ".txt";
     dataFile.open(fileName, std::ios::trunc);
-    dataFile << std::fixed << std::setprecision(2) << K;
-    Trace(K, D_cut, n_node, N, dataFile);
+    dataFile << std::fixed << std::setprecision(2) << beta;
+    Trace(N, n_node, D_cut, beta, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
-
-    /* vs D_cut */
-//    K_end += K_interval / 2; // 誤差対策
-//    for (D_cut = 8; D_cut <= 24; D_cut += 4) {
-//        K = K_start;
-//        time.start();
-//        fileName = dir + "D" + std::to_string(D_cut) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        while (K <= K_end) {
-//            cout << "K = " << std::fixed << std::setprecision(1) << K << " : " << std::flush;
-//            dataFile << std::fixed << std::setprecision(1) << K;
-//            Trace(K, D_cut, n_node, N, dataFile);
-//            K += K_interval;
-//        }
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
 
     return 0;
 }
