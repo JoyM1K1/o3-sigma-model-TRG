@@ -6,21 +6,14 @@
 #include <gsl/gsl_specfunc.h>
 #include <cmath>
 #include <mkl.h>
-//#include <fstream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
 void GaussQuadrature::init_tensor(const double &K, const int &n_node, const int &D_cut, BaseTensor &T) {
     const int D = std::min(n_node * n_node, D_cut);
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
-//    std::vector<double> x(n_node);
     std::vector<double> p(n_node);
     std::vector<double> w(n_node);
-
-//    std::ifstream GL_node;
-//    GL_node.open("GL-node.txt", std::ios::in);
-//    for (int i = 0; GL_node >> x[i] >> w[i]; ++i);
-//    GL_node.close();
 
     REP(i, n_node) p[i] = gsl_sf_legendre_Pl(n_node - 1, x[i]);
     REP(i, n_node) w[i] = 2 * (1 - x[i] * x[i]) / (n_node * n_node * p[i] * p[i]);
@@ -67,14 +60,9 @@ void GaussQuadrature::init_tensor(const double &K, const int &n_node, const int 
 template<class Tensor>
 void GaussQuadrature::init_tensor_with_impure(const double &K, const int &n_node, const int &D_cut, const int &D, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
     std::vector<double> x = math::solver::legendre_zero_point(n_node);
-//    std::vector<double> x(n_node);
     std::vector<double> p(n_node);
     std::vector<double> w(n_node);
 
-//    std::ifstream GL_node;
-//    GL_node.open("GL-node.txt", std::ios::in);
-//    for (int i = 0; GL_node >> x[i] >> w[i]; ++i);
-//    GL_node.close();
 
     REP(i, n_node) p[i] = gsl_sf_legendre_Pl(n_node - 1, x[i]);
     REP(i, n_node) w[i] = 2 * (1 - x[i] * x[i]) / (n_node * n_node * p[i] * p[i]);
