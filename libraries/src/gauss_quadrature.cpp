@@ -1,5 +1,5 @@
 #include "../include/gauss_quadrature.hpp"
-#include "../include/legendre_zero_point.hpp"
+#include "../include/legendre_root.hpp"
 #include <iostream>
 #include <vector>
 #include <functional>
@@ -11,7 +11,7 @@
 
 void GaussQuadrature::init_tensor(const double &beta, const int &n_node, const int &D_cut, BaseTensor &T) {
     const int D = std::min(n_node * n_node, D_cut);
-    std::vector<double> x = math::solver::legendre_zero_point(n_node);
+    std::vector<double> x = math::solver::legendre_root(n_node);
     std::vector<double> p(n_node);
     std::vector<double> w(n_node);
 
@@ -59,7 +59,7 @@ void GaussQuadrature::init_tensor(const double &beta, const int &n_node, const i
 
 template<class Tensor>
 void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_node, const int &D_cut, const int &D, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
-    std::vector<double> x = math::solver::legendre_zero_point(n_node);
+    std::vector<double> x = math::solver::legendre_root(n_node);
     std::vector<double> p(n_node);
     std::vector<double> w(n_node);
 
