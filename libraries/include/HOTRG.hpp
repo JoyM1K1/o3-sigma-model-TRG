@@ -65,9 +65,14 @@ namespace HOTRG {
 
         void mass(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor, double *res);
 
-        // deprecated
+        /// deprecated
         void mass_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res);
 
+        void mass_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &N, const int &n, int &distance, const int &normalize_factor, double *res);
+
+        /**
+         * compress alternatively until just before the impure tensors merge with each other
+        **/
         void mass_v1(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, int &x_count, int &y_count, const int &normalize_factor, double *res);
     }
 }
