@@ -753,9 +753,9 @@ void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &IMT, long long *o
     }
 }
 
-/*
+/**
  * compress alternatively until just before the impure tensors merge with each other
-*/
+**/
 void HOTRG::renormalization::mass_v1(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, int &x_count, int &y_count, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
     if ((n % 2 && x_count < merge_point - 1) || y_count == N / 2) { // compress along x-axis
