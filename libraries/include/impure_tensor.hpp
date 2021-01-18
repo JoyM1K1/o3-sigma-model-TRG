@@ -2,7 +2,6 @@
 #define O3_SIGMA_MODEL_IMPURE_TENSOR_HPP
 
 #include "tensor.hpp"
-//#include "TRG.hpp"
 #include <vector>
 
 #define DIMENSION 3
@@ -11,7 +10,6 @@ template<class Tensor>
 class BaseImpureTensor {
 public:
     int distance{0};
-    int mergeIndex{0};
     bool isMerged{false};
     bool isImpure{false};
     std::vector<double> corrs;
@@ -78,7 +76,5 @@ public:
 
     static int normalization(Tensor &T, BaseImpureTensor<Tensor> &originIMT, std::vector<BaseImpureTensor<Tensor>> &IMTs);
 };
-
-//extern template class BaseImpureTensor<TRG::Tensor>;
 
 #endif //O3_SIGMA_MODEL_IMPURE_TENSOR_HPP

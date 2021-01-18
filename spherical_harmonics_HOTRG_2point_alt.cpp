@@ -15,7 +15,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(const int merge_point, double const K, int const D_cut, int const l_max, int const N, std::ofstream &file) {
+void Trace(const int N, const int l_max, const int D_cut, const double beta, const int merge_point, std::ofstream &file) {
     time_counter time;
 
     /* distance */
@@ -26,7 +26,7 @@ void Trace(const int merge_point, double const K, int const D_cut, int const l_m
     // initialize tensor network : max index size is D_cut
     HOTRG::Tensor T;
     HOTRG::ImpureTensor IMT;
-    HOTRG::initialize_spherical_harmonics_with_impure(T, IMT, K, D_cut, l_max);
+    HOTRG::initialize_spherical_harmonics_with_impure(T, IMT, beta, D_cut, l_max);
 
     /* orders */
     long long int orders[DIMENSION];
@@ -52,18 +52,18 @@ int main(int argc, char *argv[]) {
     int N = 40;     // volume : 2^N
     int l_max = 1;  // l_max
     int D_cut; // bond dimension
-    double K = 1.90; // inverse temperature
+    double beta = 1.90; // inverse temperature
     int merge_point = 4; // d = 2^(merge_point - 1)
 
     if (argc == 5) {
         N = std::stoi(argv[1]);
         l_max = std::stoi(argv[2]);
-        K = std::stod(argv[3]);
+        beta = std::stod(argv[3]);
         merge_point = std::stoi(argv[4]);
     }
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(2) << K;
+    ss << std::fixed << std::setprecision(2) << beta;
     const string dir = "../data/spherical_harmonics/HOTRG_2point_alt/beta" + ss.str()
                        + "/N" + std::to_string(N)
                        + "/l" + std::to_string(l_max) + "/";
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     fileName = dir + std::to_string(merge_point) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     D_cut = (l_max + 1) * (l_max + 1);
-    Trace(merge_point, K, D_cut, l_max, N, dataFile);
+    Trace(N, l_max, D_cut, beta, merge_point, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';

@@ -15,7 +15,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(double const K, int const D_cut, int const n_node, int const N, int distance, std::ofstream &file) {
+void Trace(const int N, const int n_node, const int D_cut, const double beta, int distance, std::ofstream &file) {
     time_counter time;
 
     const int x = distance;
@@ -23,7 +23,7 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, int d
     // initialize tensor network : max index size is D_cut
     HOTRG::Tensor T;
     HOTRG::ImpureTensor originIMT;
-    HOTRG::initialize_gauss_quadrature_with_impure(T, originIMT, K, D_cut, n_node);
+    HOTRG::initialize_gauss_quadrature_with_impure(T, originIMT, beta, D_cut, n_node);
     auto IMT = originIMT;
 
     long long int orders[DIMENSION];
@@ -52,21 +52,21 @@ void Trace(double const K, int const D_cut, int const n_node, int const N, int d
 int main(int argc, char *argv[]) {
     /* inputs */
     int N = 14;     // volume : 2^N
-    double K = 1.90; // inverse temperature
     int n_node = 16;  // n_node
     int D_cut = 16; // bond dimension
+    double beta = 1.90; // inverse temperature
     int distance = 5;
 
     if (argc == 6) {
         N = std::stoi(argv[1]);
         n_node = std::stoi(argv[2]);
         D_cut = std::stoi(argv[3]);
-        K = std::stod(argv[4]);
+        beta = std::stod(argv[4]);
         distance = std::stoi(argv[5]);
     }
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(2) << K;
+    ss << std::fixed << std::setprecision(2) << beta;
     const string dir = "../data/gauss_quadrature/HOTRG_mass_manual/beta" + ss.str()
                        + "/N" + std::to_string(N)
                        + "/node" + std::to_string(n_node)
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
          << '\n' << std::flush;
     fileName = dir + std::to_string(distance) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
-    Trace(K, D_cut, n_node, N, distance, dataFile);
+    Trace(N, n_node, D_cut, beta, distance, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';

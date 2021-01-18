@@ -1,8 +1,6 @@
 #include "../include/tensor.hpp"
 #include <cassert>
-#include <cmath>
 #include <algorithm>
-#include <iostream>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 

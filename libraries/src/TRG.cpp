@@ -167,36 +167,36 @@ void TRG::allocate_tensor(Tensor &T, const int &D, const int &D_cut) {
     T.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
 }
 
-void TRG::initialize_spherical_harmonics(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &K, const int &l_max) {
+void TRG::initialize_spherical_harmonics(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &beta, const int &l_max) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
     allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
-    SphericalHarmonics::init_tensor(K, l_max, T1);
+    SphericalHarmonics::init_tensor(beta, l_max, T1);
     time.end();
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
-void TRG::initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &K, const int &n_node) {
+void TRG::initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &beta, const int &n_node) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
     allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
-    GaussQuadrature::init_tensor(K, n_node, D_cut, T1);
+    GaussQuadrature::init_tensor(beta, n_node, D_cut, T1);
     time.end();
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
-void TRG::initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &K, const int &l_max, const int &merge_point) {
+void TRG::initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &beta, const int &l_max, const int &merge_point) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
     allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
     REP(i, MAX_IMT_NUM) IMTs[i] = ImpureTensor(D, D_cut);
-    SphericalHarmonics::init_tensor_with_impure(K, l_max, T1, IMTs[0]);
+    SphericalHarmonics::init_tensor_with_impure(beta, l_max, T1, IMTs[0]);
     IMTs[0].isImpure = true;
     if (merge_point == 1) {
         IMTs[1] = IMTs[0];
@@ -206,14 +206,14 @@ void TRG::initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, Imp
     cout << "in " << time.duration_cast_to_string() << "\n" << std::flush;
 }
 
-void TRG::initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &K, const int &n_node, const int &merge_point) {
+void TRG::initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &beta, const int &n_node, const int &merge_point) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
     allocate_tensor(T1, D, D_cut); /* (ij)(kl) -> S1 S3 */
     allocate_tensor(T2, D, D_cut); /* (jk)(li) -> S2 S4 */
     REP(i, MAX_IMT_NUM) IMTs[i] = ImpureTensor(D, D_cut);
-    GaussQuadrature::init_tensor_with_impure(K, n_node, D_cut, D, T1, IMTs[0]);
+    GaussQuadrature::init_tensor_with_impure(beta, n_node, D_cut, D, T1, IMTs[0]);
     IMTs[0].isImpure = true;
     if (merge_point == 1) {
         IMTs[1] = IMTs[0];

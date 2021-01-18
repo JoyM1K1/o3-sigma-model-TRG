@@ -15,7 +15,7 @@ using std::cout;
 using std::cerr;
 using std::string;
 
-void Trace(const int merge_point, double const K, const int D_cut, const int n_node, const int N, std::ofstream &file) {
+void Trace(const int N, const int n_node, const int D_cut, const double beta, const int merge_point, std::ofstream &file) {
     time_counter time;
     // index dimension
     int D = std::min(D_cut, n_node * n_node);
@@ -62,19 +62,19 @@ int main(int argc, char *argv[]) {
     int N = 14;     // volume : 2^N
     int n_node = 16;  // n_node
     int D_cut = 16; // bond dimension
-    double K = 1.90; // inverse temperature
+    double beta = 1.90; // inverse temperature
     int merge_point = 7; // d = 2^(merge_point - 1)
 
     if (argc == 6) {
         N = std::stoi(argv[1]);
         n_node = std::stoi(argv[2]);
         D_cut = std::stoi(argv[3]);
-        K = std::stod(argv[4]);
+        beta = std::stod(argv[4]);
         merge_point = std::stoi(argv[5]);
     }
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(2) << K;
+    ss << std::fixed << std::setprecision(2) << beta;
     const string dir = "../data/gauss_quadrature/TRG_2point/beta" + ss.str()
                        + "/N" + std::to_string(N)
                        + "/node" + std::to_string(n_node)
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
          << '\n' << std::flush;
     fileName = dir + std::to_string(merge_point) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
-    Trace(merge_point, K, D_cut, n_node, N, dataFile);
+    Trace(N, n_node, D_cut, beta, merge_point, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';

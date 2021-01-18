@@ -64,7 +64,7 @@ public:
 
     void forEach(const std::function<void(int, int, int, int, double *)> &f);
 
-    virtual long long int normalization(int c) {return 0;};
+    virtual long long int normalization(int c) { return 0; };
 
     double trace();
 };
