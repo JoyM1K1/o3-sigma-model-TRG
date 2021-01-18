@@ -1,7 +1,3 @@
-//
-// Created by Joy on 2020/05/15.
-//
-
 #ifndef O3_SIGMA_MODEL_LEGENDRE_ZERO_POINT_HPP
 #define O3_SIGMA_MODEL_LEGENDRE_ZERO_POINT_HPP
 
@@ -9,13 +5,13 @@
 
 namespace math {
     namespace solver {
-        // P_n(x) の微分
+        /// Derivative of Legendre polynomial. : P'n(x)
         double d_legendre(int n, double x);
 
-        // newton法
+        /// Newton's method.
         double newton(int n, double x);
 
-        // newton法を用いてn次Legendre多項式のゼロ点を計算する
+        /// Calculate root of Legendre polynomial.
         std::vector<double> legendre_zero_point(int n);
     }
 }
