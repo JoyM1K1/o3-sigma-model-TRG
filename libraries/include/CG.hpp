@@ -1,7 +1,3 @@
-//
-// Created by Joy on 2020/04/29.
-//
-
 #ifndef O3_SIGMA_MODEL_CG_HPP
 #define O3_SIGMA_MODEL_CG_HPP
 
@@ -10,6 +6,7 @@
 #include <map>
 #include <fstream>
 
+/// @Deprecated Clebsch-Gordan Coefficient class
 class CG {
 public:
     frac l1, l2, m1, m2, L, M;

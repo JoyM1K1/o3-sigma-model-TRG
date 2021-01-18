@@ -1,13 +1,10 @@
-//
-// Created by Joy on 2020/04/27.
-//
-
 #ifndef O3_SIGMA_MODEL_FRAC_HPP
 #define O3_SIGMA_MODEL_FRAC_HPP
 
 #include <iostream>
 #include <cmath>
 
+/// @Deprecated fraction class
 class frac {
 public:
     long long num, den; // numerator, denominator
