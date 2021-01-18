@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../include/legendre_zero_point.hpp"
+#include "../include/legendre_root.hpp"
 #include <cmath>
 #include <algorithm>
 #include <gsl/gsl_specfunc.h>
@@ -28,7 +28,7 @@ double math::solver::newton(int n, double x) {
     exit(1);
 }
 
-std::vector<double> math::solver::legendre_zero_point(int n) {
+std::vector<double> math::solver::legendre_root(int n) {
     std::vector<double> ans(n);
     for (int i = 0; i < n; ++i) {
         // initial value

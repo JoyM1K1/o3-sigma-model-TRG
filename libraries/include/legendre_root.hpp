@@ -1,5 +1,5 @@
-#ifndef O3_SIGMA_MODEL_LEGENDRE_ZERO_POINT_HPP
-#define O3_SIGMA_MODEL_LEGENDRE_ZERO_POINT_HPP
+#ifndef O3_SIGMA_MODEL_LEGENDRE_ROOT_HPP
+#define O3_SIGMA_MODEL_LEGENDRE_ROOT_HPP
 
 #include <vector>
 
@@ -12,8 +12,8 @@ namespace math {
         double newton(int n, double x);
 
         /// Calculate root of Legendre polynomial.
-        std::vector<double> legendre_zero_point(int n);
+        std::vector<double> legendre_root(int n);
     }
 }
 
-#endif //O3_SIGMA_MODEL_LEGENDRE_ZERO_POINT_HPP
+#endif //O3_SIGMA_MODEL_LEGENDRE_ROOT_HPP

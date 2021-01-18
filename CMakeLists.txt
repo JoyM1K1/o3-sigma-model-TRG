@@ -118,7 +118,4 @@ else ()
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG TRG tensor time_counter)
-
-    add_executable(gauss_legendre_test gauss_legendre_test.cpp)
-    target_link_libraries(gauss_legendre_test legendre_zero_point)
 endif ()
