@@ -2,7 +2,6 @@
 #define O3_SIGMA_MODEL_TENSOR_HPP
 
 #include <functional>
-#include <vector>
 
 class BaseTensor {
 private:
@@ -10,7 +9,6 @@ private:
     double *M;
 public:
     long long int order{0};
-    std::vector<int> orders;
 
     BaseTensor();
 
@@ -64,7 +62,7 @@ public:
 
     void forEach(const std::function<void(int, int, int, int, double *)> &f);
 
-    virtual long long int normalization(int c) { return 0; };
+    long long int normalization(int c);
 
     double trace();
 };

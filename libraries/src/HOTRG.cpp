@@ -59,31 +59,6 @@ void HOTRG::initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT
     cout << "in " << time.duration_cast_to_string() << '\n' << std::flush;
 }
 
-long long int HOTRG::Tensor::normalization(int c) {
-    double _max = 0;
-    this->forEach([&](int i, int j, int k, int l, const double *t) {
-        const double absT = std::abs(*t);
-        if (std::isnan(absT)) {
-            std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
-            exit(1);
-        }
-        _max = std::max(_max, absT);
-    });
-    auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
-    auto absO = std::abs(o);
-    if (o > 0) {
-        this->forEach([&](double *t) {
-            REP(a, absO) *t /= c;
-        });
-    } else if (o < 0) {
-        this->forEach([&](double *t) {
-            REP(a, absO) *t *= c;
-        });
-    }
-    orders.push_back(o);
-    return order = o;
-}
-
 void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
     const int Dx = T.GetDx(), Dy = T.GetDy(), D_max = T.GetD_max();
     BaseTensor MM(Dx, D_max);
@@ -98,15 +73,17 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
         tmp_2(k, j, i, l) = *t;
     });
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, x, p) * T(i_, y, x, q)
+            Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, x, p) * T(i_, y, x, q)
     T.forEach([&](int i, int j, int k, int l, const double *t) {
         tmp_1(i, j, k, l) = *t;
         tmp_2(k, l, i, j) = *t;
     });
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, x, y) * T(i_, q, x, y)
-    tmp_1.SetDj(Dx); tmp_1.SetDk(Dy);
-    tmp_2.SetDi(Dy); tmp_2.SetDl(Dx);
+            Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, x, y) * T(i_, q, x, y)
+    tmp_1.SetDj(Dx);
+    tmp_1.SetDk(Dy);
+    tmp_2.SetDi(Dy);
+    tmp_2.SetDl(Dx);
     A.forEach([&](int i, int j, int k, int l, const double *t) {
         tmp_1(i, k, j, l) = *t;
     });
@@ -114,7 +91,7 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
         tmp_2(j, l, i, k) = *t;
     });
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.GetMatrix(),
-                Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+            Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
     MM.forEach([&](int i, int j, int k, int l, const double *t) {
         MM_(i, k, j, l) = *t;
     }); // MM(i1, i2, i1_, i2_) = A(i1, p, i1_, q) * B(i2, p, i2_, q)
@@ -137,15 +114,17 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
             tmp_2(i, j, k, l) = *t;
         });
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                    Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(k, p, k_, q) = T(x, y, k, p) * T(x, y, k_, q)
+                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(k, p, k_, q) = T(x, y, k, p) * T(x, y, k_, q)
         T.forEach([&](int i, int j, int k, int l, const double *t) {
             tmp_1(k, j, i, l) = *t;
             tmp_2(i, l, k, j) = *t;
         });
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                    Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(k, p, k_, q) = T(x, p, k, y) * T(x, q, k_, y)
-        tmp_1.SetDj(Dx); tmp_1.SetDk(Dy);
-        tmp_2.SetDi(Dy); tmp_2.SetDl(Dx);
+                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(k, p, k_, q) = T(x, p, k, y) * T(x, q, k_, y)
+        tmp_1.SetDj(Dx);
+        tmp_1.SetDk(Dy);
+        tmp_2.SetDi(Dy);
+        tmp_2.SetDl(Dx);
         A.forEach([&](int i, int j, int k, int l, const double *t) {
             tmp_1(i, k, j, l) = *t;
         });
@@ -153,7 +132,7 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
             tmp_2(j, l, i, k) = *t;
         });
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.GetMatrix(),
-                    Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+                Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
         MM.forEach([&](int i, int j, int k, int l, const double *t) {
             MM_(i, k, j, l) = *t;
         }); // MM(k1, k2, k1_, k2_) = A(k1, p, k1_, q) * B(k2, p, k2_, q)
@@ -191,19 +170,19 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
                     tmp2[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
                 }
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, j, q, j_) = T(x, j, p, y) * T(x, j_, q, y)
+            Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, j, q, j_) = T(x, j, p, y) * T(x, j_, q, y)
     REP4tensor(i, j, k, l, Dx, Dy) {
                     tmp1[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
                     tmp2[Dy * Dx * Dy * k + Dy * Dx * l + Dy * i + j] = T(i, j, k, l);
                 }
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, j, q, j_) = T(p, j, x, y) * T(q, j_, x, y)
+            Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, j, q, j_) = T(p, j, x, y) * T(q, j_, x, y)
     REP4tensor(i, j, k, l, Dx, Dy) {
                     tmp1[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = A(i, j, k, l);
                     tmp2[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = B(i, j, k, l);
                 }
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp1,
-                Dx * Dx, tmp2, Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
+            Dx * Dx, tmp2, Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
     REP(i, Dy)REP(l, Dy) { // MM(j1, j2, j1_, j2_) = A(p, j1, q, j1_) * B(p, j2, q, j2_)
             auto t = new double[Dy * Dy];
             REP(j, Dy)REP(k, Dy) {
@@ -234,19 +213,19 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
                         tmp2[Dy * Dx * Dy * i + Dy * Dx * j + Dy * k + l] = T(i, j, k, l);
                     }
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                    Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, l, q, l_) = T(x, y, p, l) * T(x, y, q, l_)
+                Dx * Dy, tmp2, Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, l, q, l_) = T(x, y, p, l) * T(x, y, q, l_)
         REP4tensor(i, j, k, l, Dx, Dy) {
                         tmp1[Dy * Dx * Dy * i + Dy * Dx * l + Dy * k + j] = T(i, j, k, l);
                         tmp2[Dy * Dx * Dy * k + Dy * Dx * j + Dy * i + l] = T(i, j, k, l);
                     }
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp1,
-                    Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, l, q, l_) = T(p, y, x, l) * T(q, y, x, l_)
+                Dx * Dy, tmp2, Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, l, q, l_) = T(p, y, x, l) * T(q, y, x, l_)
         REP4tensor(i, j, k, l, Dx, Dy) {
                         tmp1[Dy * Dx * Dx * j + Dx * Dx * l + Dx * i + k] = A(i, j, k, l);
                         tmp2[Dx * Dy * Dy * i + Dy * Dy * k + Dy * j + l] = B(i, j, k, l);
                     }
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp1,
-                    Dx * Dx, tmp2, Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
+                Dx * Dx, tmp2, Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
         REP(i, Dy)REP(l, Dy) { // MM(l1, l2, l1_, l2_) = A(p, l1, q, l1_) * B(p, l2, q, l2_)
                 auto t = new double[Dy * Dy];
                 REP(j, Dy)REP(k, Dy) {
@@ -295,11 +274,11 @@ void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT
                 bU[Dy_new * Dy * j + Dy_new * i + k] = U[Dy * Dy * Dy * i + Dy * Dy * j + k];
             }
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, rT,
-                Dy, tU, Dy * Dy_new, 0, tmp1, Dy * Dy_new);
+            Dy, tU, Dy * Dy_new, 0, tmp1, Dy * Dy_new);
     delete[] rT;
     delete[] tU;
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, lT,
-                Dy, bU, Dy * Dy_new, 0, tmp2, Dy * Dy_new);
+            Dy, bU, Dy * Dy_new, 0, tmp2, Dy * Dy_new);
     delete[] lT;
     delete[] bU;
     auto tmp1_ = new double[Dy_new * Dx * Dx * Dy * Dy];
@@ -316,11 +295,11 @@ void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT
     delete[] tmp2;
     if (mergeT == "left") {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
-                    tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, leftT.GetMatrix(), Dx * Dy_new);
+                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, leftT.GetMatrix(), Dx * Dy_new);
         leftT.UpdateDy(Dy_new);
     } else {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
-                    tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, rightT.GetMatrix(), Dx * Dy_new);
+                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, rightT.GetMatrix(), Dx * Dy_new);
         rightT.UpdateDy(Dy_new);
     }
     delete[] tmp1_;
@@ -346,11 +325,11 @@ void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT
                 rU[Dx_new * Dx * i + Dx_new * j + k] = U[Dx * Dx * Dx * i + Dx * Dx * j + k];
             }
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy * Dx, Dx * Dx_new, Dx, 1, tT,
-                Dx, rU, Dx * Dx_new, 0, tmp1, Dx * Dx_new);
+            Dx, rU, Dx * Dx_new, 0, tmp1, Dx * Dx_new);
     delete[] tT;
     delete[] rU;
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy * Dx, Dx * Dx_new, Dx, 1, bT,
-                Dx, lU, Dx * Dx_new, 0, tmp2, Dx * Dx_new);
+            Dx, lU, Dx * Dx_new, 0, tmp2, Dx * Dx_new);
     delete[] bT;
     delete[] lU;
     auto tmp1_ = new double[Dx_new * Dx * Dx * Dy * Dy];
@@ -367,11 +346,11 @@ void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT
     delete[] tmp2;
     if (mergeT == "top") {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx_new, Dy * Dx_new, Dx * Dx * Dy, 1,
-                    tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, topT.GetMatrix(), Dy * Dx_new);
+                tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, topT.GetMatrix(), Dy * Dx_new);
         topT.UpdateDx(Dx_new);
     } else {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx_new, Dy * Dx_new, Dx * Dx * Dy, 1,
-                    tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, bottomT.GetMatrix(), Dy * Dx_new);
+                tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, bottomT.GetMatrix(), Dy * Dx_new);
         bottomT.UpdateDx(Dx_new);
     }
     delete[] tmp1_;
@@ -444,11 +423,12 @@ void HOTRG::renormalization::one_point_alt(Tensor &T, ImpureTensor &IMT, long lo
         } else {
             REP(k, absOrder) impureTr /= normalize_factor;
         }
-        res[i] = impureTr/Tr;
+        res[i] = impureTr / Tr;
     }
 }
 
-void HOTRG::renormalization::two_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
+void
+HOTRG::renormalization::two_point_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
     const int times = (n + 1) / 2;
     if (n % 2) { // compress along x-axis
@@ -499,11 +479,12 @@ void HOTRG::renormalization::two_point_alt(Tensor &T, ImpureTensor &IMT, long lo
         } else {
             REP(k, absOrder) impureTr /= normalize_factor;
         }
-        res[i] = impureTr/Tr;
+        res[i] = impureTr / Tr;
     }
 }
 
-void HOTRG::renormalization::two_point_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &n, std::pair<int, int> &p, const int &normalize_factor, double *res) {
+void
+HOTRG::renormalization::two_point_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &n, std::pair<int, int> &p, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
     if (n % 2) { // compression along x-axis
         cout << " compress along x-axis " << std::flush;
@@ -621,14 +602,15 @@ void HOTRG::renormalization::two_point_manual(Tensor &T, ImpureTensor &originIMT
         } else {
             REP(i, absOrder) impureTr /= normalize_factor;
         }
-        res[k] = impureTr/Tr;
+        res[k] = impureTr / Tr;
     }
 }
 
-void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
+void
+HOTRG::renormalization::mass(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
-    const int times = n - N/2;
-    if (n > N/2) { // compress along x-axis
+    const int times = n - N / 2;
+    if (n > N / 2) { // compress along x-axis
         cout << " compress along x-axis " << std::flush;
         const int Dy = T.GetDy();
         auto U = new double[Dy * Dy * Dy * Dy];
@@ -685,11 +667,12 @@ void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &IMT, long long *order
         } else {
             REP(k, absOrder) impureTr /= normalize_factor;
         }
-        res[i] = impureTr/Tr;
+        res[i] = impureTr / Tr;
     }
 }
 
-void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
+void
+HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
     const int times = (n + 1) / 2;
     if (n % 2) { // compress along x-axis
@@ -749,13 +732,14 @@ void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &IMT, long long *o
         } else {
             REP(k, absOrder) impureTr /= normalize_factor;
         }
-        res[i] = impureTr/Tr;
+        res[i] = impureTr / Tr;
     }
 }
 
-void HOTRG::renormalization::mass_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &N, const int &n, int &distance, const int &normalize_factor, double *res) {
+void
+HOTRG::renormalization::mass_manual(Tensor &T, ImpureTensor &originIMT, ImpureTensor &IMT, long long *orders, const int &N, const int &n, int &distance, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
-    if (n > N/2) { // compress along x-axis
+    if (n > N / 2) { // compress along x-axis
         cout << " compress along x-axis " << std::flush;
         cout << std::setw(7);
         const int Dy = T.GetDy();
@@ -848,11 +832,12 @@ void HOTRG::renormalization::mass_manual(Tensor &T, ImpureTensor &originIMT, Imp
         } else {
             REP(k, absOrder) impureTr /= normalize_factor;
         }
-        res[i] = impureTr/Tr;
+        res[i] = impureTr / Tr;
     }
 }
 
-void HOTRG::renormalization::mass_v1(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, int &x_count, int &y_count, const int &normalize_factor, double *res) {
+void
+HOTRG::renormalization::mass_v1(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, int &x_count, int &y_count, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
     if ((n % 2 && x_count < merge_point - 1) || y_count == N / 2) { // compress along x-axis
         cout << " compress along x-axis " << std::flush;
@@ -913,6 +898,6 @@ void HOTRG::renormalization::mass_v1(Tensor &T, ImpureTensor &IMT, long long *or
         } else {
             REP(k, absOrder) impureTr /= normalize_factor;
         }
-        res[i] = impureTr/Tr;
+        res[i] = impureTr / Tr;
     }
 }

@@ -71,10 +71,6 @@ public:
         tensors[2] = rhs.tensors[2];
         return *this;
     }
-
-    static int normalization(Tensor &T, BaseImpureTensor<Tensor> &originIMT);
-
-    static int normalization(Tensor &T, BaseImpureTensor<Tensor> &originIMT, std::vector<BaseImpureTensor<Tensor>> &IMTs);
 };
 
 #endif //O3_SIGMA_MODEL_IMPURE_TENSOR_HPP

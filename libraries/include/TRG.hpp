@@ -1,7 +1,6 @@
 #ifndef O3_SIGMA_MODEL_TRG_HPP
 #define O3_SIGMA_MODEL_TRG_HPP
 
-#include <vector>
 #include "tensor.hpp"
 #include "impure_tensor.hpp"
 
@@ -11,8 +10,6 @@ namespace TRG {
     class Unitary_S {
     public:
         double *tensor;
-        unsigned long long int order{0};
-        std::vector<int> orders;
         int D_cut{0};
 
         Unitary_S();
@@ -20,8 +17,6 @@ namespace TRG {
         Unitary_S(int D_cut);
 
         ~Unitary_S();
-
-        void normalization(int c = 10);
     };
 
     class Tensor : public BaseTensor {
@@ -39,8 +34,6 @@ namespace TRG {
         Tensor(int Di, int Dj, int Dk, int Dl, int D_max) : BaseTensor(Di, Dj, Dk, Dl, D_max) {};
 
         Tensor &operator=(const Tensor &rhs);
-
-        long long int normalization(int c) override;
     };
 
     class ImpureTensor : public BaseImpureTensor<Tensor> {

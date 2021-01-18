@@ -1,6 +1,8 @@
 #include "../include/tensor.hpp"
+#include <iostream>
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
@@ -61,10 +63,6 @@ BaseTensor::BaseTensor(BaseTensor &rhs) {
     this->D_max = rhs.D_max;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
-    orders.clear();
-    for (auto o : rhs.orders) {
-        orders.push_back(o);
-    }
 }
 
 BaseTensor::~BaseTensor() {
@@ -150,10 +148,6 @@ BaseTensor &BaseTensor::operator=(const BaseTensor &rhs) {
     delete[] M;
     M = new double[D_max * D_max * D_max * D_max];
     for (int i = 0; i < D_max * D_max * D_max * D_max; ++i) M[i] = rhs.M[i];
-    orders.clear();
-    for (auto o : rhs.orders) {
-        orders.push_back(o);
-    }
     order = rhs.order;
     return *this;
 }
@@ -184,6 +178,30 @@ void BaseTensor::forEach(const std::function<void(int, int, int, int, double *)>
     REP(i, Di)REP(j, Dj)REP(k, Dk)REP(l, Dl) {
                     f(i, j, k, l, &(*this)(i, j, k, l));
                 }
+}
+
+long long int BaseTensor::normalization(int c) {
+    double _max = 0;
+    this->forEach([&](int i, int j, int k, int l, const double *t) {
+        const double absT = std::abs(*t);
+        if (std::isnan(absT)) {
+            std::cerr << "T(" << i << ',' << j << ',' << k << ',' << l << ") is nan";
+            exit(1);
+        }
+        _max = std::max(_max, absT);
+    });
+    auto o = static_cast<int>(std::floor(std::log10(_max) / std::log10(c)));
+    auto absO = std::abs(o);
+    if (o > 0) {
+        this->forEach([&](double *t) {
+            REP(a, absO) *t /= c;
+        });
+    } else if (o < 0) {
+        this->forEach([&](double *t) {
+            REP(a, absO) *t *= c;
+        });
+    }
+    return order = o;
 }
 
 double BaseTensor::trace() {
