@@ -65,45 +65,28 @@ int main(int argc, char *argv[]) {
 
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2) << K;
-    const string dir = "../data/gauss_quadrature/HOTRG_2point_alt/beta" + ss.str() + "/N" + std::to_string(N) + "/node" + std::to_string(n_node) + "/D" +
-                       std::to_string(D_cut) + "/";
+    const string dir = "../data/gauss_quadrature/HOTRG_2point_alt/beta" + ss.str()
+                       + "/N" + std::to_string(N)
+                       + "/node" + std::to_string(n_node)
+                       + "/D" + std::to_string(D_cut) + "/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", node = " << n_node << ", D_cut = " << D_cut << ", beta = " << ss.str() << ", merge_point = " << merge_point << '\n' << std::flush;
+    cout << "N = " << N
+         << ", node = " << n_node
+         << ", D_cut = " << D_cut
+         << ", beta = " << ss.str()
+         << ", merge_point = " << merge_point
+         << '\n' << std::flush;
     fileName = dir + std::to_string(merge_point) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     Trace(merge_point, K, D_cut, n_node, N, dataFile);
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
-
-    /* vs D_cut */
-//    for (D_cut = 56; D_cut <= 64; D_cut += 8) {
-//        time.start();
-//        cout << "---------- " << D_cut << " ----------\n";
-//        fileName = dir + "D" + std::to_string(D_cut) + "_" + std::to_string(n_data_point_start) + "-" + std::to_string(n_data_point_end) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
-
-    /* vs n_node */
-//    for (n_node = 48; n_node <= 64; n_node += 16) {
-//        time.start();
-//        cout << "---------- " << n_node << " ----------\n";
-//        fileName = dir + "D" + std::to_string(D_cut) + "_" + std::to_string(n_data_point_start) + "-" + std::to_string(n_data_point_end) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        Trace(n_data_point_start, n_data_point_end, K, D_cut, n_node, N, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
 
     return 0;
 }

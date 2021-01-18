@@ -1,8 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <cmath>
-#include <vector>
 #include <fstream>
 #include <HOTRG.hpp>
 #include <time_counter.hpp>
@@ -70,14 +68,20 @@ int main(int argc, char *argv[]) {
 
     std::stringstream ss;
     ss << std::fixed << std::setprecision(2) << K;
-    const string dir = "../data/spherical_harmonics/HOTRG_2point_manual/beta" + ss.str() + "/N" + std::to_string(N) + "/l" + std::to_string(l_max) + "/data/";
+    const string dir = "../data/spherical_harmonics/HOTRG_2point_manual/beta" + ss.str()
+                       + "/N" + std::to_string(N)
+                       + "/l" + std::to_string(l_max) + "/data/";
     time_counter time;
     string fileName;
     std::ofstream dataFile;
 
     /* calculation */
     time.start();
-    cout << "N = " << N << ", l_max = " << l_max << ", beta = " << ss.str() << ", impure tensor coordinate = (" << p.first << "," << p.second << ")" << '\n' << std::flush;
+    cout << "N = " << N
+         << ", l_max = " << l_max
+         << ", beta = " << ss.str()
+         << ", impure tensor coordinate = (" << p.first << "," << p.second << ")"
+         << '\n' << std::flush;
     fileName = dir + std::to_string(p.first) + "-" + std::to_string(p.second) + ".txt";
     dataFile.open(fileName, std::ios::trunc);
     D_cut = (l_max + 1) * (l_max + 1);
@@ -85,19 +89,6 @@ int main(int argc, char *argv[]) {
     dataFile.close();
     time.end();
     cout << "合計計算時間 : " << time.duration_cast_to_string() << '\n';
-
-    /* vs l_max */
-//    for (l_max = 1; l_max <= 4; ++l_max) {
-//        time.start();
-//        cout << "---------- " << l_max << " ----------\n";
-//        fileName = dir + "l" + std::to_string(l_max) + ".txt";
-//        dataFile.open(fileName, std::ios::trunc);
-//        D_cut = (l_max + 1) * (l_max + 1);
-//        Trace(K, D_cut, l_max, N, d, dataFile);
-//        dataFile.close();
-//        time.end();
-//        cout << "合計計算時間 : " << time.duration_cast_to_string() << "\n\n";
-//    }
 
     return 0;
 }
