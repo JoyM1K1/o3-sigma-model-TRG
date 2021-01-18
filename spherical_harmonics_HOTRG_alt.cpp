@@ -20,7 +20,7 @@ void Trace(const int N, const int l_max, const int D_cut, const double beta, std
 
     // initialize tensor network : max index size is D_cut
     HOTRG::Tensor T;
-    HOTRG::initialize_spherical_harmonics(T, K, D_cut, l_max);
+    HOTRG::initialize_spherical_harmonics(T, beta, D_cut, l_max);
 
     auto orders = new long long int[N];
 
