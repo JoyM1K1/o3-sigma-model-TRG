@@ -1,7 +1,3 @@
-//
-// Created by Joy on 2020/04/29.
-//
-
 #include <chrono>
 #include <fstream>
 #include "../include/CG.hpp"
