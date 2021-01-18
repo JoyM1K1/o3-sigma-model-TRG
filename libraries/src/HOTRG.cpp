@@ -625,7 +625,7 @@ void HOTRG::renormalization::two_point_manual(Tensor &T, ImpureTensor &originIMT
     }
 }
 
-void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &originIMT, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
+void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
     const int times = n - N/2;
     if (n > N/2) { // compress along x-axis
@@ -634,11 +634,11 @@ void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &originIMT, long long 
         auto U = new double[Dy * Dy * Dy * Dy];
         HOTRG::SVD_Y(D_cut, T, U);
         if (times == merge_point) {
-            for (auto &tensor : originIMT.tensors) {
+            for (auto &tensor : IMT.tensors) {
                 HOTRG::contractionX(D_cut, tensor, tensor, U, "left");
             }
         } else {
-            for (auto &tensor : originIMT.tensors) {
+            for (auto &tensor : IMT.tensors) {
                 HOTRG::contractionX(D_cut, tensor, T, U, "left");
             }
         }
@@ -649,13 +649,13 @@ void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &originIMT, long long 
         const int Dx = T.GetDx();
         auto U = new double[Dx * Dx * Dx * Dx];
         HOTRG::SVD_X(D_cut, T, U);
-        auto imt1 = originIMT;
-        auto imt2 = originIMT;
+        auto imt1 = IMT;
+        auto imt2 = IMT;
         for (int a = 0; a < 3; ++a) {
             HOTRG::contractionY(D_cut, imt1.tensors[a], T, U, "bottom");
             HOTRG::contractionY(D_cut, T, imt2.tensors[a], U, "top");
-            originIMT.tensors[a].UpdateDx(imt1.tensors[a].GetDx());
-            originIMT.tensors[a].forEach([&](int i, int j, int k, int l, double *t) {
+            IMT.tensors[a].UpdateDx(imt1.tensors[a].GetDx());
+            IMT.tensors[a].forEach([&](int i, int j, int k, int l, double *t) {
                 *t = imt1.tensors[a](i, j, k, l) + imt2.tensors[a](i, j, k, l);
             });
         }
@@ -665,9 +665,9 @@ void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &originIMT, long long 
 
     /* normalization */
     T.normalization(normalize_factor);
-    for (auto &tensor : originIMT.tensors) tensor.normalization(normalize_factor);
+    for (auto &tensor : IMT.tensors) tensor.normalization(normalize_factor);
     REP(i, DIMENSION) {
-        long long int order = originIMT.tensors[i].order - T.order;
+        long long int order = IMT.tensors[i].order - T.order;
         if (times < merge_point) {
             order *= 2;
         }
@@ -677,7 +677,7 @@ void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &originIMT, long long 
     double Tr = T.trace();
 
     REP(i, DIMENSION) {
-        double impureTr = originIMT.tensors[i].trace();
+        double impureTr = IMT.tensors[i].trace();
         const long long int order = orders[i];
         const long long int absOrder = std::abs(order);
         if (order > 0) {
@@ -689,7 +689,7 @@ void HOTRG::renormalization::mass(Tensor &T, ImpureTensor &originIMT, long long 
     }
 }
 
-void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &originIMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
+void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &IMT, long long *orders, const int &n, const int &merge_point, const int &normalize_factor, double *res) {
     const int D_cut = T.GetD_max();
     const int times = (n + 1) / 2;
     if (n % 2) { // compress along x-axis
@@ -698,11 +698,11 @@ void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &originIMT, long l
         auto U = new double[Dy * Dy * Dy * Dy];
         HOTRG::SVD_Y(D_cut, T, U);
         if (times == merge_point) {
-            for (auto &tensor : originIMT.tensors) {
+            for (auto &tensor : IMT.tensors) {
                 HOTRG::contractionX(D_cut, tensor, tensor, U, "left");
             }
         } else {
-            for (auto &tensor : originIMT.tensors) {
+            for (auto &tensor : IMT.tensors) {
                 HOTRG::contractionX(D_cut, tensor, T, U, "left");
             }
         }
@@ -713,13 +713,13 @@ void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &originIMT, long l
         const int Dx = T.GetDx();
         auto U = new double[Dx * Dx * Dx * Dx];
         HOTRG::SVD_X(D_cut, T, U);
-        auto imt1 = originIMT;
-        auto imt2 = originIMT;
+        auto imt1 = IMT;
+        auto imt2 = IMT;
         for (int a = 0; a < 3; ++a) {
             HOTRG::contractionY(D_cut, imt1.tensors[a], T, U, "bottom");
             HOTRG::contractionY(D_cut, T, imt2.tensors[a], U, "top");
-            originIMT.tensors[a].UpdateDx(imt1.tensors[a].GetDx());
-            originIMT.tensors[a].forEach([&](int i, int j, int k, int l, double *t) {
+            IMT.tensors[a].UpdateDx(imt1.tensors[a].GetDx());
+            IMT.tensors[a].forEach([&](int i, int j, int k, int l, double *t) {
                 *t = imt1.tensors[a](i, j, k, l) + imt2.tensors[a](i, j, k, l);
             });
         }
@@ -729,9 +729,9 @@ void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &originIMT, long l
 
     /* normalization */
     T.normalization(normalize_factor);
-    for (auto &tensor : originIMT.tensors) tensor.normalization(normalize_factor);
+    for (auto &tensor : IMT.tensors) tensor.normalization(normalize_factor);
     REP(i, DIMENSION) {
-        long long int order = originIMT.tensors[i].order - T.order;
+        long long int order = IMT.tensors[i].order - T.order;
         if (times < merge_point) {
             order *= 2;
         }
@@ -741,7 +741,75 @@ void HOTRG::renormalization::mass_alt(Tensor &T, ImpureTensor &originIMT, long l
     double Tr = T.trace();
 
     REP(i, DIMENSION) {
-        double impureTr = originIMT.tensors[i].trace();
+        double impureTr = IMT.tensors[i].trace();
+        const long long int order = orders[i];
+        const long long int absOrder = std::abs(order);
+        if (order > 0) {
+            REP(k, absOrder) impureTr *= normalize_factor;
+        } else {
+            REP(k, absOrder) impureTr /= normalize_factor;
+        }
+        res[i] = impureTr/Tr;
+    }
+}
+
+/*
+ * compress alternatively until just before the impure tensors merge with each other
+*/
+void HOTRG::renormalization::mass_v1(Tensor &T, ImpureTensor &IMT, long long *orders, const int &N, const int &n, const int &merge_point, int &x_count, int &y_count, const int &normalize_factor, double *res) {
+    const int D_cut = T.GetD_max();
+    if ((n % 2 && x_count < merge_point - 1) || y_count == N / 2) { // compress along x-axis
+        cout << " compress along x-axis " << std::flush;
+        x_count++;
+        const int Dy = T.GetDy();
+        auto U = new double[Dy * Dy * Dy * Dy];
+        HOTRG::SVD_Y(D_cut, T, U);
+        if (x_count == merge_point) {
+            for (auto &tensor : IMT.tensors) {
+                HOTRG::contractionX(D_cut, tensor, tensor, U, "left");
+            }
+        } else {
+            for (auto &tensor : IMT.tensors) {
+                HOTRG::contractionX(D_cut, tensor, T, U, "left");
+            }
+        }
+        HOTRG::contractionX(D_cut, T, T, U, "left");
+        delete[] U;
+    } else { // compress along y-axis
+        cout << " compress along y-axis " << std::flush;
+        y_count++;
+        const int Dx = T.GetDx();
+        auto U = new double[Dx * Dx * Dx * Dx];
+        HOTRG::SVD_X(D_cut, T, U);
+        auto imt1 = IMT;
+        auto imt2 = IMT;
+        for (int a = 0; a < 3; ++a) {
+            HOTRG::contractionY(D_cut, imt1.tensors[a], T, U, "bottom");
+            HOTRG::contractionY(D_cut, T, imt2.tensors[a], U, "top");
+            IMT.tensors[a].UpdateDx(imt1.tensors[a].GetDx());
+            IMT.tensors[a].forEach([&](int i, int j, int k, int l, double *t) {
+                *t = imt1.tensors[a](i, j, k, l) + imt2.tensors[a](i, j, k, l);
+            });
+        }
+        HOTRG::contractionY(D_cut, T, T, U, "bottom");
+        delete[] U;
+    }
+
+    /* normalization */
+    T.normalization(normalize_factor);
+    for (auto &tensor : IMT.tensors) tensor.normalization(normalize_factor);
+    REP(i, DIMENSION) {
+        long long int order = IMT.tensors[i].order - T.order;
+        if (x_count < merge_point) {
+            order *= 2;
+        }
+        orders[i] += order;
+    }
+
+    double Tr = T.trace();
+
+    REP(i, DIMENSION) {
+        double impureTr = IMT.tensors[i].trace();
         const long long int order = orders[i];
         const long long int absOrder = std::abs(order);
         if (order > 0) {
