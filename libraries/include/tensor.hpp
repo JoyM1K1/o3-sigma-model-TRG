@@ -74,10 +74,10 @@ class tensor {
 private:
     int D[N]{};
     int D_prod[N]{};
-    int **indices{};
+    int **indices{nullptr};
     int array_size{0};
 public:
-    double *array;
+    double *array{nullptr};
 
     tensor();
 
@@ -97,8 +97,7 @@ public:
 
 template<int N>
 inline tensor<N>::tensor() {
-    array = new double[1];
-    array_size = 1;
+    array_size = 0;
     array[0] = 0;
     for (auto &d : D) d = 0;
     for (auto &d : D_prod) d = 0;
