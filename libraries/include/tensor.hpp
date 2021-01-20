@@ -4,6 +4,7 @@
 #include <functional>
 #include <cassert>
 #include <tuple>
+#include <array>
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
@@ -74,7 +75,7 @@ class tensor {
 private:
     int D[N]{};
     int D_prod[N]{};
-    int **indices{nullptr};
+    std::array<int, N> *indices{nullptr};
     int array_size{0};
 public:
     double *array{nullptr};
@@ -92,7 +93,7 @@ public:
     template<typename ...Args>
     double &operator()(Args ...args);
 
-    void forEach(const std::function<void(double *, int *)> &f);
+    void forEach(const std::function<void(double *, std::array<int, N> *)> &f);
 };
 
 template<int N>
@@ -115,18 +116,15 @@ inline tensor<N>::tensor(Args ...args) {
         i++;
     }
     array_size = buffer;
-    array = new double[buffer];
-    indices = new int *[buffer];
+    array = new double[array_size];
+    indices = new std::array<int, N>[array_size];
     i = 0;
     for (auto &d : {args...}) {
         buffer /= d;
         D_prod[i] = buffer;
         i++;
     }
-    REP(a, array_size) {
-        array[a] = 0;
-        indices[a] = new int[N];
-    }
+    REP(a, array_size) array[a] = 0;
 
     REP(n, N) {
         REP(a, array_size) {
@@ -138,7 +136,6 @@ inline tensor<N>::tensor(Args ...args) {
 template<int N>
 inline tensor<N>::~tensor() {
     delete[] array;
-    REP(i, array_size) delete[] indices[i];
     delete[] indices;
 }
 
@@ -173,9 +170,9 @@ inline double &tensor<N>::operator()(Args ...args) {
 }
 
 template<int N>
-inline void tensor<N>::forEach(const std::function<void(double *, int *)> &f) {
+inline void tensor<N>::forEach(const std::function<void(double *, std::array<int, N> *)> &f) {
     REP(i, array_size) {
-        f(&array[i], indices[i]);
+        f(&array[i], &indices[i]);
     }
 }
 
