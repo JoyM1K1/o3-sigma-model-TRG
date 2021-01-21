@@ -253,54 +253,57 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
 void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT) {
     assert(mergeT == "right" || mergeT == "left");
     const int Dx = leftT.GetDx(), Dy = leftT.GetDy(), Dy_new = std::min(Dy * Dy, D_cut);
-    auto lT = new double[Dx * Dx * Dy * Dy];
-    auto rT = new double[Dx * Dx * Dy * Dy];
-    auto tU = new double[Dy_new * Dy * Dy];
-    auto bU = new double[Dy_new * Dy * Dy];
-    auto tmp1 = new double[Dy_new * Dx * Dx * Dy * Dy];
-    auto tmp2 = new double[Dy_new * Dx * Dx * Dy * Dy];
-    REP4tensor(i, j, k, l, Dx, Dy) {
-                    lT[Dy * Dx * Dy * k + Dx * Dy * j + Dy * i + l] = leftT(i, j, k, l);
-                    rT[Dx * Dy * Dy * i + Dy * Dy * k + Dy * l + j] = rightT(i, j, k, l);
-                }
-    REP(i, Dy)REP(j, Dy)REP(k, Dy_new) {
-                tU[Dy_new * Dy * i + Dy_new * j + k] = U[Dy * Dy * Dy * i + Dy * Dy * j + k];
-                bU[Dy_new * Dy * j + Dy_new * i + k] = U[Dy * Dy * Dy * i + Dy * Dy * j + k];
-            }
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, rT,
-            Dy, tU, Dy * Dy_new, 0, tmp1, Dy * Dy_new);
-    delete[] rT;
-    delete[] tU;
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, lT,
-            Dy, bU, Dy * Dy_new, 0, tmp2, Dy * Dy_new);
-    delete[] lT;
-    delete[] bU;
-    auto tmp1_ = new double[Dy_new * Dx * Dx * Dy * Dy];
-    REP(a, Dy)REP(b, Dx)REP(c, Dy)REP(i, Dx)REP(j, Dy_new) {
-                        tmp1_[Dy_new * Dy * Dy * Dx * i + Dy * Dy * Dx * j + Dy * Dx * c + Dx * a + b]
-                                = tmp1[Dx * Dy_new * Dy * Dy * i + Dy_new * Dy * Dy * b + Dy_new * Dy * c + Dy_new * a + j];
-                    }
-    delete[] tmp1;
-    auto tmp2_ = new double[Dy_new * Dx * Dx * Dy * Dy];
-    REP(a, Dy)REP(b, Dx)REP(c, Dy)REP(k, Dx)REP(l, Dy_new) {
-                        tmp2_[Dy * Dx * Dx * Dy_new * c + Dx * Dx * Dy_new * a + Dx * Dy_new * b + Dy_new * k + l]
-                                = tmp2[Dy * Dx * Dy * Dy_new * k + Dx * Dy * Dy_new * a + Dy * Dy_new * b + Dy_new * c + l];
-                    }
-    delete[] tmp2;
+
+    auto lT = new tensor<4>(Dx, Dy, Dx, Dy);
+    auto Ub = new tensor<3>(Dy, Dy, Dy_new);
+    auto tmp1 = new tensor<5>(Dx, Dx, Dy, Dy, Dy_new); // lT(i,j,k,*) * Ub(*,l,m)
+    leftT.forEach([&](int i, int j, int k, int l, const double *t) {
+        (*lT)(k, j, i, l) = *t;
+    });
+    Ub->forEach([&](std::array<int, 3> *index, double *t) {
+        *t = U[Dy * Dy * Dy * (*index)[1] + Dy * Dy * (*index)[0] + (*index)[2]];
+    });
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, lT->array,
+            Dy, Ub->array, Dy * Dy_new, 0, tmp1->array, Dy * Dy_new);
+    delete lT;
+    delete Ub;
+    tensor<5> tmp3(Dy, Dy, Dx, Dx, Dy_new);
+    tmp1->forEach([&](std::array<int, 5> *index, const double *t) {
+        tmp3((*index)[3], (*index)[1], (*index)[2], (*index)[0], (*index)[4]) = *t;
+    });
+    delete tmp1;
+
+    auto rT = new tensor<4>(Dx, Dx, Dy, Dy);
+    auto Ut = new tensor<3>(Dy, Dy, Dy_new);
+    auto tmp2 = new tensor<5>(Dx, Dy, Dx, Dy, Dy_new); // rT(i,j,k,*) * Ut(*,l,m)
+    rightT.forEach([&](int i, int j, int k, int l, const double *t) {
+        (*rT)(i, k, l, j) = *t;
+    });
+    Ut->forEach([&](std::array<int, 3> *index, double *t) {
+        *t = U[Dy * Dy * Dy * (*index)[0] + Dy * Dy * (*index)[1] + (*index)[2]];
+    });
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx * Dx, Dy * Dy_new, Dy, 1, rT->array,
+            Dy, Ut->array, Dy * Dy_new, 0, tmp2->array, Dy * Dy_new);
+    delete rT;
+    delete Ut;
+    tensor<5> tmp4(Dx, Dy_new, Dy, Dy, Dx);
+    tmp2->forEach([&](std::array<int, 5> *index, const double *t) {
+        tmp4((*index)[0], (*index)[4], (*index)[2], (*index)[3], (*index)[1]) = *t;
+    });
+    delete tmp2;
+
     if (mergeT == "left") {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
-                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, leftT.GetMatrix(), Dx * Dy_new);
+                tmp4.array, Dx * Dy * Dy, tmp3.array, Dx * Dy_new, 0, leftT.GetMatrix(), Dx * Dy_new);
         leftT.UpdateDy(Dy_new);
     } else {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
-                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, rightT.GetMatrix(), Dx * Dy_new);
+                tmp4.array, Dx * Dy * Dy, tmp3.array, Dx * Dy_new, 0, rightT.GetMatrix(), Dx * Dy_new);
         rightT.UpdateDy(Dy_new);
     }
-    delete[] tmp1_;
-    delete[] tmp2_;
 }
 
-// contraction top tensor into bottom tensor
+// contraction top tensor into bottom tensor or vice versa
 void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string mergeT) {
     assert(mergeT == "bottom" || mergeT == "top");
     const int Dx = bottomT.GetDx(), Dy = bottomT.GetDy(), Dx_new = std::min(Dx * Dx, D_cut);
