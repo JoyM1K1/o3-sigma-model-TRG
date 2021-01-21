@@ -12,7 +12,7 @@ namespace TRG {
         double *array{nullptr};
         int D_cut{0};
 
-        Unitary_S() {};
+        Unitary_S() = default;
 
         explicit Unitary_S(int D_cut);
 
@@ -40,7 +40,7 @@ namespace TRG {
     public:
         ImpureTensor() : BaseImpureTensor<Tensor>() {};
 
-        ImpureTensor(int D) : BaseImpureTensor<Tensor>(D) {};
+        explicit ImpureTensor(int D) : BaseImpureTensor<Tensor>(D) {};
 
         ImpureTensor(int D, int D_max) : BaseImpureTensor<Tensor>(D, D_max) {};
 
@@ -50,7 +50,7 @@ namespace TRG {
 
         ImpureTensor(int d, BaseImpureTensor<Tensor> &T) : BaseImpureTensor<Tensor>(d, T) {};
 
-        ImpureTensor(BaseImpureTensor<Tensor> &rhs) : BaseImpureTensor<Tensor>(rhs) {};
+        explicit ImpureTensor(BaseImpureTensor<Tensor> &rhs) : BaseImpureTensor<Tensor>(rhs) {};
     };
 
     void SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp);
