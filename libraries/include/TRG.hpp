@@ -9,10 +9,10 @@
 namespace TRG {
     class Unitary_S {
     public:
-        double *array;
+        double *array{nullptr};
         int D_cut{0};
 
-        Unitary_S();
+        Unitary_S() {};
 
         explicit Unitary_S(int D_cut);
 
@@ -23,9 +23,9 @@ namespace TRG {
     public:
         std::pair<Unitary_S *, Unitary_S *> S{std::make_pair(nullptr, nullptr)};
 
-        Tensor();
+        Tensor() : BaseTensor() {};
 
-        explicit Tensor(int D_cut);
+        explicit Tensor(int D_cut) : BaseTensor(D_cut) {};
 
         Tensor(int D, int D_max) : BaseTensor(D, D_max) {};
 

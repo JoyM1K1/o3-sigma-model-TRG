@@ -76,10 +76,6 @@ void TRG::contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, 
     delete[] bottom;
 }
 
-TRG::Unitary_S::Unitary_S() {
-    array = new double[1];
-}
-
 TRG::Unitary_S::Unitary_S(int D_cut) {
     array = new double[D_cut * D_cut * D_cut];
     this->D_cut = D_cut;
@@ -88,14 +84,6 @@ TRG::Unitary_S::Unitary_S(int D_cut) {
 
 TRG::Unitary_S::~Unitary_S() {
     delete[] array;
-}
-
-TRG::Tensor::Tensor() : BaseTensor() {
-//    S = std::make_pair(new Unitary_S(), new Unitary_S());
-}
-
-TRG::Tensor::Tensor(int D_cut) : BaseTensor(D_cut) {
-//    S = std::make_pair(new Unitary_S(D_cut), new Unitary_S(D_cut));
 }
 
 TRG::Tensor &TRG::Tensor::operator=(const Tensor &rhs) {
