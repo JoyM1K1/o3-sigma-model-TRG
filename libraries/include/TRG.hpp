@@ -55,9 +55,9 @@ namespace TRG {
         explicit ImpureTensor(BaseImpureTensor<Tensor> &rhs) : BaseImpureTensor<Tensor>(rhs) {};
     };
 
-    void SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp);
+    void SVD(Tensor &T, bool is_default, bool is_odd_times);
 
-    void contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, Unitary_S *S2, Unitary_S *S3, Unitary_S *S4);
+    void contraction(Tensor &T, Tensor &T1, Tensor &T2, Tensor &T3, Tensor &T4);
 
     void initialize_spherical_harmonics(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &beta, const int &l_max);
 
@@ -70,8 +70,6 @@ namespace TRG {
     initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX_IMT_NUM], const int &D, const int &D_cut, const double &beta, const int &n_node, const int &merge_point);
 
     void allocate_tensor(Tensor &T, const int &D, const int &D_cut);
-
-    void index_rotation(Tensor &T, Tensor &tmp);
 
     namespace renormalization {
         double partition(Tensor &T1, Tensor &T2, long long int *orders, const int &n, const int &normalize_factor);
