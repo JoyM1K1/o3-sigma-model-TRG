@@ -77,3 +77,4 @@ data/
 gauss_legendre_test.cpp
 test.cpp
 .vscode
+.DS_Store
