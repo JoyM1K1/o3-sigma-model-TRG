@@ -84,6 +84,14 @@ TRG::Unitary_S::Unitary_S(int D_cut) {
 
 TRG::Unitary_S::~Unitary_S() {
     delete[] array;
+    array = nullptr;
+}
+
+TRG::Tensor::~Tensor() {
+    delete S.first;
+    delete S.second;
+    S.first = nullptr;
+    S.second = nullptr;
 }
 
 TRG::Tensor &TRG::Tensor::operator=(const Tensor &rhs) {
@@ -119,7 +127,7 @@ void TRG::initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, cons
 }
 
 void
-TRG::initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &beta, const int &l_max, const int &merge_point) {
+TRG::initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX_IMT_NUM], const int &D, const int &D_cut, const double &beta, const int &l_max, const int &merge_point) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
@@ -137,7 +145,7 @@ TRG::initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTe
 }
 
 void
-TRG::initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &beta, const int &n_node, const int &merge_point) {
+TRG::initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX_IMT_NUM], const int &D, const int &D_cut, const double &beta, const int &n_node, const int &merge_point) {
     time_counter time;
     time.start();
     cout << "initialize tensor " << std::flush;
@@ -200,7 +208,7 @@ void TRG::index_rotation(Tensor &T, Tensor &tmp) {
 }
 
 void
-TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor) {
+TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX_IMT_NUM], long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor) {
     const int D = T1.GetDx();
     const int D_cut = T1.GetD_max();
     const int D_new = std::min(D * D, D_cut);
@@ -401,8 +409,7 @@ TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long
                 for (auto &tensor : IMTs[3].tensors) {
                     delete tensor.S.first;
                     delete tensor.S.second;
-                    tensor.S.first = T1.S.first;
-                    tensor.S.second = T1.S.second;
+                    tensor.S = std::make_pair(nullptr, nullptr);
                 }
                 IMTs[3].isImpure = false;
             } else { // n == N - 2
@@ -599,12 +606,14 @@ TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long
             if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
                 delete tensor.S.first;
                 delete tensor.S.second;
+                tensor.S = std::make_pair(nullptr, nullptr);
             }
         }
         for (auto &tensor : IMTs[5].tensors) {
             if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
                 delete tensor.S.first;
                 delete tensor.S.second;
+                tensor.S = std::make_pair(nullptr, nullptr);
             }
         }
         IMTs[3].isImpure = true;
@@ -623,12 +632,14 @@ TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long
             if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
                 delete tensor.S.first;
                 delete tensor.S.second;
+                tensor.S = std::make_pair(nullptr, nullptr);
             }
         }
         for (auto &tensor : IMTs[3].tensors) {
             if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
                 delete tensor.S.first;
                 delete tensor.S.second;
+                tensor.S = std::make_pair(nullptr, nullptr);
             }
         }
         IMTs[2].isImpure = false;
@@ -641,12 +652,14 @@ TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long
             if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
                 delete tensor.S.first;
                 delete tensor.S.second;
+                tensor.S = std::make_pair(nullptr, nullptr);
             }
         }
         for (auto &tensor : IMTs[0].tensors) {
             if (tensor.S.first != T1.S.first && tensor.S.first != T2.S.first) {
                 delete tensor.S.first;
                 delete tensor.S.second;
+                tensor.S = std::make_pair(nullptr, nullptr);
             }
         }
         IMTs[1].isImpure = false;
@@ -656,11 +669,11 @@ TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long
     T1.normalization(normalize_factor);
     REP(i, MAX_IMT_NUM) {
         auto IMT = &IMTs[i];
-        if ((*IMT).isImpure) {
+        if (IMT->isImpure) {
             REP(a, DIMENSION) {
-                auto tensor = &(*IMT).tensors[a];
-                (*tensor).normalization(normalize_factor);
-                long long int diff = (*tensor).order - T1.order;
+                auto tensor = &IMT->tensors[a];
+                tensor->normalization(normalize_factor);
+                long long int diff = tensor->order - T1.order;
                 if (merge_point == 2) {
                     if (n == 1) {
                         diff *= 2;
@@ -688,6 +701,12 @@ TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long
                 }
                 orders[a] += diff;
             }
+        }
+    }
+
+    for (auto &IMT : IMTs) {
+        if (!IMT.isImpure) {
+            for (auto &tensor : IMT.tensors) tensor.S = std::make_pair(nullptr, nullptr);
         }
     }
 }

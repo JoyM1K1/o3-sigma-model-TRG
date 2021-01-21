@@ -34,10 +34,6 @@ void Trace(const int N, const int l_max, const int D_cut, const double beta, std
         file << '\t' << std::scientific << std::setprecision(16) << Tr;
         cout << '\t' << std::scientific << std::setprecision(16) << Tr << "  in " << time.duration_cast_to_string() << '\n' << std::flush;
     }
-    delete T1.S.first;
-    delete T1.S.second;
-    delete T2.S.first;
-    delete T2.S.second;
     delete[] orders;
 }
 
