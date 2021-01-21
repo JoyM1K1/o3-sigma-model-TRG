@@ -10,7 +10,7 @@ namespace HOTRG {
     public:
         Tensor() : BaseTensor() {};
 
-        Tensor(int D_cut) : BaseTensor(D_cut) {};
+        explicit Tensor(int D_cut) : BaseTensor(D_cut) {};
 
         Tensor(int D, int D_max) : BaseTensor(D, D_max) {};
 
@@ -23,7 +23,7 @@ namespace HOTRG {
     public:
         ImpureTensor() : BaseImpureTensor<Tensor>() {};
 
-        ImpureTensor(int D) : BaseImpureTensor<Tensor>(D) {};
+        explicit ImpureTensor(int D) : BaseImpureTensor<Tensor>(D) {};
 
         ImpureTensor(int D, int D_max) : BaseImpureTensor<Tensor>(D, D_max) {};
 
@@ -33,7 +33,7 @@ namespace HOTRG {
 
         ImpureTensor(int d, BaseImpureTensor<Tensor> &T) : BaseImpureTensor<Tensor>(d, T) {};
 
-        ImpureTensor(BaseImpureTensor<Tensor> &rhs) : BaseImpureTensor<Tensor>(rhs) {};
+        explicit ImpureTensor(BaseImpureTensor<Tensor> &rhs) : BaseImpureTensor<Tensor>(rhs) {};
     };
 
     void initialize_spherical_harmonics(Tensor &T, const double &beta, const int &D_cut, const int &l_max);
@@ -44,9 +44,9 @@ namespace HOTRG {
 
     void initialize_gauss_quadrature_with_impure(Tensor &T, ImpureTensor &IMT, const double &beta, const int &D_cut, const int &n_node);
 
-    void contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT);
+    void contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string &mergeT);
 
-    void contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string mergeT);
+    void contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string &mergeT);
 
     void SVD_X(const int &D_cut, BaseTensor &T, double *&U);
 

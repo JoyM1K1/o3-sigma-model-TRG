@@ -21,7 +21,7 @@ public:
         tensors[2] = Tensor();
     }
 
-    BaseImpureTensor(int D) {
+    explicit BaseImpureTensor(int D) {
         tensors[0] = Tensor(D);
         tensors[1] = Tensor(D);
         tensors[2] = Tensor(D);

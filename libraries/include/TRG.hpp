@@ -14,7 +14,7 @@ namespace TRG {
 
         Unitary_S();
 
-        Unitary_S(int D_cut);
+        explicit Unitary_S(int D_cut);
 
         ~Unitary_S();
     };
@@ -25,7 +25,7 @@ namespace TRG {
 
         Tensor();
 
-        Tensor(int D_cut);
+        explicit Tensor(int D_cut);
 
         Tensor(int D, int D_max) : BaseTensor(D, D_max) {};
 
