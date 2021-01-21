@@ -55,25 +55,22 @@ void TRG::SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp) {
 }
 
 void TRG::contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, Unitary_S *S2, Unitary_S *S3, Unitary_S *S4) {
-    auto top = new double[D_new * D_new * D * D], bottom = new double[D_new * D_new * D * D];
-    auto X = new double[D_new * D_new * D * D];
+    BaseTensor top_(D_new, D_new, D, D), bottom_(D, D, D_new, D_new);
+    BaseTensor X_(D_new, D, D, D_new);
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S1->array,
-            D, S2->array, D_new * D, 0, X, D_new * D);
-    REP(a, D)REP(b, D)REP(i, D_new)REP(j, D_new) {
-                    bottom[D_new * D_new * D * a + D_new * D_new * b + D_new * i + j] = X[D_new * D * D * i + D_new * D * b + D_new * a + j];
-                }
+            D, S2->array, D_new * D, 0, X_.array, D_new * D);
+    X_.forEach([&](int i, int b, int a, int j, const double *t) {
+        bottom_(a, b, i, j) = *t;
+    });
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S3->array,
-            D, S4->array, D_new * D, 0, X, D_new * D);
-    REP(a, D)REP(b, D)REP(i, D_new)REP(j, D_new) {
-                    top[D * D * D_new * i + D * D * j + D * a + b] = X[D_new * D * D * i + D_new * D * a + D_new * b + j];
-                }
-    delete[] X;
+            D, S4->array, D_new * D, 0, X_.array, D_new * D);
+    X_.forEach([&](int i, int a, int b, int j, const double *t) {
+        top_(i, j, a, b) = *t;
+    });
     T.UpdateDx(D_new);
     T.UpdateDy(D_new);
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-            D_new * D_new, D_new * D_new, D * D, 1, top, D * D, bottom, D_new * D_new, 0, T.array, D_new * D_new);
-    delete[] top;
-    delete[] bottom;
+            D_new * D_new, D_new * D_new, D * D, 1, top_.array, D * D, bottom_.array, D_new * D_new, 0, T.array, D_new * D_new);
 }
 
 TRG::Unitary_S::Unitary_S(int D_cut) {
