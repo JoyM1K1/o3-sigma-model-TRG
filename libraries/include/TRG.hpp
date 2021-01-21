@@ -33,6 +33,8 @@ namespace TRG {
 
         Tensor(int Di, int Dj, int Dk, int Dl, int D_max) : BaseTensor(Di, Dj, Dk, Dl, D_max) {};
 
+        ~Tensor();
+
         Tensor &operator=(const Tensor &rhs);
     };
 
@@ -62,10 +64,10 @@ namespace TRG {
     void initialize_gauss_quadrature(Tensor &T1, Tensor &T2, const int &D, const int &D_cut, const double &beta, const int &n_node);
 
     void
-    initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &beta, const int &l_max, const int &merge_point);
+    initialize_spherical_harmonics_with_impure(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX_IMT_NUM], const int &D, const int &D_cut, const double &beta, const int &l_max, const int &merge_point);
 
     void
-    initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, const int &D, const int &D_cut, const double &beta, const int &n_node, const int &merge_point);
+    initialize_gauss_quadrature_with_impure(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX_IMT_NUM], const int &D, const int &D_cut, const double &beta, const int &n_node, const int &merge_point);
 
     void allocate_tensor(Tensor &T, const int &D, const int &D_cut);
 
@@ -75,7 +77,7 @@ namespace TRG {
         double partition(Tensor &T1, Tensor &T2, long long int *orders, const int &n, const int &normalize_factor);
 
         void
-        two_point(Tensor &T1, Tensor &T2, ImpureTensor *IMTs, long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor);
+        two_point(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX_IMT_NUM], long long *orders, const int &N, const int &n, const int &merge_point, const int &normalize_factor);
 
         void trace(Tensor &T, ImpureTensor &IMT, const long long *orders, const int &normalize_factor, double *res);
     }
