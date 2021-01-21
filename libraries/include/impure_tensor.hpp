@@ -46,7 +46,7 @@ public:
     }
 
     BaseImpureTensor(int d, BaseImpureTensor<Tensor> &T) {
-        this->distance = d;
+        distance = d;
         tensors[0] = Tensor(T.tensors[0]);
         tensors[1] = Tensor(T.tensors[1]);
         tensors[2] = Tensor(T.tensors[2]);
