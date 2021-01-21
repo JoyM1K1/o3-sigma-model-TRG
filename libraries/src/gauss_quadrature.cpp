@@ -28,7 +28,7 @@ void GaussQuadrature::init_tensor(const double &beta, const int &n_node, const i
     auto VT = new double[n_node * n_node * n_node * n_node];
     auto sigma = new double[n_node * n_node];
     auto buffer = new double[n_node * n_node - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.GetMatrix(), n_node * n_node,
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.array, n_node * n_node,
             sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         std::cerr << "The algorithm computing SVD failed to converge.\n";
@@ -50,8 +50,8 @@ void GaussQuadrature::init_tensor(const double &beta, const int &n_node, const i
     Y.forEach([&](int a, int b, int k, int l, double *t) {
         *t = VT[n_node * n_node * k + n_node * a + b] * VT[n_node * n_node * l + n_node * a + b];
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
-            n_node * n_node, Y.GetMatrix(), D * D, 0, T.GetMatrix(), D * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.array,
+            n_node * n_node, Y.array, D * D, 0, T.array, D * D);
     delete[] U;
     delete[] VT;
     delete[] sigma;
@@ -79,7 +79,7 @@ void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_n
     auto VT = new double[n_node * n_node * n_node * n_node];
     auto sigma = new double[n_node * n_node];
     auto buffer = new double[n_node * n_node - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.GetMatrix(), n_node * n_node,
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', n_node * n_node, n_node * n_node, M.array, n_node * n_node,
             sigma, U, n_node * n_node, VT, n_node * n_node, buffer);
     if (info > 0) {
         std::cerr << "The algorithm computing SVD failed to converge.\n";
@@ -103,29 +103,29 @@ void GaussQuadrature::init_tensor_with_impure(const double &beta, const int &n_n
     Y.forEach([&](int a, int b, int k, int l, double *t) {
         *t = VT[n_node * n_node * k + n_node * a + b] * VT[n_node * n_node * l + n_node * a + b];
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
-            n_node * n_node, Y.GetMatrix(), D * D, 0, T.GetMatrix(), D * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.array,
+            n_node * n_node, Y.array, D * D, 0, T.array, D * D);
     /* impure tensor x */
     X.forEach([&](int i, int j, int a, int b, double *t) {
         *t = U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
              co(a) * std::cos(M_PI * x[b]) * M_PI / 8;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
-            n_node * n_node, Y.GetMatrix(), D * D, 0, IMT.tensors[0].GetMatrix(), D * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.array,
+            n_node * n_node, Y.array, D * D, 0, IMT.tensors[0].array, D * D);
     /* impure tensor y */
     X.forEach([&](int i, int j, int a, int b, double *t) {
         *t = -U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
              co(a) * std::sin(M_PI * x[b]) * M_PI / 8;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
-            n_node * n_node, Y.GetMatrix(), D * D, 0, IMT.tensors[1].GetMatrix(), D * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.array,
+            n_node * n_node, Y.array, D * D, 0, IMT.tensors[1].array, D * D);
     /* impure tensor z */
     X.forEach([&](int i, int j, int a, int b, double *t) {
         *t = -U[n_node * n_node * n_node * a + n_node * n_node * b + i] * U[n_node * n_node * n_node * a + n_node * n_node * b + j] * w[a] * w[b] * co(a) *
              si(a) * M_PI / 8;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.GetMatrix(),
-            n_node * n_node, Y.GetMatrix(), D * D, 0, IMT.tensors[2].GetMatrix(), D * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D * D, D * D, n_node * n_node, 1, X.array,
+            n_node * n_node, Y.array, D * D, 0, IMT.tensors[2].array, D * D);
     delete[] U;
     delete[] VT;
     delete[] sigma;
