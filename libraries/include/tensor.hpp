@@ -93,8 +93,10 @@ public:
     template<typename ...Args>
     double &operator()(Args ...args);
 
-    void forEach(const std::function<void(double *, std::array<int, N> *)> &f);
+    void forEach(const std::function<void(std::array<int, N> *, double *)> &f);
 };
+
+using matrix = tensor<2>;
 
 template<int N>
 inline tensor<N>::tensor() {
@@ -170,9 +172,9 @@ inline double &tensor<N>::operator()(Args ...args) {
 }
 
 template<int N>
-inline void tensor<N>::forEach(const std::function<void(double *, std::array<int, N> *)> &f) {
+inline void tensor<N>::forEach(const std::function<void(std::array<int, N> *, double *)> &f) {
     REP(i, array_size) {
-        f(&array[i], &indices[i]);
+        f(&indices[i], &array[i]);
     }
 }
 
