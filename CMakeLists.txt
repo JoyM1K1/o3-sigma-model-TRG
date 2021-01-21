@@ -64,6 +64,9 @@ if (APPLE)
 
     add_executable(spherical_harmonics_TRG spherical_harmonics_TRG.cpp)
     target_link_libraries(spherical_harmonics_TRG mkl_intel_ilp64 mkl_sequential mkl_core TRG tensor time_counter)
+
+    add_executable(test test.cpp)
+    target_link_libraries(test tensor)
 else ()
     set(CMAKE_CXX_COMPILER icpc)
     set(CMAKE_CXX_FLAGS "-std=c++11 -mkl -axMIC-AVX512 -qopenmp -lgsl -lgslcblas")
