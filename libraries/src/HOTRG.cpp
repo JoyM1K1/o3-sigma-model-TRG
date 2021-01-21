@@ -250,7 +250,7 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
 }
 
 // contraction right tensor into left tensor or vice versa
-void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string mergeT) {
+void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT, const double *U, const std::string &mergeT) {
     assert(mergeT == "right" || mergeT == "left");
     const int Dx = leftT.GetDx(), Dy = leftT.GetDy(), Dy_new = std::min(Dy * Dy, D_cut);
     auto lT = new double[Dx * Dx * Dy * Dy];
@@ -301,7 +301,7 @@ void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT
 }
 
 // contraction top tensor into bottom tensor
-void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string mergeT) {
+void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT, const double *U, const std::string &mergeT) {
     assert(mergeT == "bottom" || mergeT == "top");
     const int Dx = bottomT.GetDx(), Dy = bottomT.GetDy(), Dx_new = std::min(Dx * Dx, D_cut);
     auto bT = new double[Dx * Dx * Dy * Dy];

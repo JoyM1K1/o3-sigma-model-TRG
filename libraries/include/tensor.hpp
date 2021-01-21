@@ -12,7 +12,7 @@ public:
 
     BaseTensor();
 
-    BaseTensor(int D);
+    explicit BaseTensor(int D);
 
     BaseTensor(int D, int D_max);
 
