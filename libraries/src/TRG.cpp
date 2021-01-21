@@ -18,7 +18,7 @@ void TRG::SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp) {
     auto U_ = new double[D * D * D * D], VT_ = new double[D * D * D * D];
     auto superb = new double[D * D - 1];
     if (isRightUp) { // (ij)(kl)
-        MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, T.GetMatrix(), D * D, sigma, U_, D * D, VT_, D * D, superb);
+        MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, T.array, D * D, sigma, U_, D * D, VT_, D * D, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
             exit(1);
@@ -35,7 +35,7 @@ void TRG::SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp) {
         T.forEach([&](int i, int j, int k, int l, const double *t) {
             M(j, k, l, i) = *t; // M(jk)(li)
         });
-        MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, M.GetMatrix(), D * D, sigma, U_, D * D, VT_, D * D, superb);
+        MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', D * D, D * D, M.array, D * D, sigma, U_, D * D, VT_, D * D, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
             exit(1);
@@ -71,7 +71,7 @@ void TRG::contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, 
     T.UpdateDx(D_new);
     T.UpdateDy(D_new);
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-            D_new * D_new, D_new * D_new, D * D, 1, top, D * D, bottom, D_new * D_new, 0, T.GetMatrix(), D_new * D_new);
+            D_new * D_new, D_new * D_new, D * D, 1, top, D * D, bottom, D_new * D_new, 0, T.array, D_new * D_new);
     delete[] top;
     delete[] bottom;
 }

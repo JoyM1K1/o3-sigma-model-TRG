@@ -5,12 +5,12 @@
 
 class BaseTensor {
 private:
-    int Di, Dj, Dk, Dl, D_max;
-    double *M;
+    int Di{0}, Dj{0}, Dk{0}, Dl{0}, D_max{0};
 public:
+    double *array{nullptr};
     long long int order{0};
 
-    BaseTensor();
+    BaseTensor() = default;
 
     explicit BaseTensor(int D);
 
@@ -38,19 +38,17 @@ public:
 
     int GetD_max() const;
 
-    double *GetMatrix() const;
-
     void UpdateDx(int Dx);
 
     void UpdateDy(int Dy);
 
-    void SetDi(int Di);
+    void SetDi(int Di_);
 
-    void SetDj(int Dj);
+    void SetDj(int Dj_);
 
-    void SetDk(int Dk);
+    void SetDk(int Dk_);
 
-    void SetDl(int Dl);
+    void SetDl(int Dl_);
 
     BaseTensor &operator=(const BaseTensor &rhs);
 

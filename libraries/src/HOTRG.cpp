@@ -72,14 +72,14 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
         tmp_1(i, l, k, j) = *t;
         tmp_2(k, j, i, l) = *t;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-            Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(i, p, i_, q) = T(i, y, x, p) * T(i_, y, x, q)
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+            Dx * Dy, tmp_2.array, Dx * Dy, 0, A.array, Dx * Dy); // A(i, p, i_, q) = T(i, y, x, p) * T(i_, y, x, q)
     T.forEach([&](int i, int j, int k, int l, const double *t) {
         tmp_1(i, j, k, l) = *t;
         tmp_2(k, l, i, j) = *t;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-            Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(i, p, i_, q) = T(i, p, x, y) * T(i_, q, x, y)
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+            Dx * Dy, tmp_2.array, Dx * Dy, 0, B.array, Dx * Dy); // B(i, p, i_, q) = T(i, p, x, y) * T(i_, q, x, y)
     tmp_1.SetDj(Dx); tmp_1.SetDk(Dy); // (Dx, Dy, Dx, Dy) -> (Dx, Dx, Dy, Dy)
     tmp_2.SetDi(Dy); tmp_2.SetDl(Dx); // (Dx, Dy, Dx, Dy) -> (Dy, Dy, Dx, Dx)
     A.forEach([&](int i, int j, int k, int l, const double *t) {
@@ -88,15 +88,15 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
     B.forEach([&](int i, int j, int k, int l, const double *t) {
         tmp_2(j, l, i, k) = *t;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.GetMatrix(),
-            Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.array,
+            Dy * Dy, tmp_2.array, Dx * Dx, 0, MM.array, Dx * Dx);
     MM.forEach([&](int i, int j, int k, int l, const double *t) {
         MM_(i, k, j, l) = *t;
     }); // MM(i1, i2, i1_, i2_) = A(i1, p, i1_, q) * B(i2, p, i2_, q)
     const int m = Dx * Dx;
     auto sigma = new double[m];
     auto superb = new double[m - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.GetMatrix(), m, sigma, U, m, nullptr, 1, superb);
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.array, m, sigma, U, m, nullptr, 1, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
@@ -113,14 +113,14 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
             tmp_1(k, l, i, j) = *t;
             tmp_2(i, j, k, l) = *t;
         });
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(k, p, k_, q) = T(x, y, k, p) * T(x, y, k_, q)
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+                Dx * Dy, tmp_2.array, Dx * Dy, 0, A.array, Dx * Dy); // A(k, p, k_, q) = T(x, y, k, p) * T(x, y, k_, q)
         T.forEach([&](int i, int j, int k, int l, const double *t) {
             tmp_1(k, j, i, l) = *t;
             tmp_2(i, l, k, j) = *t;
         });
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(k, p, k_, q) = T(x, p, k, y) * T(x, q, k_, y)
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+                Dx * Dy, tmp_2.array, Dx * Dy, 0, B.array, Dx * Dy); // B(k, p, k_, q) = T(x, p, k, y) * T(x, q, k_, y)
         tmp_1.SetDj(Dx); tmp_1.SetDk(Dy); // (Dx, Dy, Dx, Dy) -> (Dx, Dx, Dy, Dy)
         tmp_2.SetDi(Dy); tmp_2.SetDl(Dx); // (Dx, Dy, Dx, Dy) -> (Dy, Dy, Dx, Dx)
         A.forEach([&](int i, int j, int k, int l, const double *t) {
@@ -129,13 +129,13 @@ void HOTRG::SVD_X(const int &D_cut, BaseTensor &T, double *&U) {
         B.forEach([&](int i, int j, int k, int l, const double *t) {
             tmp_2(j, l, i, k) = *t;
         });
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.GetMatrix(),
-                Dy * Dy, tmp_2.GetMatrix(), Dx * Dx, 0, MM.GetMatrix(), Dx * Dx);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dx, Dx * Dx, Dy * Dy, 1, tmp_1.array,
+                Dy * Dy, tmp_2.array, Dx * Dx, 0, MM.array, Dx * Dx);
         MM.forEach([&](int i, int j, int k, int l, const double *t) {
             MM_(i, k, j, l) = *t;
         }); // MM(k1, k2, k1_, k2_) = A(k1, p, k1_, q) * B(k2, p, k2_, q)
         auto tmpU = new double[m * m];
-        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.GetMatrix(), m, sigma, tmpU, m, nullptr, 1, superb);
+        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.array, m, sigma, tmpU, m, nullptr, 1, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
             exit(1);
@@ -167,14 +167,14 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
         tmp_1(k, j, i, l) = *t;
         tmp_2(i, l, k, j) = *t;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-            Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, j, q, j_) = T(x, j, p, y) * T(x, j_, q, y)
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+            Dx * Dy, tmp_2.array, Dx * Dy, 0, A.array, Dx * Dy); // A(p, j, q, j_) = T(x, j, p, y) * T(x, j_, q, y)
     T.forEach([&](int i, int j, int k, int l, const double *t) {
         tmp_1(i, j, k, l) = *t;
         tmp_2(k, l, i, j) = *t;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-            Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, j, q, j_) = T(p, j, x, y) * T(q, j_, x, y)
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+            Dx * Dy, tmp_2.array, Dx * Dy, 0, B.array, Dx * Dy); // B(p, j, q, j_) = T(p, j, x, y) * T(q, j_, x, y)
     tmp_1.SetDi(Dy); tmp_1.SetDl(Dx); // (Dx, Dy, Dx, Dy) -> (Dy, Dy, Dx, Dx)
     tmp_2.SetDj(Dx); tmp_2.SetDk(Dy); // (Dx, Dy, Dx, Dy) -> (Dx, Dx, Dy, Dy)
     A.forEach([&](int i, int j, int k, int l, const double *t) {
@@ -183,15 +183,15 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
     B.forEach([&](int i, int j, int k, int l, const double *t) {
         tmp_2(i, k, j, l) = *t;
     });
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp_1.GetMatrix(),
-            Dx * Dx, tmp_2.GetMatrix(), Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp_1.array,
+            Dx * Dx, tmp_2.array, Dy * Dy, 0, MM.array, Dy * Dy);
     MM.forEach([&](int i, int j, int k, int l, const double *t) {
         MM_(i, k, j, l) = *t;
     });
     const int m = Dy * Dy;
     auto sigma = new double[m];
     auto superb = new double[m - 1];
-    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.GetMatrix(), m, sigma, U, m, nullptr, 1, superb);
+    MKL_INT info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.array, m, sigma, U, m, nullptr, 1, superb);
     if (info > 0) {
         cerr << "The algorithm computing SVD failed to converge.\n";
         exit(1);
@@ -208,14 +208,14 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
             tmp_1(k, l, i, j) = *t;
             tmp_2(i, j, k, l) = *t;
         });
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, A.GetMatrix(), Dx * Dy); // A(p, l, q, l_) = T(x, y, p, l) * T(x, y, q, l_)
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+                Dx * Dy, tmp_2.array, Dx * Dy, 0, A.array, Dx * Dy); // A(p, l, q, l_) = T(x, y, p, l) * T(x, y, q, l_)
         T.forEach([&](int i, int j, int k, int l, const double *t) {
             tmp_1(i, l, k, j) = *t;
             tmp_2(k, j, i, l) = *t;
         });
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.GetMatrix(),
-                Dx * Dy, tmp_2.GetMatrix(), Dx * Dy, 0, B.GetMatrix(), Dx * Dy); // B(p, l, q, l_) = T(p, y, x, l) * T(q, y, x, l_)
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy, Dx * Dy, Dx * Dy, 1, tmp_1.array,
+                Dx * Dy, tmp_2.array, Dx * Dy, 0, B.array, Dx * Dy); // B(p, l, q, l_) = T(p, y, x, l) * T(q, y, x, l_)
         tmp_1.SetDi(Dy); tmp_1.SetDl(Dx); // (Dx, Dy, Dx, Dy) -> (Dy, Dy, Dx, Dx)
         tmp_2.SetDj(Dx); tmp_2.SetDk(Dy); // (Dx, Dy, Dx, Dy) -> (Dx, Dx, Dy, Dy)
         A.forEach([&](int i, int j, int k, int l, const double *t) {
@@ -224,13 +224,13 @@ void HOTRG::SVD_Y(const int &D_cut, BaseTensor &T, double *&U) {
         B.forEach([&](int i, int j, int k, int l, const double *t) {
             tmp_2(i, k, j, l) = *t;
         });
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp_1.GetMatrix(),
-                Dx * Dx, tmp_2.GetMatrix(), Dy * Dy, 0, MM.GetMatrix(), Dy * Dy);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dy, Dy * Dy, Dx * Dx, 1, tmp_1.array,
+                Dx * Dx, tmp_2.array, Dy * Dy, 0, MM.array, Dy * Dy);
         MM.forEach([&](int i, int j, int k, int l, const double *t) {
             MM_(i, k, j, l) = *t;
         });
         auto tmpU = new double[m * m];
-        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.GetMatrix(), m, sigma, tmpU, m, nullptr, 1, superb);
+        info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'N', m, m, MM_.array, m, sigma, tmpU, m, nullptr, 1, superb);
         if (info > 0) {
             cerr << "The algorithm computing SVD failed to converge.\n";
             exit(1);
@@ -289,11 +289,11 @@ void HOTRG::contractionX(const int &D_cut, BaseTensor &leftT, BaseTensor &rightT
     delete[] tmp2;
     if (mergeT == "left") {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
-                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, leftT.GetMatrix(), Dx * Dy_new);
+                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, leftT.array, Dx * Dy_new);
         leftT.UpdateDy(Dy_new);
     } else {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dx * Dy_new, Dx * Dy_new, Dx * Dy * Dy, 1,
-                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, rightT.GetMatrix(), Dx * Dy_new);
+                tmp1_, Dx * Dy * Dy, tmp2_, Dx * Dy_new, 0, rightT.array, Dx * Dy_new);
         rightT.UpdateDy(Dy_new);
     }
     delete[] tmp1_;
@@ -340,11 +340,11 @@ void HOTRG::contractionY(const int &D_cut, BaseTensor &bottomT, BaseTensor &topT
     delete[] tmp2;
     if (mergeT == "top") {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx_new, Dy * Dx_new, Dx * Dx * Dy, 1,
-                tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, topT.GetMatrix(), Dy * Dx_new);
+                tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, topT.array, Dy * Dx_new);
         topT.UpdateDx(Dx_new);
     } else {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, Dy * Dx_new, Dy * Dx_new, Dx * Dx * Dy, 1,
-                tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, bottomT.GetMatrix(), Dy * Dx_new);
+                tmp1_, Dx * Dx * Dy, tmp2_, Dy * Dx_new, 0, bottomT.array, Dy * Dx_new);
         bottomT.UpdateDx(Dx_new);
     }
     delete[] tmp1_;
