@@ -219,31 +219,23 @@ TRG::renormalization::two_point(Tensor &T1, Tensor &T2, ImpureTensor (&IMTs)[MAX
     /* SVD impure tensor IMTs */
     REP(i, MAX_IMT_NUM) {
         if (IMTs[i].isImpure) {
-//                string allocate;
-//                string tmp;
             for (auto &tensor : IMTs[i].tensors) {
-                if (tensor.S.first == T1.S.first ||
-                    tensor.S.first == T2.S.first/* same as tensor.S.second == T1.S.second || tensor.S.second == T2.S.second */) {
-//                        allocate = " allocate";
+                /* same as tensor.S.second == T1.S.second || tensor.S.second == T2.S.second */
+                if (tensor.S.first == T1.S.first || tensor.S.first == T2.S.first) {
                     tensor.S = std::make_pair(new TRG::Unitary_S(D_cut), new TRG::Unitary_S(D_cut));
                 }
                 if (merge_point == 1 || count <= merge_point - 1) {
-//                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
                     TRG::SVD(D, D_new, tensor, i % 2 == 1);
                 } else if (n <= N - 2) {
                     if (n % 2) {
-//                            tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
                         TRG::SVD(D, D_new, tensor, i % 2 == 1);
                     } else {
-//                            tmp = " " + std::to_string(i) + (i % 4 == 0 ? "rightUp " : "leftUp ");
                         TRG::SVD(D, D_new, tensor, i % 4 == 0);
                     }
                 } else {
-//                        tmp = " " + std::to_string(i) + (i % 2 == 1 ? "rightUp " : "leftUp ");
                     TRG::SVD(D, D_new, tensor, i % 2 == 1);
                 }
             }
-//                cout << allocate << tmp;
         } else {
             for (auto &tensor : IMTs[i].tensors) {
                 if (merge_point == 1 || count < merge_point - 1) {
