@@ -26,8 +26,8 @@ void TRG::SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp) {
         REP(k, D_new) {
             double s = std::sqrt(sigma[k]);
             REP(i, D)REP(j, D) {
-                    T.S.first->tensor[D * D * k + D * j + i] = U_[D * D * D * i + D * D * j + k] * s; // S1
-                    T.S.second->tensor[D * D * k + D * j + i] = VT_[D * D * k + D * i + j] * s; // S3
+                    T.S.first->array[D * D * k + D * j + i] = U_[D * D * D * i + D * D * j + k] * s; // S1
+                    T.S.second->array[D * D * k + D * j + i] = VT_[D * D * k + D * i + j] * s; // S3
                 }
         }
     } else { // (jk)(li)
@@ -43,8 +43,8 @@ void TRG::SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp) {
         REP(k, D_new) {
             double s = std::sqrt(sigma[k]);
             REP(i, D)REP(j, D) {
-                    T.S.first->tensor[D_new * D * j + D_new * i + k] = U_[D * D * D * i + D * D * j + k] * s;
-                    T.S.second->tensor[D_new * D * j + D_new * i + k] = VT_[D * D * k + D * i + j] * s;
+                    T.S.first->array[D_new * D * j + D_new * i + k] = U_[D * D * D * i + D * D * j + k] * s;
+                    T.S.second->array[D_new * D * j + D_new * i + k] = VT_[D * D * k + D * i + j] * s;
                 }
         }
     }
@@ -57,13 +57,13 @@ void TRG::SVD(const int &D, const int &D_new, Tensor &T, bool isRightUp) {
 void TRG::contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, Unitary_S *S2, Unitary_S *S3, Unitary_S *S4) {
     auto top = new double[D_new * D_new * D * D], bottom = new double[D_new * D_new * D * D];
     auto X = new double[D_new * D_new * D * D];
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S1->tensor,
-            D, S2->tensor, D_new * D, 0, X, D_new * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S1->array,
+            D, S2->array, D_new * D, 0, X, D_new * D);
     REP(a, D)REP(b, D)REP(i, D_new)REP(j, D_new) {
                     bottom[D_new * D_new * D * a + D_new * D_new * b + D_new * i + j] = X[D_new * D * D * i + D_new * D * b + D_new * a + j];
                 }
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S3->tensor,
-            D, S4->tensor, D_new * D, 0, X, D_new * D);
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, D_new * D, D_new * D, D, 1, S3->array,
+            D, S4->array, D_new * D, 0, X, D_new * D);
     REP(a, D)REP(b, D)REP(i, D_new)REP(j, D_new) {
                     top[D * D * D_new * i + D * D * j + D * a + b] = X[D_new * D * D * i + D_new * D * a + D_new * b + j];
                 }
@@ -77,17 +77,17 @@ void TRG::contraction(const int &D, const int &D_new, Tensor &T, Unitary_S *S1, 
 }
 
 TRG::Unitary_S::Unitary_S() {
-    tensor = new double[1];
+    array = new double[1];
 }
 
 TRG::Unitary_S::Unitary_S(int D_cut) {
-    tensor = new double[D_cut * D_cut * D_cut];
+    array = new double[D_cut * D_cut * D_cut];
     this->D_cut = D_cut;
-    REP(i, D_cut * D_cut * D_cut) tensor[i] = 0;
+    REP(i, D_cut * D_cut * D_cut) array[i] = 0;
 }
 
 TRG::Unitary_S::~Unitary_S() {
-    delete[] tensor;
+    delete[] array;
 }
 
 TRG::Tensor::Tensor() : BaseTensor() {

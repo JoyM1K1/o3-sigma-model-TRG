@@ -9,7 +9,7 @@
 namespace TRG {
     class Unitary_S {
     public:
-        double *tensor;
+        double *array;
         int D_cut{0};
 
         Unitary_S();
