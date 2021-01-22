@@ -4,6 +4,8 @@
 #include "tensor.hpp"
 #include <vector>
 
+#define REP(i, N) for (int i = 0; i < (N); ++i)
+
 #define DIMENSION 3
 
 template<class Tensor>
@@ -16,48 +18,34 @@ public:
     Tensor tensors[DIMENSION];
 
     BaseImpureTensor() {
-        tensors[0] = Tensor();
-        tensors[1] = Tensor();
-        tensors[2] = Tensor();
+        for (auto &tensor : tensors) tensor = Tensor();
     }
 
     explicit BaseImpureTensor(int D) {
-        tensors[0] = Tensor(D);
-        tensors[1] = Tensor(D);
-        tensors[2] = Tensor(D);
+        for (auto &tensor : tensors) tensor = Tensor(D);
     }
 
     BaseImpureTensor(int D, int D_max) {
-        tensors[0] = Tensor(D, D_max);
-        tensors[1] = Tensor(D, D_max);
-        tensors[2] = Tensor(D, D_max);
+        for (auto &tensor : tensors) tensor = Tensor(D, D_max);
     }
 
     BaseImpureTensor(int Di, int Dj, int Dk, int Dl) {
-        tensors[0] = Tensor(Di, Dj, Dk, Dl);
-        tensors[1] = Tensor(Di, Dj, Dk, Dl);
-        tensors[2] = Tensor(Di, Dj, Dk, Dl);
+        for (auto &tensor : tensors) tensor = Tensor(Di, Dj, Dk, Dl);
     }
 
     BaseImpureTensor(int Di, int Dj, int Dk, int Dl, int D_max) {
-        tensors[0] = Tensor(Di, Dj, Dk, Dl, D_max);
-        tensors[1] = Tensor(Di, Dj, Dk, Dl, D_max);
-        tensors[2] = Tensor(Di, Dj, Dk, Dl, D_max);
+        for (auto &tensor : tensors) tensor = Tensor(Di, Dj, Dk, Dl, D_max);
     }
 
     BaseImpureTensor(int d, BaseImpureTensor<Tensor> &T) {
         distance = d;
-        tensors[0] = Tensor(T.tensors[0]);
-        tensors[1] = Tensor(T.tensors[1]);
-        tensors[2] = Tensor(T.tensors[2]);
+        REP(i, DIMENSION) tensors[i] = Tensor(T.tensors[i]);
     }
 
     BaseImpureTensor(BaseImpureTensor<Tensor> &rhs) {
         distance = rhs.distance;
         corrs.clear();
-        tensors[0] = rhs.tensors[0];
-        tensors[1] = rhs.tensors[1];
-        tensors[2] = rhs.tensors[2];
+        REP(i, DIMENSION) tensors[i] = Tensor(rhs.tensors[i]);
     }
 
     ~BaseImpureTensor() {
@@ -66,9 +54,7 @@ public:
 
     BaseImpureTensor<Tensor> &operator=(const BaseImpureTensor<Tensor> &rhs) {
         distance = rhs.distance;
-        tensors[0] = rhs.tensors[0];
-        tensors[1] = rhs.tensors[1];
-        tensors[2] = rhs.tensors[2];
+        REP(i, DIMENSION) tensors[i] = rhs.tensors[i];
         return *this;
     }
 };
