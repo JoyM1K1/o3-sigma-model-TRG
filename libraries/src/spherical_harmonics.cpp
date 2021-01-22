@@ -2,13 +2,14 @@
 #include <gsl/gsl_specfunc.h>
 #include <cmath>
 #include <iostream>
+#include "../include/time_counter.hpp"
 
 #define REP(i, N) for (int i = 0; i < (N); ++i)
 
-void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTensor &T) {
+void SphericalHarmonics::init_tensor(const double &beta, const int &l_max, BaseTensor &T) {
     auto A = new double[l_max + 1];
     REP(i, l_max + 1) {
-        A[i] = gsl_sf_bessel_Inu(i + 0.5, K) * (i * 2 + 1);
+        A[i] = gsl_sf_bessel_Inu(i + 0.5, beta) * (i * 2 + 1);
     }
 
     int n;
@@ -22,7 +23,7 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
     double c;
     const int components_num = (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1);
 
-#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, two_L, two_M, c, sum, a) shared(K, l_max, A, T, components_num, std::cerr) schedule(static, 1)
+#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, two_L, two_M, c, sum, a) shared(beta, l_max, A, T, components_num, std::cerr) schedule(static, 1)
     for (n = 0; n < components_num; ++n) {
         i = n % (l_max + 1);
         j = n / (l_max + 1) % (l_max + 1);
@@ -62,17 +63,17 @@ void SphericalHarmonics::initTensor(const double &K, const int &l_max, BaseTenso
                                       << '(' << l << ',' << lm << ')'
                                       << " : sum is nan\n";
                         }
-                        T(i * i + (i + im), j * j + (j + jm), k * k + (k + km), l * l + (l + lm)) = a * sum * M_PI / (2 * K);
+                        T(i * i + (i + im), j * j + (j + jm), k * k + (k + km), l * l + (l + lm)) = a * sum * M_PI / (2 * beta);
                     }
     }
     delete[] A;
 }
 
 template<class Tensor>
-void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
+void SphericalHarmonics::init_tensor_with_impure(const double &beta, const int &l_max, Tensor &T, BaseImpureTensor<Tensor> &IMT) {
     auto A = new double[l_max + 1];
     REP(i, l_max + 1) {
-        A[i] = gsl_sf_bessel_Inu(i + 0.5, K) * (i * 2 + 1);
+        A[i] = gsl_sf_bessel_Inu(i + 0.5, beta) * (i * 2 + 1);
     }
 
     int n;
@@ -88,7 +89,7 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
     int m, two_m;
     const int components_num = (l_max + 1) * (l_max + 1) * (l_max + 1) * (l_max + 1);
 
-#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, L_, M, M_, two_L, two_M, two_L_, two_M_, m, two_m, c, sum, s, a, index_i, index_j, index_k, index_l) shared(K, l_max, A, T, IMT, components_num, std::cerr) schedule(static, 1)
+#pragma omp parallel for default(none) private(n, i, j, k, l, two_i, two_j, two_k, two_l, im, jm, km, lm, two_im, two_jm, two_km, two_lm, L, L_, M, M_, two_L, two_M, two_L_, two_M_, m, two_m, c, sum, s, a, index_i, index_j, index_k, index_l) shared(beta, l_max, A, T, IMT, components_num, std::cerr) schedule(static, 1)
     for (n = 0; n < components_num; ++n) {
         i = n % (l_max + 1);
         j = n / (l_max + 1) % (l_max + 1);
@@ -156,15 +157,15 @@ void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max,
                                       << " : s is nan\n";
                         }
                         index_i = i * i + (i + im), index_j = j * j + (j + jm), index_k = k * k + (k + km), index_l = l * l + (l + lm);
-                        T(index_i, index_j, index_k, index_l) = a * s * M_PI / (2 * K);
-                        IMT.tensors[0](index_i, index_j, index_k, index_l) = a * (sum[0] - sum[2]) / std::sqrt(2) * M_PI / (2 * K);
-                        IMT.tensors[1](index_i, index_j, index_k, index_l) = a * (sum[0] + sum[2]) / std::sqrt(2) * M_PI / (2 * K);
-                        IMT.tensors[2](index_i, index_j, index_k, index_l) = a * sum[1] * M_PI / (2 * K);
+                        T(index_i, index_j, index_k, index_l) = a * s * M_PI / (2 * beta);
+                        IMT.tensors[0](index_i, index_j, index_k, index_l) = a * (sum[0] - sum[2]) / std::sqrt(2) * M_PI / (2 * beta);
+                        IMT.tensors[1](index_i, index_j, index_k, index_l) = a * (sum[0] + sum[2]) / std::sqrt(2) * M_PI / (2 * beta);
+                        IMT.tensors[2](index_i, index_j, index_k, index_l) = a * sum[1] * M_PI / (2 * beta);
                     }
     }
     delete[] A;
 }
 
-template void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
+template void SphericalHarmonics::init_tensor_with_impure(const double &beta, const int &l_max, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
 
-template void SphericalHarmonics::initTensorWithImpure(const double &K, const int &l_max, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);
+template void SphericalHarmonics::init_tensor_with_impure(const double &beta, const int &l_max, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);

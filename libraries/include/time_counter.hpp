@@ -10,8 +10,11 @@ private:
     std::chrono::system_clock::time_point _end;
 public:
     time_counter();
+
     void start();
+
     void end();
+
     std::string duration_cast_to_string();
 };
 

@@ -1,14 +1,11 @@
-//
-// Created by Joy on 2020/06/03.
-//
-
 #include <iostream>
-#include "../include/legendre_zero_point.hpp"
+#include "../include/legendre_root.hpp"
 #include <cmath>
 #include <algorithm>
 #include <gsl/gsl_specfunc.h>
 
-#define ERROR 10e-14
+#define ERROR 1e-13
+#define MAX_ITER 100
 
 double math::solver::d_legendre(int n, double x) {
     if (n == 0) return 0;
@@ -16,11 +13,10 @@ double math::solver::d_legendre(int n, double x) {
 }
 
 double math::solver::newton(int n, double x) {
-    // 最大100回まで試す
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < MAX_ITER; ++i) {
         double d = d_legendre(n, x);
         if (d == 0) {
-            std::cerr << "Error : derivative is zero\n";
+            std::cerr << "Error : derivative is zero.\n";
             exit(1);
         }
         x -= gsl_sf_legendre_Pl(n, x) / d;
@@ -28,17 +24,16 @@ double math::solver::newton(int n, double x) {
             return x;
         }
     }
-    // 100回試してダメならエラー
-    std::cerr << "Error : can't find zero point\n";
+    std::cerr << "Error : can't find zero point.\n";
     exit(1);
 }
 
-std::vector<double> math::solver::legendre_zero_point(int n) {
+std::vector<double> math::solver::legendre_root(int n) {
     std::vector<double> ans(n);
     for (int i = 0; i < n; ++i) {
-        // 初期値
+        // initial value
         double init = std::cos((i + 0.75) / (n + 0.5) * M_PI);
-        // newton法
+        // Newton's method
         ans[i] = newton(n, init);
     }
     std::sort(ans.begin(), ans.end());

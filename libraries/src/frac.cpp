@@ -1,7 +1,3 @@
-//
-// Created by Joy on 2020/04/27.
-//
-
 #include <iostream>
 #include <cmath>
 #include "../include/frac.hpp"

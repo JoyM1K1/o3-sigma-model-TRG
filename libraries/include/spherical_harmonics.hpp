@@ -7,13 +7,14 @@
 #include "HOTRG.hpp"
 
 namespace SphericalHarmonics {
-    void initTensor(const double &K, const int &l_max, BaseTensor &T);
+    void init_tensor(const double &beta, const int &l_max, BaseTensor &T);
 
     template<class Tensor>
-    void initTensorWithImpure(const double &K, const int &l_max, Tensor &T, BaseImpureTensor<Tensor> &IMT);
+    void init_tensor_with_impure(const double &beta, const int &l_max, Tensor &T, BaseImpureTensor<Tensor> &IMT);
 
-    extern template void initTensorWithImpure(const double &K, const int &l_max, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
-    extern template void initTensorWithImpure(const double &K, const int &l_max, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);
+    extern template void init_tensor_with_impure(const double &beta, const int &l_max, TRG::Tensor &T, BaseImpureTensor<TRG::Tensor> &IMT);
+
+    extern template void init_tensor_with_impure(const double &beta, const int &l_max, HOTRG::Tensor &T, BaseImpureTensor<HOTRG::Tensor> &IMT);
 }
 
 #endif //O3_SIGMA_MODEL_SPHERICALHARMONICS_HPP
